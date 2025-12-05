@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import "../styles/PostCard.css";
 import api from "../api/api";
@@ -8,17 +8,52 @@ import TweetEmbed from "./TweetEmbed";
 import IGReply from "./IGReply";
 import TweetReply from "./TweetReply";
 
-export default function PostCard({ post, childrenPosts = [], comments = [] }) {
+export default function PostCard({ post }) {
     const isInstagram = post.platform === "ig" || post.platform === "instagram";
     const isTwitter = post.platform === "x" || post.platform === "twitter";
 
+    const [loadedReplies, setLoadedReplies] = useState(false);
+    const [comments, setComments] = useState(null);
+    const [childrenPosts, setChildrenPosts] = useState(null);
+
+    const cardRef = useRef();
+
+    // --- Lazy load replies when card becomes visible ---
     useEffect(() => {
-        setTimeout(() => window.twttr?.widgets?.load(), 150);
+        const observer = new IntersectionObserver(
+            async (entries) => {
+                if (entries[0].isIntersecting && !loadedReplies) {
+                    setLoadedReplies(true);
+
+                    const [cRes, tRes] = await Promise.all([
+                        api.get(`/texts/by_post/${post.id}`),
+                        api.get(`/posts/${post.id}/thread`)
+                    ]);
+
+                    setComments(cRes.data);
+                    setChildrenPosts(tRes.data);
+
+                    observer.disconnect();
+                }
+            },
+            { threshold: 0.2 }
+        );
+
+        if (cardRef.current) observer.observe(cardRef.current);
+
+        return () => observer.disconnect();
+    }, [post.id, loadedReplies]);
+
+    // Re-render twitter embeds AFTER replies load
+    useEffect(() => {
+        if (childrenPosts || comments) {
+            setTimeout(() => window.twttr?.widgets?.load(), 200);
+        }
     }, [childrenPosts, comments]);
 
     // IG reply grouping
     const igReplyPairs = useMemo(() => {
-        if (!isInstagram) return [];
+        if (!isInstagram || !comments) return [];
         const byMain = {};
 
         comments.forEach((c) => {
@@ -32,24 +67,16 @@ export default function PostCard({ post, childrenPosts = [], comments = [] }) {
     }, [comments, isInstagram]);
 
     return (
-        <div className="post-wrapper">
+        <div ref={cardRef} className="post-wrapper">
             {/* EMBED */}
             <div className="post-embed">
                 {isInstagram && <InstagramEmbed url={post.external_url} />}
                 {isTwitter && <TweetEmbed url={post.external_url} />}
             </div>
 
-            {/* CAPTION */}
-            {/* {post.caption && (
-                <div className="post-caption">
-                    <b>Main Caption:</b>
-                    <p>{post.caption}</p>
-                </div>
-            )} */}
-
+            {/* TRANSLATION */}
             {post.caption_translation && (
                 <div className="post-caption-translation">
-                    {/* <b>Translation:</b> */}
                     <p>{post.caption_translation}</p>
                 </div>
             )}
@@ -62,7 +89,7 @@ export default function PostCard({ post, childrenPosts = [], comments = [] }) {
             )}
 
             {/* IG REPLIES */}
-            {isInstagram && igReplyPairs.length > 0 && (
+            {isInstagram && comments && igReplyPairs.length > 0 && (
                 <div className="reply-section">
                     <h3>Instagram Replies</h3>
                     {igReplyPairs.map((pair) => (
@@ -72,7 +99,7 @@ export default function PostCard({ post, childrenPosts = [], comments = [] }) {
             )}
 
             {/* TWEET REPLIES */}
-            {isTwitter && childrenPosts.length > 0 && (
+            {isTwitter && childrenPosts && childrenPosts.length > 0 && (
                 <div className="reply-section">
                     <h3>Tweet Replies</h3>
                     {childrenPosts.map((child) => (
