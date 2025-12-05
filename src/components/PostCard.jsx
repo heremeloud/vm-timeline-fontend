@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import "../styles/PostCard.css";
 import api from "../api/api";
@@ -12,48 +12,30 @@ export default function PostCard({ post }) {
     const isInstagram = post.platform === "ig" || post.platform === "instagram";
     const isTwitter = post.platform === "x" || post.platform === "twitter";
 
-    const [loadedReplies, setLoadedReplies] = useState(false);
-    const [comments, setComments] = useState(null);
-    const [childrenPosts, setChildrenPosts] = useState(null);
+    const [comments, setComments] = useState([]);
+    const [childrenPosts, setChildrenPosts] = useState([]);
 
-    const cardRef = useRef();
-
-    // --- Lazy load replies when card becomes visible ---
+    // Load replies immediately (no lazy loading)
     useEffect(() => {
-        const observer = new IntersectionObserver(
-            async (entries) => {
-                if (entries[0].isIntersecting && !loadedReplies) {
-                    setLoadedReplies(true);
+        async function load() {
+            const [cRes, tRes] = await Promise.all([
+                api.get(`/texts/by_post/${post.id}`),
+                api.get(`/posts/${post.id}/thread`)
+            ]);
 
-                    const [cRes, tRes] = await Promise.all([
-                        api.get(`/texts/by_post/${post.id}`),
-                        api.get(`/posts/${post.id}/thread`)
-                    ]);
+            setComments(cRes.data);
+            setChildrenPosts(tRes.data);
 
-                    setComments(cRes.data);
-                    setChildrenPosts(tRes.data);
-
-                    observer.disconnect();
-                }
-            },
-            { threshold: 0.2 }
-        );
-
-        if (cardRef.current) observer.observe(cardRef.current);
-
-        return () => observer.disconnect();
-    }, [post.id, loadedReplies]);
-
-    // Re-render twitter embeds AFTER replies load
-    useEffect(() => {
-        if (childrenPosts || comments) {
-            setTimeout(() => window.twttr?.widgets?.load(), 200);
+            // refresh Twitter embeds
+            setTimeout(() => window.twttr?.widgets?.load(), 150);
         }
-    }, [childrenPosts, comments]);
+
+        load();
+    }, [post.id]);
 
     // IG reply grouping
     const igReplyPairs = useMemo(() => {
-        if (!isInstagram || !comments) return [];
+        if (!isInstagram) return [];
         const byMain = {};
 
         comments.forEach((c) => {
@@ -67,29 +49,25 @@ export default function PostCard({ post }) {
     }, [comments, isInstagram]);
 
     return (
-        <div ref={cardRef} className="post-wrapper">
-            {/* EMBED */}
+        <div className="post-wrapper">
             <div className="post-embed">
                 {isInstagram && <InstagramEmbed url={post.external_url} />}
                 {isTwitter && <TweetEmbed url={post.external_url} />}
             </div>
 
-            {/* TRANSLATION */}
             {post.caption_translation && (
                 <div className="post-caption-translation">
                     <p>{post.caption_translation}</p>
                 </div>
             )}
 
-            {/* MEDIA */}
             {post.media_url && (
                 <div className="post-media">
                     <img src={post.media_url} alt="media" />
                 </div>
             )}
 
-            {/* IG REPLIES */}
-            {isInstagram && comments && igReplyPairs.length > 0 && (
+            {isInstagram && igReplyPairs.length > 0 && (
                 <div className="reply-section">
                     <h3>Instagram Replies</h3>
                     {igReplyPairs.map((pair) => (
@@ -98,8 +76,7 @@ export default function PostCard({ post }) {
                 </div>
             )}
 
-            {/* TWEET REPLIES */}
-            {isTwitter && childrenPosts && childrenPosts.length > 0 && (
+            {isTwitter && childrenPosts.length > 0 && (
                 <div className="reply-section">
                     <h3>Tweet Replies</h3>
                     {childrenPosts.map((child) => (
@@ -108,7 +85,6 @@ export default function PostCard({ post }) {
                 </div>
             )}
 
-            {/* ACTION BUTTONS */}
             {localStorage.getItem("adminToken") && (
                 <div className="post-actions">
                     <Link to={`/add-reply/${post.id}`}>

@@ -6,24 +6,15 @@ import PostCard from "../components/PostCard";
 
 export default function Home() {
     const [posts, setPosts] = useState([]);
+
     const [platformFilter, setPlatformFilter] = useState("all");
     const [sortOrder, setSortOrder] = useState("newest");
 
-    // Infinite scroll controls
-    const [offset, setOffset] = useState(0);
+    const [page, setPage] = useState(1);
     const LIMIT = 10;
-    const [hasMore, setHasMore] = useState(true);
-    const [isLoading, setIsLoading] = useState(false);
 
-    // ------------------------------
-    // LOAD MORE POSTS FROM BACKEND
-    // ------------------------------
-    async function loadMore() {
-        if (isLoading || !hasMore) return;
-
-        setIsLoading(true);
-
-        let url = `/posts?offset=${offset}&limit=${LIMIT}`;
+    async function load() {
+        let url = `/posts?limit=${LIMIT}&offset=${(page - 1) * LIMIT}`;
 
         if (platformFilter !== "all") {
             url += `&platform=${platformFilter}`;
@@ -31,18 +22,16 @@ export default function Home() {
 
         url += `&sort=${sortOrder}`;
 
-        const res = await api.get(url);
-        const newPosts = res.data;
+        const postRes = await api.get(url);
+        const basePosts = postRes.data;
 
-        if (newPosts.length < LIMIT) {
-            setHasMore(false);
-        }
-
-        // Load children + comments per post
-        const enriched = await Promise.all(
-            newPosts.map(async (p) => {
-                const commentsRes = await api.get(`/texts/by_post/${p.id}`);
-                const threadRes = await api.get(`/posts/${p.id}/thread`);
+        // Load comments + replies lazily (only for posts on the current page)
+        const withReplies = await Promise.all(
+            basePosts.map(async (p) => {
+                const [commentsRes, threadRes] = await Promise.all([
+                    api.get(`/texts/by_post/${p.id}`),
+                    api.get(`/posts/${p.id}/thread`),
+                ]);
 
                 return {
                     ...p,
@@ -52,59 +41,12 @@ export default function Home() {
             })
         );
 
-        setPosts((prev) => [...prev, ...enriched]);
-        setOffset((prev) => prev + LIMIT);
-
-        setIsLoading(false);
+        setPosts(withReplies);
     }
 
-    // ------------------------------
-    // RESET WHEN FILTERS CHANGE
-    // ------------------------------
     useEffect(() => {
-        setPosts([]);
-        setOffset(0);
-        setHasMore(true);
-        loadMore();
-    }, [platformFilter, sortOrder]);
-
-    // ------------------------------
-    // INFINITE SCROLL HANDLER
-    // ------------------------------
-    useEffect(() => {
-        function handleScroll() {
-            if (
-                window.innerHeight + window.scrollY >=
-                    document.body.offsetHeight - 400 &&
-                hasMore
-            ) {
-                loadMore();
-            }
-        }
-
-        window.addEventListener("scroll", handleScroll);
-        return () => window.removeEventListener("scroll", handleScroll);
-    }, [hasMore, offset]);
-
-    // ------------------------------
-    // RELOAD EMBEDS WHEN POSTS CHANGE
-    // ------------------------------
-    useEffect(() => {
-        const tw = document.createElement("script");
-        tw.src = "https://platform.twitter.com/widgets.js";
-        tw.async = true;
-        document.body.appendChild(tw);
-
-        const ig = document.createElement("script");
-        ig.src = "https://www.instagram.com/embed.js";
-        ig.async = true;
-        document.body.appendChild(ig);
-
-        setTimeout(() => {
-            window.twttr?.widgets?.load();
-            window.instgrm?.Embeds?.process();
-        }, 300);
-    }, [posts]);
+        load();
+    }, [platformFilter, sortOrder, page]);
 
     return (
         <div className="home-container">
@@ -120,29 +62,33 @@ export default function Home() {
 
             {/* Filters */}
             <div className="filter-bar">
-                <label>Filter by Platform:</label>
+                <label>Platform:</label>
                 <select
                     value={platformFilter}
-                    onChange={(e) => setPlatformFilter(e.target.value)}
+                    onChange={(e) => {
+                        setPage(1);
+                        setPlatformFilter(e.target.value);
+                    }}
                 >
                     <option value="all">All</option>
                     <option value="ig">Instagram</option>
                     <option value="x">X (Twitter)</option>
                 </select>
 
-                <span style={{ marginLeft: 20 }} />
-
-                <label>Sort by:</label>
+                <label>Sort:</label>
                 <select
                     value={sortOrder}
-                    onChange={(e) => setSortOrder(e.target.value)}
+                    onChange={(e) => {
+                        setPage(1);
+                        setSortOrder(e.target.value);
+                    }}
                 >
                     <option value="newest">Newest First</option>
                     <option value="oldest">Oldest First</option>
                 </select>
             </div>
 
-            {/* Render posts */}
+            {/* Posts Page */}
             <div className="timeline-container">
                 {posts.map((post) => (
                     <PostCard
@@ -152,19 +98,29 @@ export default function Home() {
                         comments={post.comments || []}
                     />
                 ))}
-
-                {/* Loading indicator */}
-                {isLoading && <p style={{ opacity: 0.6 }}>Loading…</p>}
-
-                {/* End message */}
-                {!hasMore && (
-                    <p style={{ opacity: 0.6, marginTop: "1rem" }}>
-                        — No more posts —
-                    </p>
-                )}
             </div>
 
-            {/* Floating Add Button */}
+            {/* Pagination Controls */}
+            <div className="pagination-bar">
+                <button
+                    className="pagination-btn"
+                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                    disabled={page === 1}
+                >
+                    ⬅ Prev
+                </button>
+
+                <span>Page {page}</span>
+
+                <button
+                    className="pagination-btn"
+                    onClick={() => setPage((p) => p + 1)}
+                    disabled={posts.length < LIMIT}
+                >
+                    Next ➜
+                </button>
+            </div>
+            {/* Add Button */}
             <Link to="/create-post">
                 <button className="fab-button">+</button>
             </Link>
