@@ -9,67 +9,86 @@ export default function Home() {
     const [platformFilter, setPlatformFilter] = useState("all");
     const [sortOrder, setSortOrder] = useState("newest");
 
-    async function load() {
-        let url = "/posts?";
+    // Infinite scroll controls
+    const [offset, setOffset] = useState(0);
+    const LIMIT = 10;
+    const [hasMore, setHasMore] = useState(true);
+    const [isLoading, setIsLoading] = useState(false);
+
+    // ------------------------------
+    // LOAD MORE POSTS FROM BACKEND
+    // ------------------------------
+    async function loadMore() {
+        if (isLoading || !hasMore) return;
+
+        setIsLoading(true);
+
+        let url = `/posts?offset=${offset}&limit=${LIMIT}`;
 
         if (platformFilter !== "all") {
-            url += `platform=${platformFilter}&`;
+            url += `&platform=${platformFilter}`;
         }
 
-        const postRes = await api.get(url);
-        let posts = postRes.data;
+        url += `&sort=${sortOrder}`;
 
-        // Sorting
-        if (sortOrder === "newest") {
-            posts = posts.sort((a, b) => {
-                const dateCompare = (b.posted_at || "").localeCompare(
-                    a.posted_at || ""
-                );
+        const res = await api.get(url);
+        const newPosts = res.data;
 
-                // If same date → sort by id DESC (higher id = newer)
-                if (dateCompare === 0) {
-                    return b.id - a.id;
-                }
-
-                return dateCompare;
-            });
-        } else {
-            posts = posts.sort((a, b) => {
-                const dateCompare = (a.posted_at || "").localeCompare(
-                    b.posted_at || ""
-                );
-
-                // If same date → sort by id ASC (lower id = older)
-                if (dateCompare === 0) {
-                    return a.id - b.id;
-                }
-
-                return dateCompare;
-            });
+        if (newPosts.length < LIMIT) {
+            setHasMore(false);
         }
 
-        // Load IG comments + Tweet replies for each post
-        const withReplies = await Promise.all(
-            posts.map(async (p) => {
+        // Load children + comments per post
+        const enriched = await Promise.all(
+            newPosts.map(async (p) => {
                 const commentsRes = await api.get(`/texts/by_post/${p.id}`);
                 const threadRes = await api.get(`/posts/${p.id}/thread`);
 
                 return {
                     ...p,
-                    comments: commentsRes.data, // IG comments
-                    childrenPosts: threadRes.data, // tweet replies
+                    comments: commentsRes.data,
+                    childrenPosts: threadRes.data,
                 };
             })
         );
 
-        setPosts(withReplies);
+        setPosts((prev) => [...prev, ...enriched]);
+        setOffset((prev) => prev + LIMIT);
+
+        setIsLoading(false);
     }
 
+    // ------------------------------
+    // RESET WHEN FILTERS CHANGE
+    // ------------------------------
     useEffect(() => {
-        load();
+        setPosts([]);
+        setOffset(0);
+        setHasMore(true);
+        loadMore();
     }, [platformFilter, sortOrder]);
 
-    // embed processing
+    // ------------------------------
+    // INFINITE SCROLL HANDLER
+    // ------------------------------
+    useEffect(() => {
+        function handleScroll() {
+            if (
+                window.innerHeight + window.scrollY >=
+                    document.body.offsetHeight - 400 &&
+                hasMore
+            ) {
+                loadMore();
+            }
+        }
+
+        window.addEventListener("scroll", handleScroll);
+        return () => window.removeEventListener("scroll", handleScroll);
+    }, [hasMore, offset]);
+
+    // ------------------------------
+    // RELOAD EMBEDS WHEN POSTS CHANGE
+    // ------------------------------
     useEffect(() => {
         const tw = document.createElement("script");
         tw.src = "https://platform.twitter.com/widgets.js";
@@ -84,7 +103,7 @@ export default function Home() {
         setTimeout(() => {
             window.twttr?.widgets?.load();
             window.instgrm?.Embeds?.process();
-        }, 500);
+        }, 300);
     }, [posts]);
 
     return (
@@ -124,18 +143,25 @@ export default function Home() {
             </div>
 
             {/* Render posts */}
-
             <div className="timeline-container">
                 {posts.map((post) => (
                     <PostCard
                         key={post.id}
                         post={post}
-                        childrenPosts={
-                            post.childrenPosts || post.children || []
-                        }
+                        childrenPosts={post.childrenPosts || []}
                         comments={post.comments || []}
                     />
                 ))}
+
+                {/* Loading indicator */}
+                {isLoading && <p style={{ opacity: 0.6 }}>Loading…</p>}
+
+                {/* End message */}
+                {!hasMore && (
+                    <p style={{ opacity: 0.6, marginTop: "1rem" }}>
+                        — No more posts —
+                    </p>
+                )}
             </div>
 
             {/* Floating Add Button */}
