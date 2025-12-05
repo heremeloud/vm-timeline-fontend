@@ -107,7 +107,7 @@ export default function Home() {
                     onClick={() => setPage((p) => Math.max(1, p - 1))}
                     disabled={page === 1}
                 >
-                    ⬅ Prev
+                    ⬅️ Prev
                 </button>
 
                 <span>Page {page}</span>
@@ -117,7 +117,7 @@ export default function Home() {
                     onClick={() => setPage((p) => p + 1)}
                     disabled={posts.length < LIMIT}
                 >
-                    Next ➜
+                    Next ➡️
                 </button>
             </div>
             {/* Add Button */}
