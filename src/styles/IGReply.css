@@ -1,0 +1,73 @@
+/* Outer box */
+.igreply-container {
+    padding: 14px 0;
+    border-bottom: 1px solid #eee;
+}
+
+/* The horizontal layout (avatar + right content) */
+.igreply-row {
+    display: flex;
+    gap: 10px;
+}
+
+/* Avatar */
+.avatar-wrapper {
+    width: 28px;
+    height: 28px;
+}
+
+.avatar-img {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.avatar-emoji {
+    width: 28px;
+    height: 28px;
+    display: flex;
+    font-size: 22px;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Right side content */
+.igreply-content {
+    display: flex;
+    flex-direction: column;
+}
+
+.igreply-author {
+    font-weight: bold;
+    margin-bottom: 2px;
+}
+
+.igreply-caption {
+    margin-top: 2px;
+}
+
+.igreply-translation {
+    margin-top: 4px;
+    opacity: 0.8;
+    font-style: italic;
+}
+
+/* Admin action buttons */
+.igreply-actions {
+    margin-top: 8px;
+    display: flex;
+    gap: 8px;
+}
+
+/* Edit mode */
+.igreply-edit textarea {
+    width: 100%;
+    resize: none;
+}
+
+.igreply-edit-buttons {
+    display: flex;
+    gap: 10px;
+    margin-top: 6px;
+}

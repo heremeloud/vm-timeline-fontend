@@ -1,0 +1,51 @@
+.post-wrapper {
+    width: 100%;
+    max-width:700px;
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    border: 1px solid #e5e5e5;
+    margin: 0 auto 40px auto;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+    text-align: left;
+
+}
+
+.post-embed {
+    margin-top: 20px;
+}
+
+.post-caption {
+    margin-top: 20px;
+}
+
+.post-caption p {
+    white-space: pre-wrap;
+}
+
+.post-caption-translation {
+    margin-top: 10px;
+    opacity: 0.85;
+    white-space: pre-wrap;
+}
+
+.post-media img {
+    width: 100%;
+    border-radius: 8px;
+    margin-top: 15px;
+}
+
+.reply-section {
+    margin-top: 35px;
+}
+
+.post-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 25px;
+}
+
+.btn-delete {
+    background: red;
+    color: white;
+}

@@ -1,0 +1,66 @@
+
+
+/* Floating + button */
+.fab-button {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: #ff4081;
+    color: white;
+    font-size: 30px;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+}
+
+/* Base button style */
+.btn {
+    padding: 6px 12px;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+/* Normal VM-pink button */
+.btn-primary {
+    background: #ff4f81;
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #ff2a66;
+}
+
+/* Gray cancel button */
+.btn-secondary {
+    background: #888;
+    color: white;
+}
+
+.btn-secondary:hover {
+    background: #666;
+}
+
+/* Dark edit button */
+.btn-edit {
+    background: #444;
+    color: white;
+}
+
+.btn-edit:hover {
+    background: #222;
+}
+
+/* Delete button */
+.btn-delete {
+    background: #b00;
+    color: white;
+}
+
+.btn-delete:hover {
+    background: #900;
+}

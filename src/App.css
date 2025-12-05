@@ -1,0 +1,167 @@
+#root {
+  max-width: 700px;
+  margin: 0 auto;
+  padding: 20px 0;
+}
+
+.logo {
+  height: 6em;
+  padding: 1.5em;
+  will-change: filter;
+  transition: filter 300ms;
+}
+
+.logo:hover {
+  filter: drop-shadow(0 0 2em #646cffaa);
+}
+
+.logo.react:hover {
+  filter: drop-shadow(0 0 2em #61dafbaa);
+}
+
+@keyframes logo-spin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  a:nth-of-type(2) .logo {
+    animation: logo-spin infinite 20s linear;
+  }
+}
+
+.card {
+  padding: 2em;
+}
+
+.read-the-docs {
+  color: #888;
+}
+
+/* GLOBAL RESET AND LIGHT MODE */
+body {
+  margin: 0;
+  background: #fafafa;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  color: #222;
+}
+
+/* CENTER ALL CONTENT SITE-WIDE */
+.app-container,
+.home-container,
+.page-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+
+.timeline-container {
+  width: 100%;
+  max-width: 550px;
+  margin: 0 auto;
+}
+
+
+/* GLOBAL BUTTON STYLE (optional but makes site consistent) */
+button {
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: none;
+  background: #955803;
+  color: white;
+  cursor: pointer;
+  transition: 0.15s;
+}
+
+button:hover {
+  background: #ff2a66;
+}
+
+/* FORM INPUTS */
+input,
+textarea,
+select {
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  width: 100%;
+  box-sizing: border-box;
+  margin-top: 4px;
+}
+
+/* REMOVE TWITTER DARK MODE */
+.twitter-tweet {
+  background: white !important;
+}
+
+.post-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 20px;
+  justify-content: flex-start;
+}
+
+/* Prevent Twitter widget from stretching too wide */
+.tweet-embed-wrapper {
+  max-width: 100%;
+  overflow: hidden;
+}
+
+/* Force twitter iframe to respect your card width */
+.tweet-embed-wrapper iframe {
+  max-width: 100% !important;
+  width: 100% !important;
+}
+
+/* Optional: center tweet inside card */
+.twitter-tweet {
+  margin: 0 auto !important;
+  background: white !important;
+}
+
+/* Center the header area */
+.home-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Header block max width */
+.home-header {
+    max-width: 700px;
+    width: 100%;
+    margin: 0 auto 20px auto;
+    text-align: center;
+}
+
+/* Center filter area */
+.filter-bar {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 30px;
+  width: 100%;
+}
+
+/* Optionally: align label + select horizontally on large screens */
+@media (min-width: 700px) {
+  .filter-bar {
+    flex-direction: row;
+    justify-content: center;
+    gap: 25px;
+  }
+}
+
+textarea {
+  resize: none !important;
+  overflow: auto !important;
+  height: 70px !important;
+  max-height: 70px !important;
+}
