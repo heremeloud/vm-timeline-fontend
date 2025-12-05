@@ -90,7 +90,7 @@ export default function Home() {
     return (
         <div className="home-container">
             <div className="home-header">
-                <h1>ViewMim Interaction Timeline</h1>
+                <h1>🤎ViewMim Interaction Timeline🤍</h1>
                 <p>Collecting ViewMim IG and Twitter interactions</p>
                 <small style={{ opacity: 0.7 }}>※ IG stories & TikToks are not included atm</small>
                 <hr />
