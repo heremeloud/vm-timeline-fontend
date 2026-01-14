@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import "../styles/PostCard.css";
 import api from "../api/api";
+import { isFromR2, isVideo, isImage } from "../utils/media";
 
 import InstagramEmbed from "./InstagramEmbed";
 import TweetEmbed from "./TweetEmbed";
@@ -20,7 +21,7 @@ export default function PostCard({ post }) {
         async function load() {
             const [cRes, tRes] = await Promise.all([
                 api.get(`/texts/by_post/${post.id}`),
-                api.get(`/posts/${post.id}/thread`)
+                api.get(`/posts/${post.id}/thread`),
             ]);
 
             setComments(cRes.data);
@@ -51,7 +52,16 @@ export default function PostCard({ post }) {
     return (
         <div className="post-wrapper">
             <div className="post-embed">
-                {isInstagram && <InstagramEmbed url={post.external_url} />}
+                {isInstagram && (
+                    <InstagramEmbed
+                        external_url={post.external_url}
+                        media_url={post.media_url}
+                        caption={post.caption}
+                        author_id={post.author_id}
+                        author_name={post.author_name}
+                        author_photo={post.author_photo}
+                    />
+                )}
                 {isTwitter && <TweetEmbed url={post.external_url} />}
             </div>
 
@@ -61,9 +71,10 @@ export default function PostCard({ post }) {
                 </div>
             )}
 
-            {post.media_url && (
+            {isTwitter && post.media_url && (
                 <div className="post-media">
-                    <img src={post.media_url} alt="media" />
+                    {/* ideally render video-aware here later */}
+                    <img src={post.media_url} alt="" />
                 </div>
             )}
 
