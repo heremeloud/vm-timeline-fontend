@@ -55,7 +55,7 @@ export default function Home() {
                 <h1 style={{ marginTop: "0.2rem" }}>🤎Timeline🤍</h1>
                 <p>Collecting ViewMim IG and Twitter interactions</p>
                 <small style={{ opacity: 0.7 }}>
-                    ※ IG stories & TikToks are not included atm
+                    ※ TikToks are not included atm *(IG stories are included starting 2026)
                 </small>
                 <hr />
             </div>
