@@ -129,7 +129,7 @@ export default function Events() {
                 <h1 style={{ marginTop: "0.2rem" }}>🤎Events🤍</h1>
                 <p>Event timeline (fanmeets, shows, lives, etc.)</p>
                 <small style={{ opacity: 0.7 }}>
-                    ※ Click a badge to copy the Twitter search query (⚠️ be aware of Twitter's search limit) *
+                    ※ Click a badge to copy the Twitter search query (⚠️ be aware of Twitter's search limit) ※
                 </small>
                 <hr />
             </div>

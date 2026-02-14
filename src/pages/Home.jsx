@@ -154,7 +154,7 @@ export default function Home() {
                 <p>Collecting ViewMim IG and Twitter interactions</p>
                 <p>Last update: Feb/13/2026</p>
                 <small style={{ opacity: 0.7 }}>
-                    ※ IG stories are included starting 2026 *
+                    ※ IG stories are included starting 2026 ※
                 </small>
                 <hr />
             </div>
