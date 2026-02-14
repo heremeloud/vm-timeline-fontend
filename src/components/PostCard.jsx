@@ -2,39 +2,58 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import "../styles/PostCard.css";
 import api from "../api/api";
-import { isFromR2, isVideo, isImage } from "../utils/media";
 
 import InstagramEmbed from "./InstagramEmbed";
 import TweetEmbed from "./TweetEmbed";
+import TikTokEmbed from "./TikTokEmbed";
+
 import IGReply from "./IGReply";
 import TweetReply from "./TweetReply";
+import TikTokReply from "./TikTokReply";
 
 export default function PostCard({ post }) {
     const isInstagram = post.platform === "ig" || post.platform === "instagram";
     const isTwitter = post.platform === "x" || post.platform === "twitter";
+    const isTikTok = post.platform === "tt" || post.platform === "tiktok";
 
     const [comments, setComments] = useState([]);
     const [childrenPosts, setChildrenPosts] = useState([]);
 
-    // Load replies immediately (no lazy loading)
     useEffect(() => {
+        let cancelled = false;
+
         async function load() {
-            const [cRes, tRes] = await Promise.all([
-                api.get(`/texts/by_post/${post.id}`),
-                api.get(`/posts/${post.id}/thread`),
-            ]);
+            try {
+                // Always load PostText (used by IG + TikTok)
+                const cRes = await api.get(`/texts/by_post/${post.id}`);
+                if (!cancelled) setComments(cRes.data);
 
-            setComments(cRes.data);
-            setChildrenPosts(tRes.data);
+                // Only X uses child-post threads
+                if (isTwitter) {
+                    const tRes = await api.get(`/posts/${post.id}/thread`);
+                    if (!cancelled) setChildrenPosts(tRes.data);
 
-            // refresh Twitter embeds
-            setTimeout(() => window.twttr?.widgets?.load(), 150);
+                    // refresh Twitter embeds
+                    setTimeout(() => window.twttr?.widgets?.load(), 150);
+                } else {
+                    if (!cancelled) setChildrenPosts([]);
+                }
+            } catch (err) {
+                console.error("PostCard load error:", err);
+                if (!cancelled) {
+                    setComments([]);
+                    setChildrenPosts([]);
+                }
+            }
         }
 
         load();
-    }, [post.id]);
+        return () => {
+            cancelled = true;
+        };
+    }, [post.id, isTwitter]);
 
-    // IG reply grouping
+    // IG reply grouping (type names must match what you save in PostText.type)
     const igReplyPairs = useMemo(() => {
         if (!isInstagram) return [];
         const byMain = {};
@@ -42,12 +61,31 @@ export default function PostCard({ post }) {
         comments.forEach((c) => {
             const key = c.parent_comment_id ?? c.id;
             if (!byMain[key]) byMain[key] = { main: null, translation: null };
+
+            // If your DB uses "ig-comment" instead, change these two strings.
             if (c.type === "ig-reply") byMain[key].main = c;
             if (c.type === "ig-translation") byMain[key].translation = c;
         });
 
         return Object.values(byMain).filter((p) => p.main);
     }, [comments, isInstagram]);
+
+    // TikTok reply grouping (type names must match what you save in PostText.type)
+    const ttReplyPairs = useMemo(() => {
+        if (!isTikTok) return [];
+        const byMain = {};
+
+        comments.forEach((c) => {
+            const key = c.parent_comment_id ?? c.id;
+            if (!byMain[key]) byMain[key] = { main: null, translation: null };
+
+            // If you use "tt-comment" instead of "tt-reply", change this.
+            if (c.type === "tt-reply") byMain[key].main = c;
+            if (c.type === "tt-translation") byMain[key].translation = c;
+        });
+
+        return Object.values(byMain).filter((p) => p.main);
+    }, [comments, isTikTok]);
 
     return (
         <div className="post-wrapper">
@@ -62,7 +100,19 @@ export default function PostCard({ post }) {
                         author_photo={post.author_photo}
                     />
                 )}
+
                 {isTwitter && <TweetEmbed url={post.external_url} />}
+
+                {isTikTok && (
+                    <TikTokEmbed
+                        external_url={post.external_url}
+                        media_url={post.media_url}
+                        caption={post.caption}
+                        author_id={post.author_id}
+                        author_name={post.author_name}
+                        author_photo={post.author_photo}
+                    />
+                )}
             </div>
 
             {post.caption_translation && (
@@ -71,9 +121,10 @@ export default function PostCard({ post }) {
                 </div>
             )}
 
+            {/* Separate media block for X.
+          If TweetEmbed already handles media, can remove this. */}
             {isTwitter && post.media_url && (
                 <div className="post-media">
-                    {/* ideally render video-aware here later */}
                     <img src={post.media_url} alt="" />
                 </div>
             )}
@@ -83,6 +134,15 @@ export default function PostCard({ post }) {
                     <h3>Instagram Replies</h3>
                     {igReplyPairs.map((pair) => (
                         <IGReply key={pair.main.id} pair={pair} />
+                    ))}
+                </div>
+            )}
+
+            {isTikTok && ttReplyPairs.length > 0 && (
+                <div className="reply-section">
+                    <h3>TikTok Replies</h3>
+                    {ttReplyPairs.map((pair) => (
+                        <TikTokReply key={pair.main.id} pair={pair} />
                     ))}
                 </div>
             )}
@@ -100,7 +160,11 @@ export default function PostCard({ post }) {
                 <div className="post-actions">
                     <Link to={`/add-reply/${post.id}`}>
                         <button>
-                            {isInstagram ? "Add IG Reply" : "Add Tweet Reply"}
+                            {isInstagram
+                                ? "Add IG Reply"
+                                : isTikTok
+                                  ? "Add TikTok Reply"
+                                  : "Add Tweet Reply"}
                         </button>
                     </Link>
 
@@ -112,7 +176,7 @@ export default function PostCard({ post }) {
                         onClick={() => {
                             if (confirm("Delete this post?")) {
                                 api.delete(`/posts/${post.id}`).then(() =>
-                                    window.location.reload()
+                                    window.location.reload(),
                                 );
                             }
                         }}

@@ -62,8 +62,10 @@ export default function AddReply() {
 
     if (!parent) return <div>Loading...</div>;
 
-    const isInstagram = parent.platform === "ig" || parent.platform === "instagram";
+    const isInstagram =
+        parent.platform === "ig" || parent.platform === "instagram";
     const isTwitter = parent.platform === "x" || parent.platform === "twitter";
+    const isTikTok = parent.platform === "tt" || parent.platform === "tiktok";
 
     // ---------------------------------------
     // SUBMIT
@@ -80,17 +82,26 @@ export default function AddReply() {
             finalAuthor = newAuthorName.trim();
         }
 
+        if (!finalAuthor || !finalAuthor.trim()) {
+            alert("Please select an author (or add a new one).");
+            return;
+        }
+
         // create / ensure author exists
         const authorRes = await api.post("/authors/ensure", {
             name: finalAuthor,
-            profile_photo_url: author === "__new__" ? newAuthorPhoto || null : null,
+            profile_photo_url:
+                author === "__new__" ? newAuthorPhoto || null : null,
         });
         const authorId = authorRes.data.id;
 
+        // shared validation
+        if (!postedAt.trim()) return alert("Date is required.");
+
         // -------------------- Instagram Reply --------------------
         if (isInstagram) {
-            if (!caption.trim()) return alert("Instagram reply needs a caption.");
-            if (!postedAt.trim()) return alert("Date is required.");
+            if (!caption.trim() && !mediaURL.trim())
+                return alert("Instagram reply needs a caption or media URL.");
 
             // Step 1: main TH comment
             const mainRes = await api.post("/texts/", {
@@ -123,11 +134,46 @@ export default function AddReply() {
             }
         }
 
+        // -------------------- TikTok Reply (same as IG, plain text) --------------------
+        if (isTikTok) {
+            if (!caption.trim() && !mediaURL.trim())
+                return alert("TikTok reply needs a caption or media URL.");
+
+            // Step 1: main TH comment
+            const mainRes = await api.post("/texts/", {
+                post_id: Number(postId),
+                type: "tt-reply",
+                language: "th",
+                content: caption,
+                media_url: mediaURL || null,
+                author_id: authorId,
+                posted_at: postedAt,
+                source: "manual",
+                parent_comment_id: null,
+            });
+
+            const parentCommentId = mainRes.data.id;
+
+            // Step 2: optional translation
+            if (translation.trim()) {
+                await api.post("/texts/", {
+                    post_id: Number(postId),
+                    type: "tt-translation",
+                    language: "en",
+                    content: translation,
+                    media_url: null,
+                    author_id: authorId,
+                    posted_at: postedAt,
+                    source: "manual",
+                    parent_comment_id: parentCommentId,
+                });
+            }
+        }
+
         // -------------------- Twitter Reply --------------------
         if (isTwitter) {
             if (!caption.trim()) return alert("Tweet reply needs text.");
             if (!tweetURL.trim()) return alert("Tweet URL is required.");
-            if (!postedAt.trim()) return alert("Date is required.");
 
             const normalizedURL = normalizeTweetURL(tweetURL);
             const external_id =
@@ -152,9 +198,15 @@ export default function AddReply() {
     // ---------------------------------------
     // RENDER UI
     // ---------------------------------------
+    const replyLabel = isInstagram
+        ? "Instagram"
+        : isTikTok
+          ? "TikTok"
+          : "Twitter";
+
     return (
         <div style={{ padding: 20 }}>
-            <h2>Add Reply ({isInstagram ? "Instagram" : "Twitter"})</h2>
+            <h2>Add Reply ({replyLabel})</h2>
 
             {/* AUTHOR */}
             <label>Author:</label>
@@ -172,7 +224,8 @@ export default function AddReply() {
 
             {author === "__new__" && (
                 <>
-                    <br /><br />
+                    <br />
+                    <br />
 
                     <label>New Author Name:</label>
                     <input
@@ -183,7 +236,8 @@ export default function AddReply() {
                         style={{ width: "100%" }}
                     />
 
-                    <br /><br />
+                    <br />
+                    <br />
 
                     <label>Profile Photo URL (optional):</label>
                     <input
@@ -196,7 +250,8 @@ export default function AddReply() {
                 </>
             )}
 
-            <br /><br />
+            <br />
+            <br />
 
             {/* DATE */}
             <label>Reply Date:</label>
@@ -206,7 +261,8 @@ export default function AddReply() {
                 onChange={(e) => setPostedAt(e.target.value)}
             />
 
-            <br /><br />
+            <br />
+            <br />
 
             {/* IG UI */}
             {isInstagram && (
@@ -218,7 +274,8 @@ export default function AddReply() {
                         rows={4}
                         style={{ width: "100%" }}
                     />
-                    <br /><br />
+                    <br />
+                    <br />
 
                     <label>Optional Translation:</label>
                     <textarea
@@ -227,7 +284,42 @@ export default function AddReply() {
                         rows={4}
                         style={{ width: "100%" }}
                     />
-                    <br /><br />
+                    <br />
+                    <br />
+
+                    <label>Optional Media URL:</label>
+                    <input
+                        type="text"
+                        value={mediaURL}
+                        onChange={(e) => setMediaURL(e.target.value)}
+                        placeholder="https://..."
+                        style={{ width: "100%" }}
+                    />
+                </>
+            )}
+
+            {/* TIKTOK UI (same as IG) */}
+            {isTikTok && (
+                <>
+                    <label>TikTok Reply (caption): *</label>
+                    <textarea
+                        value={caption}
+                        onChange={(e) => setCaption(e.target.value)}
+                        rows={4}
+                        style={{ width: "100%" }}
+                    />
+                    <br />
+                    <br />
+
+                    <label>Optional Translation:</label>
+                    <textarea
+                        value={translation}
+                        onChange={(e) => setTranslation(e.target.value)}
+                        rows={4}
+                        style={{ width: "100%" }}
+                    />
+                    <br />
+                    <br />
 
                     <label>Optional Media URL:</label>
                     <input
@@ -251,7 +343,8 @@ export default function AddReply() {
                         placeholder="https://x.com/.../status/12345"
                         style={{ width: "100%" }}
                     />
-                    <br /><br />
+                    <br />
+                    <br />
 
                     <label>Tweet Text (caption): *</label>
                     <textarea
@@ -260,7 +353,8 @@ export default function AddReply() {
                         rows={4}
                         style={{ width: "100%" }}
                     />
-                    <br /><br />
+                    <br />
+                    <br />
 
                     <label>Optional Translation:</label>
                     <textarea
@@ -269,7 +363,8 @@ export default function AddReply() {
                         rows={4}
                         style={{ width: "100%" }}
                     />
-                    <br /><br />
+                    <br />
+                    <br />
 
                     <label>Optional Media URL:</label>
                     <input
@@ -282,7 +377,8 @@ export default function AddReply() {
                 </>
             )}
 
-            <br /><br />
+            <br />
+            <br />
 
             <button onClick={submit}>Save Reply</button>
         </div>

@@ -29,7 +29,10 @@ export default function EditPost() {
         if (!url) return "";
         let clean = url.split("?")[0];
         if (!clean.endsWith("/")) clean += "/";
-        return clean.replace("https://instagram.com", "https://www.instagram.com");
+        return clean.replace(
+            "https://instagram.com",
+            "https://www.instagram.com",
+        );
     };
 
     const normalizeTwitterURL = (url) => {
@@ -38,6 +41,14 @@ export default function EditPost() {
             .replace("https://x.com", "https://twitter.com")
             .replace("http://x.com", "https://twitter.com")
             .replace("https://www.x.com", "https://twitter.com");
+    };
+
+    const normalizeTikTokURL = (url) => {
+        if (!url) return "";
+        let clean = url.trim().split("?")[0];
+        clean = clean.replace("https://m.tiktok.com", "https://www.tiktok.com");
+        if (!clean.startsWith("http")) clean = "https://" + clean;
+        return clean;
     };
 
     const extractExternalId = (url, platform) => {
@@ -51,6 +62,11 @@ export default function EditPost() {
         if (platform === "x") {
             const parts = url.split("/status/");
             return parts?.[1]?.split("?")[0] || "";
+        }
+
+        if (platform === "tt") {
+            const m = url.match(/\/video\/(\d+)/);
+            return m?.[1] || "";
         }
 
         return "";
@@ -95,15 +111,17 @@ export default function EditPost() {
 
         if (platform === "ig") {
             newURL = normalizeInstagramURL(newURL);
-        } else {
+        } else if (platform === "x") {
             newURL = normalizeTwitterURL(newURL);
+        } else if (platform === "tt") {
+            newURL = normalizeTikTokURL(newURL);
         }
 
         const newId = extractExternalId(newURL, platform);
 
         await api.patch(`/posts/${postId}`, {
             platform,
-            author_id: authorId,   // IMPORTANT FIX
+            author_id: authorId, // IMPORTANT FIX
             external_url: newURL,
             external_id: newId,
             caption,
@@ -124,12 +142,17 @@ export default function EditPost() {
 
             {/* PLATFORM */}
             <label>Platform:</label>
-            <select value={platform} onChange={(e) => setPlatform(e.target.value)}>
+            <select
+                value={platform}
+                onChange={(e) => setPlatform(e.target.value)}
+            >
                 <option value="ig">Instagram</option>
                 <option value="x">Twitter</option>
+                <option value="tt">TikTok</option>
             </select>
 
-            <br /><br />
+            <br />
+            <br />
 
             {/* AUTHOR */}
             <label>Author:</label>
@@ -145,7 +168,8 @@ export default function EditPost() {
                 ))}
             </select>
 
-            <br /><br />
+            <br />
+            <br />
 
             {/* EXTERNAL URL */}
             <label>External URL:</label>
@@ -155,7 +179,8 @@ export default function EditPost() {
                 style={{ width: "100%" }}
             />
 
-            <br /><br />
+            <br />
+            <br />
 
             {/* EXTERNAL ID */}
             <label>External ID:</label>
@@ -165,7 +190,8 @@ export default function EditPost() {
                 style={{ width: "100%" }}
             />
 
-            <br /><br />
+            <br />
+            <br />
 
             {/* CAPTION */}
             <label>Caption:</label>
@@ -176,7 +202,8 @@ export default function EditPost() {
                 style={{ width: "100%" }}
             />
 
-            <br /><br />
+            <br />
+            <br />
 
             {/* TRANSLATION */}
             <label>Caption Translation:</label>
@@ -187,7 +214,8 @@ export default function EditPost() {
                 style={{ width: "100%" }}
             />
 
-            <br /><br />
+            <br />
+            <br />
 
             {/* MEDIA */}
             <label>Media URL:</label>
@@ -198,7 +226,8 @@ export default function EditPost() {
                 style={{ width: "100%" }}
             />
 
-            <br /><br />
+            <br />
+            <br />
 
             {/* DATE */}
             <label>Posted At:</label>
@@ -208,7 +237,8 @@ export default function EditPost() {
                 onChange={(e) => setPostedAt(e.target.value)}
             />
 
-            <br /><br />
+            <br />
+            <br />
 
             <button onClick={saveChanges} style={{ padding: "8px 16px" }}>
                 Save Changes

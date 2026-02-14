@@ -53,24 +53,48 @@ export default function CreatePost() {
         if (!clean.endsWith("/")) clean += "/";
         clean = clean.replace(
             "https://instagram.com",
-            "https://www.instagram.com"
+            "https://www.instagram.com",
         );
         return clean;
+    };
+
+    const normalizeTikTokURL = (url) => {
+        if (!url) return "";
+        let clean = url.trim().split("?")[0];
+        // normalize mobile subdomain if you want
+        clean = clean.replace("https://m.tiktok.com", "https://www.tiktok.com");
+        if (!clean.startsWith("http")) clean = "https://" + clean;
+        return clean;
+    };
+
+    const extractTikTokVideoId = (url) => {
+        if (!url) return "";
+        // match .../video/<digits>
+        const m = url.match(/\/video\/(\d+)/);
+        return m?.[1] || "";
     };
 
     /** Extract tweet ID or IG shortcode **/
 
     const extractExternalId = (url, platform) => {
+        if (!url) return "";
+
         if (platform === "ig") {
             const parts = url.split("/p/");
             if (parts.length > 1) return parts[1].split("/")[0];
             return "";
         }
+
         if (platform === "x") {
             const parts = url.split("/status/");
             if (parts.length > 1) return parts[1].split("?")[0];
             return "";
         }
+
+        if (platform === "tt") {
+            return extractTikTokVideoId(url);
+        }
+
         return "";
     };
 
@@ -107,8 +131,10 @@ export default function CreatePost() {
             let cleanURL = external_url;
             if (platform === "x") cleanURL = normalizeTweetURL(cleanURL);
             if (platform === "ig") cleanURL = normalizeInstagramURL(cleanURL);
+            if (platform === "tt") cleanURL = normalizeTikTokURL(cleanURL);
 
             const external_id = extractExternalId(cleanURL, platform);
+
 
             // Create post
             await api.post("/posts/", {
@@ -152,6 +178,7 @@ export default function CreatePost() {
                 >
                     <option value="ig">Instagram</option>
                     <option value="x">X (Twitter)</option>
+                    <option value="tt">TikTok</option>
                 </select>
 
                 <br />
