@@ -1,0 +1,110 @@
+/* ============================= */
+/* FORM CONTAINER */
+/* ============================= */
+
+.eventform-container {
+    padding: 20px;
+    max-width: 800px;
+    margin: 0 auto;              /* center whole block */
+    text-align: left;            /* force left alignment */
+}
+
+/* ============================= */
+/* FORM STRUCTURE */
+/* ============================= */
+
+.eventform-form {
+    width: 100%;
+    display: block;              /* prevent accidental flex centering */
+    text-align: left;
+}
+
+.eventform-form label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 6px;
+}
+
+.eventform-form input,
+.eventform-form textarea,
+.eventform-form select {
+    display: block;
+    width: 100%;
+    padding: 8px 10px;
+    border-radius: 8px;
+    border: 1px solid rgba(0, 0, 0, 0.2);
+    font-size: 0.95rem;
+    box-sizing: border-box;
+}
+
+.eventform-form input:focus,
+.eventform-form textarea:focus {
+    outline: none;
+    border-color: #a67c52;
+}
+
+/* spacing between sections */
+.eventform-section {
+    margin-top: 16px;
+}
+
+/* ============================= */
+/* PARTICIPANTS BOX */
+/* ============================= */
+
+.eventform-participants-box {
+    border: 1px solid rgba(0, 0, 0, 0.15);
+    border-radius: 10px;
+    padding: 10px;
+    max-height: 220px;
+    overflow-y: auto;            /* scroll */
+    width: 100%;
+
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;     /* LEFT alignment */
+}
+
+/* Scrollbar subtle styling (optional) */
+.eventform-participants-box::-webkit-scrollbar {
+    width: 6px;
+}
+
+.eventform-participants-box::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.15);
+    border-radius: 4px;
+}
+
+/* Individual participant row */
+.eventform-participant-item {
+    display: grid;
+    grid-template-columns: 22px 1fr;   
+    align-items: center;
+    column-gap: 10px;
+    padding: 6px 4px;
+    cursor: pointer;
+    width: 100%;
+}
+.eventform-participant-item:hover {
+    background: rgba(0, 0, 0, 0.04);
+    border-radius: 6px;
+}
+
+/* ============================= */
+/* BUTTON */
+/* ============================= */
+
+.eventform-form button {
+    padding: 8px 16px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    font-weight: 600;
+    background-color: #a67c52;
+    color: white;
+    transition: 0.2s ease;
+}
+
+.eventform-form button:hover {
+    opacity: 0.9;
+}
