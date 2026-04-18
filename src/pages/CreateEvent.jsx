@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { createEvent } from "../api/eventsService";
 import { getAuthors } from "../api/authorsService";
+import { ROUTES } from "../routes";
 import "../styles/EventForm.css";
 
 export default function CreateEvent() {
@@ -73,7 +74,7 @@ export default function CreateEvent() {
                 author_ids: selectedAuthorIds,
             });
 
-            navigate("/events");
+            navigate(ROUTES.events);
         } catch (err) {
             console.error("CreateEvent submit error:", err);
             alert("Error creating event. Check console for details.");

@@ -60,6 +60,11 @@
     gap: 8px;
 }
 
+.btn-delete {
+    background: red;
+    color: white;
+}
+
 /* Edit mode */
 .igreply-edit textarea {
     width: 100%;

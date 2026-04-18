@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import "../styles/Home.css";
 import { getPosts, getThread } from "../api/postsService";
 import { getTextsByPost } from "../api/textsService";
+import { ROUTES } from "../routes";
 import { Link } from "react-router-dom";
 import PostCard from "../components/PostCard";
 
@@ -150,8 +151,8 @@ export default function Home() {
             <div className="home-header">
                 <h1 style={{ marginBottom: "0.2rem" }}>ViewMim Interaction</h1>
                 <h1 style={{ marginTop: "0.2rem" }}>🤎Timeline🤍</h1>
-                <p>Collecting ViewMim IG and Twitter interactions</p>
-                <p>Last update: April/18/2026</p>
+                <p>Collecting ViewMim social media interactions</p>
+                <p>Last update: April 18, 2026</p>
                 <small style={{ opacity: 0.7 }}>
                     ※ IG stories are included starting 2026 ※
                 </small>
@@ -256,9 +257,11 @@ export default function Home() {
             </div>
 
             {/* Add Button */}
-            <Link to="/create-post">
-                <button className="fab-button">+</button>
-            </Link>
+            {localStorage.getItem("jwt") && (
+                <Link to={ROUTES.createPost}>
+                    <button className="fab-button">+</button>
+                </Link>
+            )}
         </div>
     );
 }

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { getEvents } from "../api/eventsService";
 import { Link } from "react-router-dom";
+import { ROUTES } from "../routes";
 import EventCard from "../components/EventCard";
 import "../styles/Home.css";
 
@@ -217,8 +218,8 @@ export default function Events() {
             </div>
 
             {/* Create Event button (admin only) */}
-            {localStorage.getItem("adminToken") && (
-                <Link to="/create-event">
+            {localStorage.getItem("jwt") && (
+                <Link to={ROUTES.createEvent}>
                     <button className="fab-button">+</button>
                 </Link>
             )}

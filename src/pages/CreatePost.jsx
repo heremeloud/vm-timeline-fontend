@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { createPost } from "../api/postsService";
 import { getAuthors, ensureAuthor } from "../api/authorsService";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { ROUTES } from "../routes";
 
 export default function CreatePost() {
     const navigate = useNavigate();
@@ -150,7 +151,7 @@ export default function CreatePost() {
                 parent_id: parent_id || null,
             });
 
-            navigate("/");
+            navigate(ROUTES.home);
         } catch (err) {
             console.error("CreatePost error:", err);
             alert("Error creating post. Check console for details.");

@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { getPost, updatePost } from "../api/postsService";
 import { getAuthors } from "../api/authorsService";
+import { ROUTES } from "../routes";
 
 export default function EditPost() {
     const { postId } = useParams();
@@ -131,7 +132,7 @@ export default function EditPost() {
             posted_at: postedAt,
         });
 
-        navigate("/");
+        navigate(ROUTES.home);
     }
 
     // -----------------------------

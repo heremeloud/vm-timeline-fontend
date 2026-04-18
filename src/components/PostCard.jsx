@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import "../styles/PostCard.css";
 import { getTextsByPost } from "../api/textsService";
 import { getThread, deletePost } from "../api/postsService";
+import { ROUTES } from "../routes";
 
 import InstagramEmbed from "./InstagramEmbed";
 import TweetEmbed from "./TweetEmbed";
@@ -159,7 +160,7 @@ export default function PostCard({ post }) {
 
             {localStorage.getItem("jwt") && (
                 <div className="post-actions">
-                    <Link to={`/add-reply/${post.id}`}>
+                    <Link to={ROUTES.addReply(post.id)}>
                         <button>
                             {isInstagram
                                 ? "Add IG Reply"
@@ -169,7 +170,7 @@ export default function PostCard({ post }) {
                         </button>
                     </Link>
 
-                    <Link to={`/edit-post/${post.id}`}>
+                    <Link to={ROUTES.editPost(post.id)}>
                         <button>Edit Post</button>
                     </Link>
 

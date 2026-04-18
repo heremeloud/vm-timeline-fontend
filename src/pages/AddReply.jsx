@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { getPost, createPost } from "../api/postsService";
 import { createText } from "../api/textsService";
 import { getAuthors, ensureAuthor } from "../api/authorsService";
+import { ROUTES } from "../routes";
 
 // Normalize X → Twitter canonical URL
 function normalizeTweetURL(url) {
@@ -194,7 +195,7 @@ export default function AddReply() {
             });
         }
 
-        navigate("/");
+        navigate(ROUTES.home);
     }
 
     // ---------------------------------------

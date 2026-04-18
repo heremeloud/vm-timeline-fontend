@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { login as loginRequest } from "../api/authService";
 import { useNavigate } from "react-router-dom";
+import { ROUTES } from "../routes";
 
 export default function AdminLogin() {
     const [username, setUsername] = useState("");
@@ -14,7 +15,7 @@ export default function AdminLogin() {
         try {
             const res = await loginRequest(username, password);
             localStorage.setItem("jwt", res.data.access_token);
-            navigate("/");
+            navigate(ROUTES.home);
         } catch (err) {
             console.error(err);
             alert("Login failed");

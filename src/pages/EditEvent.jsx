@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { getEvent, updateEvent } from "../api/eventsService";
 import { getAuthors } from "../api/authorsService";
+import { ROUTES } from "../routes";
 import "../styles/EventForm.css";
 
 export default function EditEvent() {
@@ -57,7 +58,7 @@ export default function EditEvent() {
             } catch (err) {
                 console.error("EditEvent load error:", err);
                 alert("Failed to load event.");
-                navigate("/events");
+                navigate(ROUTES.events);
             }
         }
 
@@ -97,14 +98,13 @@ export default function EditEvent() {
                 media_url: mediaURL.trim() || null,
                 event_date: eventDate || null,
                 announcement_url: announcementURL.trim() || null,
-                live_url: liveURL.trim() || null, 
+                live_url: liveURL.trim() || null,
                 author_ids: selectedAuthorIds,
             });
-
-            navigate("/events");
+            navigate(ROUTES.events);
         } catch (err) {
             console.error("EditEvent save error:", err);
-            alert("Failed to save event. Check console for details.");
+            alert("Failed to save event: " + (err.response?.data?.detail || err.message));
         }
     }
 

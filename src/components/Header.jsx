@@ -1,5 +1,6 @@
 import { NavLink } from "react-router-dom";
 import "../styles/Header.css";
+import { ROUTES } from "../routes";
 
 export default function Header() {
     return (
@@ -9,17 +10,17 @@ export default function Header() {
 
                 <nav className="nav-links">
                     <NavLink
-                        to="/"
+                        to={ROUTES.home}
                         className={({ isActive }) =>
                             isActive ? "nav-link active" : "nav-link"
                         }
                         end
                     >
-                        SNS Timeline
+                        Timeline
                     </NavLink>
 
                     <NavLink
-                        to="/events"
+                        to={ROUTES.events}
                         className={({ isActive }) =>
                             isActive ? "nav-link active" : "nav-link"
                         }

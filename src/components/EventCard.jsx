@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import Avatar from "./Avatar";
 import "../styles/EventCard.css";
 import { deleteEvent } from "../api/eventsService";
+import { ROUTES } from "../routes";
 
 function orderViewMimFirst(authors = []) {
     if (!Array.isArray(authors)) return [];
@@ -135,11 +136,11 @@ export default function EventCard({ event }) {
 
                     {isAdmin && (
                         <div className="eventcard-actions">
-                            <Link to={`/edit-event/${event.id}`}>
+                            <Link to={ROUTES.editEvent(event.id)}>
                                 <button className="eventcard-btn">Edit</button>
                             </Link>
                             <button
-                                className="eventcard-btn"
+                                className="btn-delete"
                                 onClick={async () => {
                                     if (confirm("Delete this event?")) {
                                         try {
