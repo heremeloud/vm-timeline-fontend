@@ -1,5 +1,5 @@
 import { useState } from "react";
-import api from "../api/api";
+import { deleteTextPair, updateTextPair } from "../api/textsService";
 import Avatar from "./Avatar";
 import "../styles/IGReply.css";
 
@@ -49,12 +49,17 @@ export default function IGReply({ pair }) {
 
     async function handleDelete() {
         if (!confirm("Delete this IG reply (caption + translation)?")) return;
-        await api.delete(`/texts/pair/${main.id}`);
-        window.location.reload();
+        try {
+            await deleteTextPair(main.id);
+            window.location.reload();
+        } catch (err) {
+            console.error("Delete reply failed:", err);
+            alert("Delete failed: " + (err.response?.data?.detail || err.message));
+        }
     }
 
     async function saveEdit() {
-        await api.patch(`/texts/pair/${main.id}`, {
+        await updateTextPair(main.id, {
             caption: editCaption,
             translation: editTranslation,
         });
@@ -149,7 +154,7 @@ export default function IGReply({ pair }) {
                         </div>
                     </div>
 
-                    {localStorage.getItem("adminToken") && (
+                    {localStorage.getItem("jwt") && (
                         <div className="igreply-actions">
                             <button onClick={() => setIsEditing(true)}>
                                 Edit

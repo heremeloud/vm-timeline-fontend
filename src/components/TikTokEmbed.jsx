@@ -29,7 +29,7 @@ export default function TikTokEmbed({
         const embedUrl = `https://www.tiktok.com/embed/v2/${videoId}`;
 
         return (
-            <div style={{ width: "100%" }}>
+            <div style={{ width: "100%", maxWidth: 605, margin: "0 auto" }}>
                 <iframe
                     src={embedUrl}
                     title="TikTok embed"

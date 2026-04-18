@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import "../styles/Home.css";
-import api from "../api/api";
+import { getPosts, getThread } from "../api/postsService";
+import { getTextsByPost } from "../api/textsService";
 import { Link } from "react-router-dom";
 import PostCard from "../components/PostCard";
 
@@ -16,16 +17,14 @@ export default function Home() {
     const [lastPage, setLastPage] = useState(null); // discovered last page
     const LIMIT = 10;
 
-    // Build posts URL for a given page (base posts only)
-    function buildPostsUrl(targetPage) {
-        let url = `/posts?limit=${LIMIT}&offset=${(targetPage - 1) * LIMIT}&sort=${sortOrder}`;
-        if (platformFilter !== "all") url += `&platform=${platformFilter}`;
-        return url;
-    }
-
     // Fetch ONLY the base posts for a page (no replies)
     async function fetchBasePosts(targetPage) {
-        const res = await api.get(buildPostsUrl(targetPage));
+        const res = await getPosts({
+            limit: LIMIT,
+            offset: (targetPage - 1) * LIMIT,
+            sort: sortOrder,
+            platform: platformFilter,
+        });
         return res.data || [];
     }
 
@@ -111,8 +110,8 @@ export default function Home() {
                 basePosts.map(async (p) => {
                     const isTwitter = p.platform === "x" || p.platform === "twitter";
                     const [commentsRes, threadRes] = await Promise.all([
-                        api.get(`/texts/by_post/${p.id}`),
-                        isTwitter ? api.get(`/posts/${p.id}/thread`) : Promise.resolve({ data: [] }),
+                        getTextsByPost(p.id),
+                        isTwitter ? getThread(p.id) : Promise.resolve({ data: [] }),
                     ]);
 
                     return {

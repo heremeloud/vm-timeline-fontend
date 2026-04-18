@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import api from "../api/api";
+import { createEvent } from "../api/eventsService";
+import { getAuthors } from "../api/authorsService";
 import "../styles/EventForm.css";
 
 export default function CreateEvent() {
@@ -24,7 +25,7 @@ export default function CreateEvent() {
 
         async function load() {
             try {
-                const res = await api.get("/authors/");
+                const res = await getAuthors();
                 if (!cancelled) setAuthors(res.data || []);
             } catch (err) {
                 console.error("CreateEvent load authors error:", err);
@@ -60,7 +61,7 @@ export default function CreateEvent() {
         }
 
         try {
-            await api.post("/events", {
+            await createEvent({
                 name: name.trim(),
                 location: location.trim() || null,
                 keyword: keyword.trim() || null,

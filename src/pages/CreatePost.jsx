@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import api from "../api/api";
+import { createPost } from "../api/postsService";
+import { getAuthors, ensureAuthor } from "../api/authorsService";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
 export default function CreatePost() {
@@ -31,7 +32,7 @@ export default function CreatePost() {
     // Load authors on page mount
     useEffect(() => {
         async function loadAuthors() {
-            const res = await api.get("/authors/");
+            const res = await getAuthors();
             setAuthors(res.data);
         }
         loadAuthors();
@@ -120,7 +121,7 @@ export default function CreatePost() {
             }
 
             // Ensure this author exists
-            const authorRes = await api.post("/authors/ensure", {
+            const authorRes = await ensureAuthor({
                 name: finalAuthor,
                 profile_photo_url:
                     author === "__new__" ? newAuthorPhoto || null : null,
@@ -137,7 +138,7 @@ export default function CreatePost() {
 
 
             // Create post
-            await api.post("/posts/", {
+            await createPost({
                 platform,
                 external_url: cleanURL,
                 external_id,

@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import api from "../api/api";
+import { getPost, createPost } from "../api/postsService";
+import { createText } from "../api/textsService";
+import { getAuthors, ensureAuthor } from "../api/authorsService";
 
 // Normalize X → Twitter canonical URL
 function normalizeTweetURL(url) {
@@ -46,10 +48,10 @@ export default function AddReply() {
     // ---------------------------------------
     useEffect(() => {
         async function load() {
-            const aRes = await api.get("/authors/");
+            const aRes = await getAuthors();
             setAuthors(aRes.data);
 
-            const res = await api.get(`/posts/${postId}`);
+            const res = await getPost(postId);
             const p = res.data.post;
             setParent(p);
 
@@ -88,7 +90,7 @@ export default function AddReply() {
         }
 
         // create / ensure author exists
-        const authorRes = await api.post("/authors/ensure", {
+        const authorRes = await ensureAuthor({
             name: finalAuthor,
             profile_photo_url:
                 author === "__new__" ? newAuthorPhoto || null : null,
@@ -104,7 +106,7 @@ export default function AddReply() {
                 return alert("Instagram reply needs a caption or media URL.");
 
             // Step 1: main TH comment
-            const mainRes = await api.post("/texts/", {
+            const mainRes = await createText({
                 post_id: Number(postId),
                 type: "ig-reply",
                 language: "th",
@@ -120,7 +122,7 @@ export default function AddReply() {
 
             // Step 2: optional translation
             if (translation.trim()) {
-                await api.post("/texts/", {
+                await createText({
                     post_id: Number(postId),
                     type: "ig-translation",
                     language: "en",
@@ -140,7 +142,7 @@ export default function AddReply() {
                 return alert("TikTok reply needs a caption or media URL.");
 
             // Step 1: main TH comment
-            const mainRes = await api.post("/texts/", {
+            const mainRes = await createText({
                 post_id: Number(postId),
                 type: "tt-reply",
                 language: "th",
@@ -156,7 +158,7 @@ export default function AddReply() {
 
             // Step 2: optional translation
             if (translation.trim()) {
-                await api.post("/texts/", {
+                await createText({
                     post_id: Number(postId),
                     type: "tt-translation",
                     language: "en",
@@ -179,7 +181,7 @@ export default function AddReply() {
             const external_id =
                 tweetURL.split("/status/")[1]?.split("?")[0] || "";
 
-            await api.post("/posts/", {
+            await createPost({
                 platform: "x",
                 external_url: normalizedURL,
                 external_id,

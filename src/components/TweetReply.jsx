@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import api from "../api/api";
+import { deletePost, updatePost } from "../api/postsService";
 import TweetEmbed from "./TweetEmbed";
 
 export default function TweetReply({ reply }) {
@@ -25,12 +25,17 @@ export default function TweetReply({ reply }) {
 
     async function handleDelete() {
         if (!confirm("Delete this tweet reply?")) return;
-        await api.delete(`/posts/${reply.id}`);
-        window.location.reload();
+        try {
+            await deletePost(reply.id);
+            window.location.reload();
+        } catch (err) {
+            console.error("Delete reply failed:", err);
+            alert("Delete failed: " + (err.response?.data?.detail || err.message));
+        }
     }
 
     async function saveEdit() {
-        await api.patch(`/posts/${reply.id}`, {
+        await updatePost(reply.id, {
             caption: editCaption,
             caption_translation: editTranslation,
             media_url: editMedia || null,
@@ -67,7 +72,7 @@ export default function TweetReply({ reply }) {
                             style={{ maxWidth: "100%", marginTop: 10 }}
                         />
                     )}
-                    {localStorage.getItem("adminToken") && (
+                    {localStorage.getItem("jwt") && (
                         <div style={{ marginTop: 8, display: "flex", gap: 10 }}>
                             <button
                                 onClick={() => setIsEditing(true)}

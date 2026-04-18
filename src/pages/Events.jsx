@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import api from "../api/api";
+import { getEvents } from "../api/eventsService";
 import { Link } from "react-router-dom";
 import EventCard from "../components/EventCard";
 import "../styles/Home.css";
@@ -17,17 +17,14 @@ export default function Events() {
 
     const LIMIT = 10;
 
-    function buildEventsUrl(targetPage) {
-        let url = `/events?limit=${LIMIT}&offset=${(targetPage - 1) * LIMIT}&sort=${sortOrder}`;
-
-        if (keywordFilter.trim()) url += `&keyword=${encodeURIComponent(keywordFilter.trim())}`;
-        if (tagFilter.trim()) url += `&tag=${encodeURIComponent(tagFilter.trim())}`;
-
-        return url;
-    }
-
     async function fetchBaseEvents(targetPage) {
-        const res = await api.get(buildEventsUrl(targetPage));
+        const res = await getEvents({
+            limit: LIMIT,
+            offset: (targetPage - 1) * LIMIT,
+            sort: sortOrder,
+            keyword: keywordFilter.trim() || undefined,
+            tag: tagFilter.trim() || undefined,
+        });
         return res.data || [];
     }
 

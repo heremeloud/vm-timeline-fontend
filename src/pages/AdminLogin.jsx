@@ -1,6 +1,6 @@
 // pages/AdminLogin.jsx
 import { useState } from "react";
-import api from "../api/api";
+import { login as loginRequest } from "../api/authService";
 import { useNavigate } from "react-router-dom";
 
 export default function AdminLogin() {
@@ -12,16 +12,7 @@ export default function AdminLogin() {
         e.preventDefault();
 
         try {
-            const form = new URLSearchParams();
-            form.append("username", username);
-            form.append("password", password);
-
-            const res = await api.post("/auth/login", form, {
-                headers: {
-                    "Content-Type": "application/x-www-form-urlencoded",
-                },
-            });
-
+            const res = await loginRequest(username, password);
             localStorage.setItem("jwt", res.data.access_token);
             navigate("/");
         } catch (err) {

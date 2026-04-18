@@ -1,7 +1,7 @@
 import { useState } from "react";
-import api from "../api/api";
+import { deleteTextPair, updateTextPair } from "../api/textsService";
 import Avatar from "./Avatar";
-import "../styles/IGReply.css"; 
+import "../styles/IGReply.css";
 
 function isYouTube(url) {
     if (!url) return false;
@@ -28,7 +28,9 @@ function getYouTubeEmbed(url) {
 function isVideo(url) {
     if (!url) return false;
     return (
-        url.endsWith(".mp4") || url.endsWith(".webm") || url.endsWith(".mov")
+        url.endsWith(".mp4") ||
+        url.endsWith(".webm") ||
+        url.endsWith(".mov")
     );
 }
 
@@ -39,18 +41,24 @@ export default function TikTokReply({ pair }) {
     const [isEditing, setIsEditing] = useState(false);
     const [editCaption, setEditCaption] = useState(main.content);
     const [editTranslation, setEditTranslation] = useState(
-        trans?.content || "",
+        trans?.content || ""
     );
 
     async function handleDelete() {
-        if (!confirm("Delete this TikTok reply (caption + translation)?"))
+        if (!confirm("Delete this TikTok reply (caption + translation)?")) {
             return;
-        await api.delete(`/texts/pair/${main.id}`);
-        window.location.reload();
+        }
+        try {
+            await deleteTextPair(main.id);
+            window.location.reload();
+        } catch (err) {
+            console.error("Delete reply failed:", err);
+            alert("Delete failed: " + (err.response?.data?.detail || err.message));
+        }
     }
 
     async function saveEdit() {
-        await api.patch(`/texts/pair/${main.id}`, {
+        await updateTextPair(main.id, {
             caption: editCaption,
             translation: editTranslation,
         });
@@ -73,7 +81,7 @@ export default function TikTokReply({ pair }) {
                                 {main.author_name} :
                             </div>
 
-                            {!main.media_url && main.content && (
+                            {main.content && (
                                 <div className="igreply-caption">
                                     {main.content}
                                 </div>
@@ -89,9 +97,7 @@ export default function TikTokReply({ pair }) {
                                 <div className="igreply-media">
                                     {isYouTube(main.media_url) ? (
                                         <iframe
-                                            src={getYouTubeEmbed(
-                                                main.media_url,
-                                            )}
+                                            src={getYouTubeEmbed(main.media_url)}
                                             title="YouTube video"
                                             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                                             allowFullScreen
@@ -108,8 +114,7 @@ export default function TikTokReply({ pair }) {
                                             src={main.media_url}
                                             controls
                                             onError={(e) =>
-                                                (e.target.style.display =
-                                                    "none")
+                                                (e.target.style.display = "none")
                                             }
                                             style={{
                                                 maxWidth: "100%",
@@ -123,8 +128,7 @@ export default function TikTokReply({ pair }) {
                                             src={main.media_url}
                                             alt="reply media"
                                             onError={(e) =>
-                                                (e.target.style.display =
-                                                    "none")
+                                                (e.target.style.display = "none")
                                             }
                                             style={{
                                                 maxWidth: "100%",
@@ -140,7 +144,7 @@ export default function TikTokReply({ pair }) {
                         </div>
                     </div>
 
-                    {localStorage.getItem("adminToken") && (
+                    {localStorage.getItem("jwt") && (
                         <div className="igreply-actions">
                             <button onClick={() => setIsEditing(true)}>
                                 Edit

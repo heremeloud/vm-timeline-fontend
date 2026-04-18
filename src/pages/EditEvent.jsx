@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import api from "../api/api";
+import { getEvent, updateEvent } from "../api/eventsService";
+import { getAuthors } from "../api/authorsService";
 import "../styles/EventForm.css";
 
 export default function EditEvent() {
@@ -27,8 +28,8 @@ export default function EditEvent() {
         async function load() {
             try {
                 const [aRes, eRes] = await Promise.all([
-                    api.get("/authors/"),
-                    api.get(`/events/${eventId}`),
+                    getAuthors(),
+                    getEvent(eventId),
                 ]);
 
                 if (cancelled) return;
@@ -88,7 +89,7 @@ export default function EditEvent() {
         }
 
         try {
-            await api.patch(`/events/${eventId}`, {
+            await updateEvent(eventId, {
                 name: name.trim(),
                 location: location.trim() || null,
                 keyword: keyword.trim() || null,

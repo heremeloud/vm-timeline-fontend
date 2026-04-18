@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
-import api from "../api/api";
+import { getPost, getThread } from "../api/postsService";
 import PostCard from "../components/PostCard";
 
 export default function PostPage() {
@@ -14,14 +14,14 @@ export default function PostPage() {
     useEffect(() => {
         async function load() {
             // main post + IG comments
-            const res = await api.get(`/posts/${postId}`);
+            const res = await getPost(postId);
             console.log("MAIN POST RESPONSE:", res.data);
 
             setPost(res.data.post);
             setComments(res.data.comments);
 
             // tweet replies
-            const threadRes = await api.get(`/posts/${postId}/thread`);
+            const threadRes = await getThread(postId);
             console.log("THREAD RESPONSE:", threadRes.data);
 
             setChildrenPosts(threadRes.data);

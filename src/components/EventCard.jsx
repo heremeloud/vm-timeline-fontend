@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import Avatar from "./Avatar";
 import "../styles/EventCard.css";
+import { deleteEvent } from "../api/eventsService";
 
 function orderViewMimFirst(authors = []) {
     if (!Array.isArray(authors)) return [];
@@ -63,6 +64,7 @@ async function copyToClipboard(text) {
     }
 }
 
+
 /* -------------------- LIVE URL HELPERS -------------------- */
 function safeUrl(url) {
     const s = (url || "").trim();
@@ -108,7 +110,7 @@ function getYouTubeEmbedUrl(url) {
 export default function EventCard({ event }) {
     const tags = event.tags || [];
     const authors = orderViewMimFirst(event.authors || []);
-    const isAdmin = !!localStorage.getItem("adminToken");
+    const isAdmin = !!localStorage.getItem("jwt");
 
     const [copied, setCopied] = useState(false);
 
@@ -136,6 +138,22 @@ export default function EventCard({ event }) {
                             <Link to={`/edit-event/${event.id}`}>
                                 <button className="eventcard-btn">Edit</button>
                             </Link>
+                            <button
+                                className="eventcard-btn"
+                                onClick={async () => {
+                                    if (confirm("Delete this event?")) {
+                                        try {
+                                            await deleteEvent(event.id);
+                                            window.location.reload();
+                                        } catch (err) {
+                                            console.error("Delete event failed:", err);
+                                            alert("Delete failed: " + (err.response?.data?.detail || err.message));
+                                        }
+                                    }
+                                }}
+                            >
+                                Delete
+                            </button>
                         </div>
                     )}
                 </div>

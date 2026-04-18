@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import "../styles/PostCard.css";
-import api from "../api/api";
+import { getTextsByPost } from "../api/textsService";
+import { getThread, deletePost } from "../api/postsService";
 
 import InstagramEmbed from "./InstagramEmbed";
 import TweetEmbed from "./TweetEmbed";
@@ -25,12 +26,12 @@ export default function PostCard({ post }) {
         async function load() {
             try {
                 // Always load PostText (used by IG + TikTok)
-                const cRes = await api.get(`/texts/by_post/${post.id}`);
+                const cRes = await getTextsByPost(post.id);
                 if (!cancelled) setComments(cRes.data);
 
                 // Only X uses child-post threads
                 if (isTwitter) {
-                    const tRes = await api.get(`/posts/${post.id}/thread`);
+                    const tRes = await getThread(post.id);
                     if (!cancelled) setChildrenPosts(tRes.data);
 
                     // refresh Twitter embeds
@@ -156,7 +157,7 @@ export default function PostCard({ post }) {
                 </div>
             )}
 
-            {localStorage.getItem("adminToken") && (
+            {localStorage.getItem("jwt") && (
                 <div className="post-actions">
                     <Link to={`/add-reply/${post.id}`}>
                         <button>
@@ -173,11 +174,15 @@ export default function PostCard({ post }) {
                     </Link>
 
                     <button
-                        onClick={() => {
+                        onClick={async () => {
                             if (confirm("Delete this post?")) {
-                                api.delete(`/posts/${post.id}`).then(() =>
-                                    window.location.reload(),
-                                );
+                                try {
+                                    await deletePost(post.id);
+                                    window.location.reload();
+                                } catch (err) {
+                                    console.error("Delete post failed:", err);
+                                    alert("Delete failed: " + (err.response?.data?.detail || err.message));
+                                }
                             }
                         }}
                         className="btn-delete"

@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import api from "../api/api";
+import { getPost, updatePost } from "../api/postsService";
+import { getAuthors } from "../api/authorsService";
 
 export default function EditPost() {
     const { postId } = useParams();
@@ -78,11 +79,11 @@ export default function EditPost() {
     useEffect(() => {
         async function load() {
             // Load authors
-            const aRes = await api.get("/authors/");
+            const aRes = await getAuthors();
             setAuthors(aRes.data);
 
             // Load post
-            const res = await api.get(`/posts/${postId}`);
+            const res = await getPost(postId);
             const p = res.data.post;
 
             setPost(p);
@@ -119,7 +120,7 @@ export default function EditPost() {
 
         const newId = extractExternalId(newURL, platform);
 
-        await api.patch(`/posts/${postId}`, {
+        await updatePost(postId, {
             platform,
             author_id: authorId, // IMPORTANT FIX
             external_url: newURL,
