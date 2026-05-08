@@ -133,7 +133,7 @@ export default function PostCard({ post }) {
 
             {isInstagram && igReplyPairs.length > 0 && (
                 <div className="reply-section">
-                    <h3>Instagram Replies</h3>
+                    <h3>Instagram Reply</h3>
                     {igReplyPairs.map((pair) => (
                         <IGReply key={pair.main.id} pair={pair} />
                     ))}
@@ -142,7 +142,7 @@ export default function PostCard({ post }) {
 
             {isTikTok && ttReplyPairs.length > 0 && (
                 <div className="reply-section">
-                    <h3>TikTok Replies</h3>
+                    <h3>TikTok Reply</h3>
                     {ttReplyPairs.map((pair) => (
                         <TikTokReply key={pair.main.id} pair={pair} />
                     ))}
@@ -151,7 +151,7 @@ export default function PostCard({ post }) {
 
             {isTwitter && childrenPosts.length > 0 && (
                 <div className="reply-section">
-                    <h3>Tweet Replies</h3>
+                    <h3>Tweet Reply</h3>
                     {childrenPosts.map((child) => (
                         <TweetReply key={child.id} reply={child} />
                     ))}

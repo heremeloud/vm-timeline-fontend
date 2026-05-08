@@ -125,8 +125,7 @@ export default function EventCard({ event }) {
         handleCopyTerm._t = window.setTimeout(() => setCopied(false), 1200);
     }
 
-    const liveUrl = safeUrl(event.live_url);
-    const ytEmbed = getYouTubeEmbedUrl(event.live_url);
+    const liveUrls = (event.live_urls || []).map(safeUrl).filter(Boolean);
 
     return (
         <div className="eventcard-wrapper">
@@ -216,29 +215,33 @@ export default function EventCard({ event }) {
                 )}
 
                 {/* LIVE VIDEO SECTION */}
-                {liveUrl && (
+                {liveUrls.length > 0 && (
                     <div className="eventcard-live">
                         <div className="eventcard-live-title">Media</div>
 
-                        {ytEmbed ? (
-                            <div className="eventcard-live-embed">
-                                <iframe
-                                    src={ytEmbed}
-                                    title={`${event.name} live`}
-                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                                    allowFullScreen
-                                />
-                            </div>
-                        ) : (
-                            <a
-                                className="eventcard-live-link"
-                                href={liveUrl}
-                                target="_blank"
-                                rel="noreferrer"
-                            >
-                                Watch Live ↗
-                            </a>
-                        )}
+                        {liveUrls.map((url, i) => {
+                            const ytEmbed = getYouTubeEmbedUrl(url);
+                            return ytEmbed ? (
+                                <div key={i} className="eventcard-live-embed">
+                                    <iframe
+                                        src={ytEmbed}
+                                        title={`${event.name} live ${i + 1}`}
+                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                                        allowFullScreen
+                                    />
+                                </div>
+                            ) : (
+                                <a
+                                    key={i}
+                                    className="eventcard-live-link"
+                                    href={url}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                >
+                                    Watch Live ↗
+                                </a>
+                            );
+                        })}
                     </div>
                 )}
 

@@ -19,7 +19,7 @@ export default function CreateEvent() {
     const [mediaURL, setMediaURL] = useState("");
     const [eventDate, setEventDate] = useState("");
     const [announcementURL, setAnnouncementURL] = useState("");
-    const [liveURL, setLiveURL] = useState(""); 
+    const [liveURLsInput, setLiveURLsInput] = useState("");
 
     useEffect(() => {
         let cancelled = false;
@@ -70,7 +70,7 @@ export default function CreateEvent() {
                 media_url: mediaURL.trim() || null,
                 event_date: eventDate || null,
                 announcement_url: announcementURL.trim() || null,
-                live_url: liveURL.trim() || null, 
+                live_urls: liveURLsInput.split("\n").map(u => u.trim()).filter(Boolean),
                 author_ids: selectedAuthorIds,
             });
 
@@ -160,12 +160,12 @@ export default function CreateEvent() {
                 <br />
                 <br />
 
-                <label>Live URL (optional):</label>
-                <input
-                    value={liveURL}
-                    onChange={(e) => setLiveURL(e.target.value)}
-                    placeholder="https://youtube.com/... (or any live link)"
-                    style={{ width: "100%" }}
+                <label>Live URLs (optional, one per line):</label>
+                <textarea
+                    value={liveURLsInput}
+                    onChange={(e) => setLiveURLsInput(e.target.value)}
+                    placeholder={"https://youtube.com/...\nhttps://..."}
+                    style={{ width: "100%", minHeight: 80 }}
                 />
 
                 <br />
