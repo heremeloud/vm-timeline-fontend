@@ -33,6 +33,24 @@
 
 
 /* ============================= */
+/* CATEGORY */
+/* ============================= */
+
+.eventcard-category {
+    display: inline-block;
+    margin-top: 6px;
+    padding: 2px 10px;
+    border-radius: 999px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    background: #955803;
+    color: #fff;
+    text-transform: uppercase;
+}
+
+
+/* ============================= */
 /* META */
 /* ============================= */
 

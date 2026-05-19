@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import { ROUTES } from "../routes";
 import EventCard from "../components/EventCard";
 import "../styles/Home.css";
+import { EVENT_CATEGORIES } from "../constants/eventCategories";
 
 export default function Events() {
     const [events, setEvents] = useState([]);
@@ -11,6 +12,7 @@ export default function Events() {
     const [sortOrder, setSortOrder] = useState("newest");
     const [keywordFilter, setKeywordFilter] = useState("");
     const [tagFilter, setTagFilter] = useState("");
+    const [categoryFilter, setCategoryFilter] = useState("");
 
     const [page, setPage] = useState(1);
     const [jumpPage, setJumpPage] = useState("");
@@ -25,6 +27,7 @@ export default function Events() {
             sort: sortOrder,
             keyword: keywordFilter.trim() || undefined,
             tag: tagFilter.trim() || undefined,
+            category: categoryFilter || undefined,
         });
         return res.data || [];
     }
@@ -108,7 +111,7 @@ export default function Events() {
     useEffect(() => {
         load();
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [sortOrder, keywordFilter, tagFilter, page]);
+    }, [sortOrder, keywordFilter, tagFilter, categoryFilter, page]);
 
     // Reset pagination knowledge on filter change
     useEffect(() => {
@@ -116,7 +119,7 @@ export default function Events() {
         setPage(1);
         setJumpPage("");
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [sortOrder, keywordFilter, tagFilter]);
+    }, [sortOrder, keywordFilter, tagFilter, categoryFilter]);
 
     const nextDisabled = lastPage ? page >= lastPage : events.length < LIMIT;
 
@@ -149,6 +152,14 @@ export default function Events() {
                     placeholder="e.g. bkk"
                     style={{ padding: "6px 8px" }}
                 />
+
+                <label>Category:</label>
+                <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)} style={{ padding: "6px 8px" }}>
+                    <option value="">All</option>
+                    {EVENT_CATEGORIES.map((c) => (
+                        <option key={c.value} value={c.value}>{c.label}</option>
+                    ))}
+                </select>
 
                 <label>Sort:</label>
                 <select value={sortOrder} onChange={(e) => setSortOrder(e.target.value)}>

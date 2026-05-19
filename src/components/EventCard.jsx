@@ -158,6 +158,12 @@ export default function EventCard({ event }) {
                     )}
                 </div>
 
+                {event.category && (
+                    <div className="eventcard-category">
+                        {event.category.toUpperCase()}
+                    </div>
+                )}
+
                 {(event.event_date || event.location) && (
                     <div className="eventcard-meta">
                         {event.event_date ? `📅 ${event.event_date}` : null}

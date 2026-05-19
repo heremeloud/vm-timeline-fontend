@@ -4,6 +4,7 @@ import { getEvent, updateEvent } from "../api/eventsService";
 import { getAuthors } from "../api/authorsService";
 import { ROUTES } from "../routes";
 import "../styles/EventForm.css";
+import { EVENT_CATEGORIES } from "../constants/eventCategories";
 
 export default function EditEvent() {
     const { eventId } = useParams();
@@ -14,9 +15,12 @@ export default function EditEvent() {
 
     // Form fields
     const [name, setName] = useState("");
+    const [category, setCategory] = useState("");
     const [location, setLocation] = useState("");
     const [keyword, setKeyword] = useState("");
     const [tagsInput, setTagsInput] = useState("");
+    const [addViewMim, setAddViewMim] = useState(false);
+    const [addViewMimTh, setAddViewMimTh] = useState(false);
     const [mediaURL, setMediaURL] = useState("");
     const [eventDate, setEventDate] = useState("");
     const [announcementURL, setAnnouncementURL] = useState("");
@@ -41,6 +45,7 @@ export default function EditEvent() {
                 if (!ev) throw new Error("Event not found");
 
                 setName(ev.name || "");
+                setCategory(ev.category || "");
                 setLocation(ev.location || "");
                 setKeyword(ev.keyword || "");
                 setMediaURL(ev.media_url || "");
@@ -49,7 +54,15 @@ export default function EditEvent() {
                 setLiveURLsInput((ev.live_urls || []).join("\n"));
 
                 const tags = ev.tags || [];
-                setTagsInput(tags.join(", "));
+                // pull out the two default tags into their own checkboxes
+                const DEFAULT_EN = "viewmim";
+                const DEFAULT_TH = "วิวมิ้ม";
+                setAddViewMim(tags.some((t) => t.toLowerCase() === DEFAULT_EN));
+                setAddViewMimTh(tags.some((t) => t === DEFAULT_TH));
+                const otherTags = tags.filter(
+                    (t) => t.toLowerCase() !== DEFAULT_EN && t !== DEFAULT_TH
+                );
+                setTagsInput(otherTags.join(", "));
 
                 const ids = (ev.authors || []).map((x) => x.id);
                 setSelectedAuthorIds(ids);
@@ -69,11 +82,17 @@ export default function EditEvent() {
     }, [eventId, navigate]);
 
     const tags = useMemo(() => {
-        return tagsInput
-            .split(",")
-            .map((t) => t.trim())
-            .filter(Boolean);
-    }, [tagsInput]);
+        const base = tagsInput.split(",").map((t) => t.trim()).filter(Boolean);
+        const defaults = [
+            addViewMim ? "ViewMim" : null,
+            addViewMimTh ? "วิวมิ้ม" : null,
+        ].filter(Boolean);
+        const seen = new Set(base.map((t) => t.toLowerCase()));
+        for (const d of defaults) {
+            if (!seen.has(d.toLowerCase())) base.push(d);
+        }
+        return base;
+    }, [tagsInput, addViewMim, addViewMimTh]);
 
     function toggleAuthor(id) {
         setSelectedAuthorIds((prev) =>
@@ -92,6 +111,7 @@ export default function EditEvent() {
         try {
             await updateEvent(eventId, {
                 name: name.trim(),
+                category: category || null,
                 location: location.trim() || null,
                 keyword: keyword.trim() || null,
                 tags,
@@ -135,6 +155,21 @@ export default function EditEvent() {
                 <br />
                 <br />
 
+                <label>Category (optional):</label>
+                <select
+                    value={category}
+                    onChange={(e) => setCategory(e.target.value)}
+                    style={{ width: "100%" }}
+                >
+                    <option value="">— None —</option>
+                    {EVENT_CATEGORIES.map((c) => (
+                        <option key={c.value} value={c.value}>{c.label}</option>
+                    ))}
+                </select>
+
+                <br />
+                <br />
+
                 <label>Location (optional):</label>
                 <input
                     value={location}
@@ -163,7 +198,25 @@ export default function EditEvent() {
                     style={{ width: "100%" }}
                 />
 
-                <br />
+                <div style={{ display: "flex", gap: 20, marginTop: 8 }}>
+                    <label style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }}>
+                        <input
+                            type="checkbox"
+                            checked={addViewMim}
+                            onChange={(e) => setAddViewMim(e.target.checked)}
+                        />
+                        <span>Add <strong>ViewMim</strong></span>
+                    </label>
+                    <label style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }}>
+                        <input
+                            type="checkbox"
+                            checked={addViewMimTh}
+                            onChange={(e) => setAddViewMimTh(e.target.checked)}
+                        />
+                        <span>Add <strong>วิวมิ้ม</strong></span>
+                    </label>
+                </div>
+
                 <br />
 
                 <label>Event Photo URL (optional):</label>

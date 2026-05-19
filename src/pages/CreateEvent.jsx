@@ -4,6 +4,7 @@ import { createEvent } from "../api/eventsService";
 import { getAuthors } from "../api/authorsService";
 import { ROUTES } from "../routes";
 import "../styles/EventForm.css";
+import { EVENT_CATEGORIES } from "../constants/eventCategories";
 
 export default function CreateEvent() {
     const navigate = useNavigate();
@@ -13,9 +14,12 @@ export default function CreateEvent() {
 
     // Form fields
     const [name, setName] = useState("");
+    const [category, setCategory] = useState("");
     const [location, setLocation] = useState("");
     const [keyword, setKeyword] = useState("");
     const [tagsInput, setTagsInput] = useState("");
+    const [addViewMim, setAddViewMim] = useState(true);
+    const [addViewMimTh, setAddViewMimTh] = useState(true);
     const [mediaURL, setMediaURL] = useState("");
     const [eventDate, setEventDate] = useState("");
     const [announcementURL, setAnnouncementURL] = useState("");
@@ -41,11 +45,18 @@ export default function CreateEvent() {
     }, []);
 
     const tags = useMemo(() => {
-        return tagsInput
-            .split(",")
-            .map((t) => t.trim())
-            .filter(Boolean);
-    }, [tagsInput]);
+        const base = tagsInput.split(",").map((t) => t.trim()).filter(Boolean);
+        const defaults = [
+            addViewMim ? "ViewMim" : null,
+            addViewMimTh ? "วิวมิ้ม" : null,
+        ].filter(Boolean);
+        // merge, keeping order, no duplicates
+        const seen = new Set(base.map((t) => t.toLowerCase()));
+        for (const d of defaults) {
+            if (!seen.has(d.toLowerCase())) base.push(d);
+        }
+        return base;
+    }, [tagsInput, addViewMim, addViewMimTh]);
 
     function toggleAuthor(id) {
         setSelectedAuthorIds((prev) =>
@@ -64,6 +75,7 @@ export default function CreateEvent() {
         try {
             await createEvent({
                 name: name.trim(),
+                category: category || null,
                 location: location.trim() || null,
                 keyword: keyword.trim() || null,
                 tags,
@@ -107,6 +119,21 @@ export default function CreateEvent() {
                 <br />
                 <br />
 
+                <label>Category (optional):</label>
+                <select
+                    value={category}
+                    onChange={(e) => setCategory(e.target.value)}
+                    style={{ width: "100%" }}
+                >
+                    <option value="">— None —</option>
+                    {EVENT_CATEGORIES.map((c) => (
+                        <option key={c.value} value={c.value}>{c.label}</option>
+                    ))}
+                </select>
+
+                <br />
+                <br />
+
                 <label>Location (optional):</label>
                 <input
                     value={location}
@@ -135,7 +162,25 @@ export default function CreateEvent() {
                     style={{ width: "100%" }}
                 />
 
-                <br />
+                <div style={{ display: "flex", gap: 20, marginTop: 8 }}>
+                    <label style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }}>
+                        <input
+                            type="checkbox"
+                            checked={addViewMim}
+                            onChange={(e) => setAddViewMim(e.target.checked)}
+                        />
+                        <span>Add <strong>ViewMim</strong></span>
+                    </label>
+                    <label style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }}>
+                        <input
+                            type="checkbox"
+                            checked={addViewMimTh}
+                            onChange={(e) => setAddViewMimTh(e.target.checked)}
+                        />
+                        <span>Add <strong>วิวมิ้ม</strong></span>
+                    </label>
+                </div>
+
                 <br />
 
                 <label>Event Photo URL (optional):</label>
