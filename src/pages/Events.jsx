@@ -10,8 +10,7 @@ export default function Events() {
     const [events, setEvents] = useState([]);
 
     const [sortOrder, setSortOrder] = useState("newest");
-    const [keywordFilter, setKeywordFilter] = useState("");
-    const [tagFilter, setTagFilter] = useState("");
+    const [nameFilter, setNameFilter] = useState("");
     const [categoryFilter, setCategoryFilter] = useState("");
 
     const [page, setPage] = useState(1);
@@ -25,8 +24,7 @@ export default function Events() {
             limit: LIMIT,
             offset: (targetPage - 1) * LIMIT,
             sort: sortOrder,
-            keyword: keywordFilter.trim() || undefined,
-            tag: tagFilter.trim() || undefined,
+            name: nameFilter.trim() || undefined,
             category: categoryFilter || undefined,
         });
         return res.data || [];
@@ -111,7 +109,7 @@ export default function Events() {
     useEffect(() => {
         load();
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [sortOrder, keywordFilter, tagFilter, categoryFilter, page]);
+    }, [sortOrder, nameFilter, categoryFilter, page]);
 
     // Reset pagination knowledge on filter change
     useEffect(() => {
@@ -119,7 +117,7 @@ export default function Events() {
         setPage(1);
         setJumpPage("");
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [sortOrder, keywordFilter, tagFilter, categoryFilter]);
+    }, [sortOrder, nameFilter, categoryFilter]);
 
     const nextDisabled = lastPage ? page >= lastPage : events.length < LIMIT;
 
@@ -136,36 +134,39 @@ export default function Events() {
             </div>
 
             {/* Filters */}
-            <div className="filter-bar" style={{ gap: 12 }}>
-                <label>Keyword:</label>
-                <input
-                    value={keywordFilter}
-                    onChange={(e) => setKeywordFilter(e.target.value)}
-                    placeholder="e.g. fanmeet"
-                    style={{ padding: "6px 8px" }}
-                />
+            <div className="filter-bar">
+                <div className="filter-group">
+                    <label>Event Name</label>
+                    <input
+                        type="text"
+                        value={nameFilter}
+                        onChange={(e) => setNameFilter(e.target.value)}
+                        placeholder="Search…"
+                        style={{ width: 140 }}
+                    />
+                </div>
 
-                <label>Tag:</label>
-                <input
-                    value={tagFilter}
-                    onChange={(e) => setTagFilter(e.target.value)}
-                    placeholder="e.g. bkk"
-                    style={{ padding: "6px 8px" }}
-                />
+                <div className="filter-divider" />
 
-                <label>Category:</label>
-                <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)} style={{ padding: "6px 8px" }}>
-                    <option value="">All</option>
-                    {EVENT_CATEGORIES.map((c) => (
-                        <option key={c.value} value={c.value}>{c.label}</option>
-                    ))}
-                </select>
+                <div className="filter-group">
+                    <label>Category</label>
+                    <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)}>
+                        <option value="">All</option>
+                        {EVENT_CATEGORIES.map((c) => (
+                            <option key={c.value} value={c.value}>{c.label}</option>
+                        ))}
+                    </select>
+                </div>
 
-                <label>Sort:</label>
-                <select value={sortOrder} onChange={(e) => setSortOrder(e.target.value)}>
-                    <option value="newest">Newest First</option>
-                    <option value="oldest">Oldest First</option>
-                </select>
+                <div className="filter-divider" />
+
+                <div className="filter-group">
+                    <label>Sort</label>
+                    <select value={sortOrder} onChange={(e) => setSortOrder(e.target.value)}>
+                        <option value="newest">Newest First</option>
+                        <option value="oldest">Oldest First</option>
+                    </select>
+                </div>
             </div>
 
             {/* Events list */}
@@ -223,7 +224,7 @@ export default function Events() {
                         onBlur={() => {
                             if (jumpPage) handleJump();
                         }}
-                        style={{ width: "55px", padding: "4px", fontSize: "0.8rem" }}
+                        className="jump-to-input"
                     />
                 </div>
             </div>

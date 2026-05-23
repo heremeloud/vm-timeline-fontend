@@ -161,25 +161,31 @@ export default function Home() {
 
             {/* Filters */}
             <div className="filter-bar">
-                <label>Platform:</label>
-                <select
-                    value={platformFilter}
-                    onChange={(e) => setPlatformFilter(e.target.value)}
-                >
-                    <option value="all">All</option>
-                    <option value="ig">Instagram</option>
-                    <option value="x">X (Twitter)</option>
-                    <option value="tt">TikTok</option>
-                </select>
+                <div className="filter-group">
+                    <label>Platform</label>
+                    <select
+                        value={platformFilter}
+                        onChange={(e) => setPlatformFilter(e.target.value)}
+                    >
+                        <option value="all">All</option>
+                        <option value="ig">Instagram</option>
+                        <option value="x">X (Twitter)</option>
+                        <option value="tt">TikTok</option>
+                    </select>
+                </div>
 
-                <label>Sort:</label>
-                <select
-                    value={sortOrder}
-                    onChange={(e) => setSortOrder(e.target.value)}
-                >
-                    <option value="newest">Newest First</option>
-                    <option value="oldest">Oldest First</option>
-                </select>
+                <div className="filter-divider" />
+
+                <div className="filter-group">
+                    <label>Sort</label>
+                    <select
+                        value={sortOrder}
+                        onChange={(e) => setSortOrder(e.target.value)}
+                    >
+                        <option value="newest">Newest First</option>
+                        <option value="oldest">Oldest First</option>
+                    </select>
+                </div>
             </div>
 
             {/* Posts Page */}
@@ -247,11 +253,7 @@ export default function Home() {
                         onBlur={() => {
                             if (jumpPage) handleJump();
                         }}
-                        style={{
-                            width: "55px",
-                            padding: "4px",
-                            fontSize: "0.8rem",
-                        }}
+                        className="jump-to-input"
                     />
                 </div>
             </div>

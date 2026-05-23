@@ -63,6 +63,77 @@
     background: #900;
 }
 
+/* ============================= */
+/* FILTER BAR                    */
+/* ============================= */
+
+.filter-bar {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 0px;       
+    margin-bottom: 24px;
+}
+
+.filter-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;        
+}
+
+.filter-group label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #777;
+    white-space: nowrap;
+}
+
+.filter-group select,
+.filter-group input[type="text"],
+.filter-group input:not([type="number"]) {
+    font-size: 0.85rem;
+    padding: 5px 10px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background: #fff;
+    color: #333;
+    outline: none;
+    transition: border-color 0.15s;
+}
+
+.filter-group select {
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23999' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 8px center;
+    padding-right: 26px;
+    cursor: pointer;
+    width: max-content;
+    min-width: 110px;
+}
+
+.filter-group input[type="text"],
+.filter-group input:not([type="number"]) {
+    cursor: text;
+}
+
+.filter-group select:focus,
+.filter-group input:focus {
+    border-color: #955803;
+}
+
+.filter-divider {
+    width: 1px;
+    height: 24px;
+    background: #e5e5e5;
+    margin: 0 2px;
+}
+
+/* ============================= */
+/* PAGINATION                    */
+/* ============================= */
+
 .pagination-bar {
     display: flex;
     justify-content: center;
@@ -89,7 +160,6 @@
     border-radius: 6px;
     background: white;
     color: #955803;
-    /* brown text */
     border: 2px solid #955803;
     cursor: pointer;
     transition: 0.15s;
@@ -98,7 +168,22 @@
 
 .pagination-btn:hover {
     background: #ffeede;
-    /* soft warm beige */
+}
+
+.jump-to-input {
+    width: 55px;
+    padding: 5px 10px;
+    font-size: 0.85rem;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background: #fff;
+    color: #333;
+    outline: none;
+    transition: border-color 0.15s;
+}
+
+.jump-to-input:focus {
+    border-color: #955803;
 }
 
 /* Disabled state */
