@@ -11,6 +11,32 @@
 
 }
 
+.post-date {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.78rem;
+    color: #999;
+    margin-bottom: 4px;
+}
+
+.post-platform-dot {
+    display: inline-block;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.post-platform-name {
+    font-weight: 600;
+    color: #777;
+}
+
+.post-date-sep {
+    color: #ccc;
+}
+
 .post-embed {
     margin-top: 20px;
 }
@@ -36,7 +62,19 @@
 }
 
 .reply-section {
-    margin-top: 35px;
+    margin-top: 20px;
+    border-top: 1px solid #f0f0f0;
+    padding-top: 10px;
+}
+
+.reply-section-label {
+    display: block;
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #aaa;
+    margin-bottom: 4px;
 }
 
 .post-actions {

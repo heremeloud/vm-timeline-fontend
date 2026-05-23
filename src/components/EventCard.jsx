@@ -114,6 +114,7 @@ export default function EventCard({ event }) {
     const isAdmin = !!localStorage.getItem("jwt");
 
     const [copied, setCopied] = useState(false);
+    const [liveIdx, setLiveIdx] = useState(0);
 
     async function handleCopyTerm(term) {
         const query = buildTwitterQuery(term, event.event_date);
@@ -130,6 +131,12 @@ export default function EventCard({ event }) {
     return (
         <div className="eventcard-wrapper">
             <div className="eventcard-inner">
+                {event.category && (
+                    <div className="eventcard-category">
+                        {event.category.toUpperCase()}
+                    </div>
+                )}
+
                 <div className="eventcard-header">
                     <div className="eventcard-title">{event.name}</div>
 
@@ -157,12 +164,6 @@ export default function EventCard({ event }) {
                         </div>
                     )}
                 </div>
-
-                {event.category && (
-                    <div className="eventcard-category">
-                        {event.category.toUpperCase()}
-                    </div>
-                )}
 
                 {(event.event_date || event.location) && (
                     <div className="eventcard-meta">
@@ -223,22 +224,29 @@ export default function EventCard({ event }) {
                 {/* LIVE VIDEO SECTION */}
                 {liveUrls.length > 0 && (
                     <div className="eventcard-live">
-                        <div className="eventcard-live-title">Media</div>
+                        <div className="eventcard-live-title">
+                            Media
+                            {liveUrls.length > 1 && (
+                                <span className="eventcard-live-count">
+                                    {liveIdx + 1} / {liveUrls.length}
+                                </span>
+                            )}
+                        </div>
 
-                        {liveUrls.map((url, i) => {
+                        {(() => {
+                            const url = liveUrls[liveIdx];
                             const ytEmbed = getYouTubeEmbedUrl(url);
                             return ytEmbed ? (
-                                <div key={i} className="eventcard-live-embed">
+                                <div className="eventcard-live-embed">
                                     <iframe
                                         src={ytEmbed}
-                                        title={`${event.name} live ${i + 1}`}
+                                        title={`${event.name} media ${liveIdx + 1}`}
                                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                                         allowFullScreen
                                     />
                                 </div>
                             ) : (
                                 <a
-                                    key={i}
                                     className="eventcard-live-link"
                                     href={url}
                                     target="_blank"
@@ -247,7 +255,38 @@ export default function EventCard({ event }) {
                                     Watch Live ↗
                                 </a>
                             );
-                        })}
+                        })()}
+
+                        {liveUrls.length > 1 && (
+                            <div className="eventcard-live-nav">
+                                <button
+                                    className="eventcard-live-nav-btn"
+                                    onClick={() => setLiveIdx((i) => i - 1)}
+                                    disabled={liveIdx === 0}
+                                >
+                                    ‹ Prev
+                                </button>
+
+                                <div className="eventcard-live-dots">
+                                    {liveUrls.map((_, i) => (
+                                        <button
+                                            key={i}
+                                            className={`eventcard-live-dot${i === liveIdx ? " active" : ""}`}
+                                            onClick={() => setLiveIdx(i)}
+                                            aria-label={`Media ${i + 1}`}
+                                        />
+                                    ))}
+                                </div>
+
+                                <button
+                                    className="eventcard-live-nav-btn"
+                                    onClick={() => setLiveIdx((i) => i + 1)}
+                                    disabled={liveIdx === liveUrls.length - 1}
+                                >
+                                    Next ›
+                                </button>
+                            </div>
+                        )}
                     </div>
                 )}
 

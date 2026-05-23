@@ -22,6 +22,7 @@ export default function EditPost() {
     const [caption, setCaption] = useState("");
     const [captionTranslation, setCaptionTranslation] = useState("");
     const [mediaURL, setMediaURL] = useState("");
+    const [mediaURLs, setMediaURLs] = useState([""]);  // for IG story multi-media
     const [postedAt, setPostedAt] = useState("");
 
     // -----------------------------
@@ -95,6 +96,13 @@ export default function EditPost() {
             setCaption(p.caption || "");
             setCaptionTranslation(p.caption_translation || "");
             setMediaURL(p.media_url || "");
+            // Load multi-URL list; fall back to single media_url for legacy posts
+            const parsed = p.media_urls && p.media_urls.length > 0
+                ? p.media_urls
+                : p.media_url
+                    ? [p.media_url]
+                    : [""];
+            setMediaURLs(parsed);
             setPostedAt(p.posted_at || "");
 
             setLoading(false);
@@ -121,14 +129,20 @@ export default function EditPost() {
 
         const newId = extractExternalId(newURL, platform);
 
+        const isIGStory = platform === "ig" && !newURL.trim();
+        const filteredMediaURLs = isIGStory
+            ? mediaURLs.map((u) => u.trim()).filter(Boolean)
+            : [];
+
         await updatePost(postId, {
             platform,
-            author_id: authorId, // IMPORTANT FIX
+            author_id: authorId,
             external_url: newURL,
             external_id: newId,
             caption,
             caption_translation: captionTranslation,
-            media_url: mediaURL || null,
+            media_url: isIGStory ? null : (mediaURL || null),
+            media_urls_json: JSON.stringify(filteredMediaURLs),
             posted_at: postedAt,
         });
 
@@ -219,14 +233,52 @@ export default function EditPost() {
             <br />
             <br />
 
-            {/* MEDIA */}
-            <label>Media URL:</label>
-            <input
-                value={mediaURL}
-                onChange={(e) => setMediaURL(e.target.value)}
-                placeholder="https://..."
-                style={{ width: "100%" }}
-            />
+            {/* MEDIA — multi-URL for IG stories, single for others */}
+            {platform === "ig" && !externalURL.trim() ? (
+                <div>
+                    <label>Story Media URLs:</label>
+                    {mediaURLs.map((url, i) => (
+                        <div key={i} style={{ display: "flex", gap: 6, marginBottom: 6 }}>
+                            <input
+                                value={url}
+                                onChange={(e) => {
+                                    const next = [...mediaURLs];
+                                    next[i] = e.target.value;
+                                    setMediaURLs(next);
+                                }}
+                                placeholder={`Media URL #${i + 1}`}
+                                style={{ flex: 1 }}
+                            />
+                            {mediaURLs.length > 1 && (
+                                <button
+                                    type="button"
+                                    onClick={() => setMediaURLs(mediaURLs.filter((_, j) => j !== i))}
+                                    style={{ color: "red", background: "none", border: "1px solid red", borderRadius: 4, cursor: "pointer", padding: "0 8px" }}
+                                >
+                                    ✕
+                                </button>
+                            )}
+                        </div>
+                    ))}
+                    <button
+                        type="button"
+                        onClick={() => setMediaURLs([...mediaURLs, ""])}
+                        style={{ fontSize: "0.85rem", marginTop: 2, cursor: "pointer" }}
+                    >
+                        + Add another media URL
+                    </button>
+                </div>
+            ) : (
+                <div>
+                    <label>Media URL:</label>
+                    <input
+                        value={mediaURL}
+                        onChange={(e) => setMediaURL(e.target.value)}
+                        placeholder="https://..."
+                        style={{ width: "100%" }}
+                    />
+                </div>
+            )}
 
             <br />
             <br />

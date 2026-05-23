@@ -91,11 +91,35 @@ export default function PostCard({ post }) {
 
     return (
         <div className="post-wrapper">
+            {post.posted_at && (
+                <div className="post-date">
+                    <span
+                        className="post-platform-dot"
+                        style={{
+                            background: isInstagram
+                                ? "#e1306c"
+                                : isTwitter
+                                  ? "#1d9bf0"
+                                  : "#010101",
+                        }}
+                    />
+                    <span className="post-platform-name">
+                        {isInstagram ? "Instagram" : isTwitter ? "X (Twitter)" : "TikTok"}
+                    </span>
+                    <span className="post-date-sep">·</span>
+                    {new Date(post.posted_at + "T00:00:00").toLocaleDateString("en-US", {
+                        year: "numeric",
+                        month: "long",
+                        day: "numeric",
+                    })}
+                </div>
+            )}
             <div className="post-embed">
                 {isInstagram && (
                     <InstagramEmbed
                         external_url={post.external_url}
                         media_url={post.media_url}
+                        media_urls={post.media_urls || []}
                         caption={post.caption}
                         author_id={post.author_id}
                         author_name={post.author_name}
@@ -133,7 +157,7 @@ export default function PostCard({ post }) {
 
             {isInstagram && igReplyPairs.length > 0 && (
                 <div className="reply-section">
-                    <h3>Instagram Reply</h3>
+                    <span className="reply-section-label">Instagram Reply</span>
                     {igReplyPairs.map((pair) => (
                         <IGReply key={pair.main.id} pair={pair} />
                     ))}
@@ -142,7 +166,7 @@ export default function PostCard({ post }) {
 
             {isTikTok && ttReplyPairs.length > 0 && (
                 <div className="reply-section">
-                    <h3>TikTok Reply</h3>
+                    <span className="reply-section-label">TikTok Reply</span>
                     {ttReplyPairs.map((pair) => (
                         <TikTokReply key={pair.main.id} pair={pair} />
                     ))}
@@ -151,7 +175,7 @@ export default function PostCard({ post }) {
 
             {isTwitter && childrenPosts.length > 0 && (
                 <div className="reply-section">
-                    <h3>Tweet Reply</h3>
+                    <span className="reply-section-label">Tweet Reply</span>
                     {childrenPosts.map((child) => (
                         <TweetReply key={child.id} reply={child} />
                     ))}

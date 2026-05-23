@@ -23,6 +23,8 @@ export default function CreatePost() {
     const [caption, setCaption] = useState("");
     const [captionTranslation, setCaptionTranslation] = useState("");
     const [mediaURL, setMediaURL] = useState("");
+    // Multiple media URLs for IG stories (no external_id)
+    const [mediaURLs, setMediaURLs] = useState([""]);
 
     // Author list from backend
     const [authors, setAuthors] = useState([]);
@@ -138,6 +140,13 @@ export default function CreatePost() {
             const external_id = extractExternalId(cleanURL, platform);
 
 
+            // For IG stories (no external URL), use the multi-URL list
+            const isIGStory = platform === "ig" && !cleanURL;
+            const finalMediaUrl = isIGStory ? null : (mediaURL || null);
+            const filteredMediaURLs = isIGStory
+                ? mediaURLs.map((u) => u.trim()).filter(Boolean)
+                : [];
+
             // Create post
             await createPost({
                 platform,
@@ -146,7 +155,8 @@ export default function CreatePost() {
                 author_id: authorId,
                 caption,
                 caption_translation: captionTranslation,
-                media_url: mediaURL || null,
+                media_url: finalMediaUrl,
+                media_urls_json: JSON.stringify(filteredMediaURLs),
                 posted_at,
                 parent_id: parent_id || null,
             });
@@ -268,13 +278,52 @@ export default function CreatePost() {
                 <br />
                 <br />
 
-                <label>Media URL (optional):</label>
-                <input
-                    value={mediaURL}
-                    onChange={(e) => setMediaURL(e.target.value)}
-                    placeholder="Image / video URL"
-                    style={{ width: "100%" }}
-                />
+                {/* IG story: multi-URL list. Other platforms: single field. */}
+                {platform === "ig" && !external_url.trim() ? (
+                    <div>
+                        <label>Story Media URLs:</label>
+                        {mediaURLs.map((url, i) => (
+                            <div key={i} style={{ display: "flex", gap: 6, marginBottom: 6 }}>
+                                <input
+                                    value={url}
+                                    onChange={(e) => {
+                                        const next = [...mediaURLs];
+                                        next[i] = e.target.value;
+                                        setMediaURLs(next);
+                                    }}
+                                    placeholder={`Media URL #${i + 1}`}
+                                    style={{ flex: 1 }}
+                                />
+                                {mediaURLs.length > 1 && (
+                                    <button
+                                        type="button"
+                                        onClick={() => setMediaURLs(mediaURLs.filter((_, j) => j !== i))}
+                                        style={{ color: "red", background: "none", border: "1px solid red", borderRadius: 4, cursor: "pointer", padding: "0 8px" }}
+                                    >
+                                        ✕
+                                    </button>
+                                )}
+                            </div>
+                        ))}
+                        <button
+                            type="button"
+                            onClick={() => setMediaURLs([...mediaURLs, ""])}
+                            style={{ fontSize: "0.85rem", marginTop: 2, cursor: "pointer" }}
+                        >
+                            + Add another media URL
+                        </button>
+                    </div>
+                ) : (
+                    <div>
+                        <label>Media URL (optional):</label>
+                        <input
+                            value={mediaURL}
+                            onChange={(e) => setMediaURL(e.target.value)}
+                            placeholder="Image / video URL"
+                            style={{ width: "100%" }}
+                        />
+                    </div>
+                )}
 
                 <br />
                 <br />
