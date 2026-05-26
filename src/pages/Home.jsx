@@ -152,7 +152,7 @@ export default function Home() {
                 <h1 style={{ marginBottom: "0.2rem" }}>ViewMim Interaction</h1>
                 <h1 style={{ marginTop: "0.2rem" }}>🤎Timeline🤍</h1>
                 <p>Collecting ViewMim social media interactions</p>
-                <p>Last update: May 22, 2026</p>
+                <p>Last update: May 26, 2026</p>
                 <small style={{ opacity: 0.7 }}>
                     ※ IG stories are included starting 2026 ※
                 </small>
