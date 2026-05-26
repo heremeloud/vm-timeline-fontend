@@ -1,6 +1,10 @@
 export const ROUTES = {
     home: "/",
     events: "/events",
+    projects: "/projects",
+    projectDetail: (id) => `/projects/${id}`,
+    createProject: "/create-project",
+    editProject: (id) => `/edit-project/${id}`,
     admin: "/admin",
     createPost: "/create-post",
     editPost: (id) => `/edit-post/${id}`,

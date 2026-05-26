@@ -37,6 +37,17 @@
     box-sizing: border-box;
 }
 
+/* Reset checkboxes outside participant rows (e.g. tag checkboxes) */
+.eventform-form input[type="checkbox"] {
+    display: inline-block;
+    width: auto;
+    padding: 0;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    margin: 0;
+}
+
 .eventform-form input:focus,
 .eventform-form textarea:focus {
     outline: none;
@@ -75,19 +86,32 @@
     border-radius: 4px;
 }
 
-/* Individual participant row */
-.eventform-participant-item {
+/* Individual participant row — must beat .eventform-form label specificity */
+.eventform-form .eventform-participant-item {
     display: grid;
-    grid-template-columns: 22px 1fr;   
+    grid-template-columns: 22px 1fr;
     align-items: center;
     column-gap: 10px;
     padding: 6px 4px;
     cursor: pointer;
     width: 100%;
+    font-weight: 400;
+    margin-bottom: 0;
 }
-.eventform-participant-item:hover {
+.eventform-form .eventform-participant-item:hover {
     background: rgba(0, 0, 0, 0.04);
     border-radius: 6px;
+}
+
+/* Checkboxes inside participant rows — reset the input styles */
+.eventform-form .eventform-participant-item input[type="checkbox"] {
+    display: inline-block;
+    width: auto;
+    padding: 0;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    margin: 0;
 }
 
 /* ============================= */

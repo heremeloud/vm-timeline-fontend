@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { getEvent, updateEvent } from "../api/eventsService";
 import { getAuthors } from "../api/authorsService";
+import { getProjects } from "../api/projectsService";
 import { ROUTES } from "../routes";
 import "../styles/EventForm.css";
 import { EVENT_CATEGORIES } from "../constants/eventCategories";
@@ -26,20 +27,24 @@ export default function EditEvent() {
     const [announcementURL, setAnnouncementURL] = useState("");
     const [liveURLsInput, setLiveURLsInput] = useState("");
     const [selectedAuthorIds, setSelectedAuthorIds] = useState([]);
+    const [projectId, setProjectId] = useState("");
+    const [projects, setProjects] = useState([]);
 
     useEffect(() => {
         let cancelled = false;
 
         async function load() {
             try {
-                const [aRes, eRes] = await Promise.all([
+                const [aRes, eRes, pRes] = await Promise.all([
                     getAuthors(),
                     getEvent(eventId),
+                    getProjects(),
                 ]);
 
                 if (cancelled) return;
 
                 setAuthors(aRes.data || []);
+                setProjects(pRes.data || []);
 
                 const ev = eRes.data?.event;
                 if (!ev) throw new Error("Event not found");
@@ -66,6 +71,7 @@ export default function EditEvent() {
 
                 const ids = (ev.authors || []).map((x) => x.id);
                 setSelectedAuthorIds(ids);
+                setProjectId(ev.project_id ? String(ev.project_id) : "");
 
                 setLoading(false);
             } catch (err) {
@@ -120,6 +126,7 @@ export default function EditEvent() {
                 announcement_url: announcementURL.trim() || null,
                 live_urls: liveURLsInput.split("\n").map(u => u.trim()).filter(Boolean),
                 author_ids: selectedAuthorIds,
+                project_id: projectId ? Number(projectId) : null,
             });
             navigate(ROUTES.events);
         } catch (err) {
@@ -134,127 +141,123 @@ export default function EditEvent() {
         <div style={{ padding: 20, maxWidth: 800, margin: "0 auto" }}>
             <h2>Edit Event #{eventId}</h2>
 
-            <form onSubmit={save}>
-                <label>Event Name: *</label>
-                <input
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    style={{ width: "100%" }}
-                />
+            <form className="eventform-form" onSubmit={save}>
 
-                <br />
-                <br />
-
-                <label>Event Date (optional):</label>
-                <input
-                    type="date"
-                    value={eventDate}
-                    onChange={(e) => setEventDate(e.target.value)}
-                />
-
-                <br />
-                <br />
-
-                <label>Category (optional):</label>
-                <select
-                    value={category}
-                    onChange={(e) => setCategory(e.target.value)}
-                    style={{ width: "100%" }}
-                >
-                    <option value="">— None —</option>
-                    {EVENT_CATEGORIES.map((c) => (
-                        <option key={c.value} value={c.value}>{c.label}</option>
-                    ))}
-                </select>
-
-                <br />
-                <br />
-
-                <label>Location (optional):</label>
-                <input
-                    value={location}
-                    onChange={(e) => setLocation(e.target.value)}
-                    style={{ width: "100%" }}
-                />
-
-                <br />
-                <br />
-
-                <label>Keyword (optional):</label>
-                <input
-                    value={keyword}
-                    onChange={(e) => setKeyword(e.target.value)}
-                    style={{ width: "100%" }}
-                />
-
-                <br />
-                <br />
-
-                <label>Tags (comma separated):</label>
-                <input
-                    value={tagsInput}
-                    onChange={(e) => setTagsInput(e.target.value)}
-                    placeholder="bkk, stage, live"
-                    style={{ width: "100%" }}
-                />
-
-                <div style={{ display: "flex", gap: 20, marginTop: 8 }}>
-                    <label style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }}>
-                        <input
-                            type="checkbox"
-                            checked={addViewMim}
-                            onChange={(e) => setAddViewMim(e.target.checked)}
-                        />
-                        <span>Add <strong>ViewMim</strong></span>
-                    </label>
-                    <label style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }}>
-                        <input
-                            type="checkbox"
-                            checked={addViewMimTh}
-                            onChange={(e) => setAddViewMimTh(e.target.checked)}
-                        />
-                        <span>Add <strong>วิวมิ้ม</strong></span>
-                    </label>
+                <div className="eventform-section">
+                    <label>Event Name: *</label>
+                    <input
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                    />
                 </div>
 
-                <br />
+                <div className="eventform-section">
+                    <label>Event Date (optional):</label>
+                    <input
+                        type="date"
+                        value={eventDate}
+                        onChange={(e) => setEventDate(e.target.value)}
+                        style={{ width: 180 }}
+                    />
+                </div>
 
-                <label>Event Photo URL (optional):</label>
-                <input
-                    value={mediaURL}
-                    onChange={(e) => setMediaURL(e.target.value)}
-                    placeholder="https://..."
-                    style={{ width: "100%" }}
-                />
+                <div className="eventform-section">
+                    <label>Category (optional):</label>
+                    <select
+                        value={category}
+                        onChange={(e) => setCategory(e.target.value)}
+                    >
+                        <option value="">— None —</option>
+                        {EVENT_CATEGORIES.map((c) => (
+                            <option key={c.value} value={c.value}>{c.label}</option>
+                        ))}
+                    </select>
+                </div>
 
-                <br />
-                <br />
+                <div className="eventform-section">
+                    <label>Location (optional):</label>
+                    <input
+                        value={location}
+                        onChange={(e) => setLocation(e.target.value)}
+                    />
+                </div>
 
-                <label>Announcement URL (optional):</label>
-                <input
-                    value={announcementURL}
-                    onChange={(e) => setAnnouncementURL(e.target.value)}
-                    placeholder="https://..."
-                    style={{ width: "100%" }}
-                />
+                <div className="eventform-section">
+                    <label>Keyword (optional):</label>
+                    <input
+                        value={keyword}
+                        onChange={(e) => setKeyword(e.target.value)}
+                    />
+                </div>
 
-                <br />
-                <br />
+                <div className="eventform-section">
+                    <label>Tags (comma separated):</label>
+                    <input
+                        value={tagsInput}
+                        onChange={(e) => setTagsInput(e.target.value)}
+                        placeholder="bkk, stage, live"
+                    />
 
-                <label>Live URLs (optional, one per line):</label>
-                <textarea
-                    value={liveURLsInput}
-                    onChange={(e) => setLiveURLsInput(e.target.value)}
-                    placeholder={"https://youtube.com/...\nhttps://..."}
-                    style={{ width: "100%", minHeight: 80 }}
-                />
+                    <div style={{ display: "flex", gap: 20, marginTop: 8 }}>
+                        <label style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer", fontWeight: 400 }}>
+                            <input
+                                type="checkbox"
+                                checked={addViewMim}
+                                onChange={(e) => setAddViewMim(e.target.checked)}
+                            />
+                            <span>Add <strong>ViewMim</strong></span>
+                        </label>
+                        <label style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer", fontWeight: 400 }}>
+                            <input
+                                type="checkbox"
+                                checked={addViewMimTh}
+                                onChange={(e) => setAddViewMimTh(e.target.checked)}
+                            />
+                            <span>Add <strong>วิวมิ้ม</strong></span>
+                        </label>
+                    </div>
+                </div>
 
-                <br />
-                <br />
+                <div className="eventform-section">
+                    <label>Event Photo URL (optional):</label>
+                    <input
+                        value={mediaURL}
+                        onChange={(e) => setMediaURL(e.target.value)}
+                        placeholder="https://..."
+                    />
+                </div>
+
+                <div className="eventform-section">
+                    <label>Announcement URL (optional):</label>
+                    <input
+                        value={announcementURL}
+                        onChange={(e) => setAnnouncementURL(e.target.value)}
+                        placeholder="https://..."
+                    />
+                </div>
+
+                <div className="eventform-section">
+                    <label>Live URLs (optional, one per line):</label>
+                    <textarea
+                        value={liveURLsInput}
+                        onChange={(e) => setLiveURLsInput(e.target.value)}
+                        placeholder={"https://youtube.com/...\nhttps://..."}
+                        style={{ minHeight: 80 }}
+                    />
+                </div>
+
+                <div className="eventform-section">
+                    <label>Linked Project (optional):</label>
+                    <select value={projectId} onChange={(e) => setProjectId(e.target.value)}>
+                        <option value="">— none —</option>
+                        {projects.map((p) => (
+                            <option key={p.id} value={p.id}>{p.title}{p.year ? ` (${p.year})` : ""}</option>
+                        ))}
+                    </select>
+                </div>
 
                 <div className="eventform-section">
                     <label>Participants:</label>
-
                     <div className="eventform-participants-box">
                         {authors.map((a) => (
                             <label
@@ -278,9 +281,10 @@ export default function EditEvent() {
                     </div>
                 </div>
 
-                <br />
+                <div className="eventform-section">
+                    <button type="submit">Save Changes</button>
+                </div>
 
-                <button type="submit">Save Changes</button>
             </form>
         </div>
     );

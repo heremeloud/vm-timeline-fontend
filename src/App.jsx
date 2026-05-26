@@ -12,6 +12,12 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import Events from "./pages/Events";
 import CreateEvent from "./pages/CreateEvent";
 import EditEvent from "./pages/EditEvent";
+
+import Projects from "./pages/Projects";
+import ProjectDetail from "./pages/ProjectDetail";
+import CreateProject from "./pages/CreateProject";
+import EditProject from "./pages/EditProject";
+
 import "./App.css";
 
 function App() {
@@ -23,6 +29,8 @@ function App() {
                 <Route path="/" element={<Home />} />
                 <Route path="/post/:postId" element={<PostPage />} />
                 <Route path="/events" element={<Events />} />
+                <Route path="/projects" element={<Projects />} />
+                <Route path="/projects/:projectId" element={<ProjectDetail />} />
 
                 {/* ADMIN LOGIN */}
                 <Route path="/admin" element={<AdminLogin />} />
@@ -51,6 +59,24 @@ function App() {
                     element={
                         <ProtectedRoute>
                             <EditPost />
+                        </ProtectedRoute>
+                    }
+                />
+
+                <Route
+                    path="/create-project"
+                    element={
+                        <ProtectedRoute>
+                            <CreateProject />
+                        </ProtectedRoute>
+                    }
+                />
+
+                <Route
+                    path="/edit-project/:projectId"
+                    element={
+                        <ProtectedRoute>
+                            <EditProject />
                         </ProtectedRoute>
                     }
                 />
