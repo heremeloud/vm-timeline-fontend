@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { createEvent } from "../api/eventsService";
+import { createEvent, getEvents } from "../api/eventsService";
 import { getAuthors } from "../api/authorsService";
 import { getProjects } from "../api/projectsService";
 import { ROUTES } from "../routes";
@@ -27,16 +27,23 @@ export default function CreateEvent() {
     const [liveURLsInput, setLiveURLsInput] = useState("");
     const [projectId, setProjectId] = useState("");
     const [projects, setProjects] = useState([]);
+    const [parentEventId, setParentEventId] = useState("");
+    const [pressTours, setPressTours] = useState([]);
 
     useEffect(() => {
         let cancelled = false;
 
         async function load() {
             try {
-                const [authRes, projRes] = await Promise.all([getAuthors(), getProjects()]);
+                const [authRes, projRes, ptRes] = await Promise.all([
+                    getAuthors(),
+                    getProjects(),
+                    getEvents({ category: "press tour", limit: 200, offset: 0, sort: "newest" }),
+                ]);
                 if (!cancelled) {
                     setAuthors(authRes.data || []);
                     setProjects(projRes.data || []);
+                    setPressTours(ptRes.data || []);
                 }
             } catch (err) {
                 console.error("CreateEvent load error:", err);
@@ -91,6 +98,7 @@ export default function CreateEvent() {
                 live_urls: liveURLsInput.split("\n").map(u => u.trim()).filter(Boolean),
                 author_ids: selectedAuthorIds,
                 project_id: projectId ? Number(projectId) : null,
+                parent_event_id: parentEventId ? Number(parentEventId) : null,
             });
 
             navigate(ROUTES.events);
@@ -208,6 +216,16 @@ export default function CreateEvent() {
                         placeholder={"https://youtube.com/...\nhttps://..."}
                         style={{ minHeight: 80 }}
                     />
+                </div>
+
+                <div className="eventform-section">
+                    <label>Part of Press Tour (optional):</label>
+                    <select value={parentEventId} onChange={(e) => setParentEventId(e.target.value)}>
+                        <option value="">— none —</option>
+                        {pressTours.map((pt) => (
+                            <option key={pt.id} value={pt.id}>{pt.name}{pt.event_date ? ` (${pt.event_date})` : ""}</option>
+                        ))}
+                    </select>
                 </div>
 
                 <div className="eventform-section">

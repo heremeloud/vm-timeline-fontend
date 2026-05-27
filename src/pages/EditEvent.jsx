@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { getEvent, updateEvent } from "../api/eventsService";
+import { getEvent, updateEvent, getEvents } from "../api/eventsService";
 import { getAuthors } from "../api/authorsService";
 import { getProjects } from "../api/projectsService";
 import { ROUTES } from "../routes";
@@ -29,22 +29,26 @@ export default function EditEvent() {
     const [selectedAuthorIds, setSelectedAuthorIds] = useState([]);
     const [projectId, setProjectId] = useState("");
     const [projects, setProjects] = useState([]);
+    const [parentEventId, setParentEventId] = useState("");
+    const [pressTours, setPressTours] = useState([]);
 
     useEffect(() => {
         let cancelled = false;
 
         async function load() {
             try {
-                const [aRes, eRes, pRes] = await Promise.all([
+                const [aRes, eRes, pRes, ptRes] = await Promise.all([
                     getAuthors(),
                     getEvent(eventId),
                     getProjects(),
+                    getEvents({ category: "press tour", limit: 200, offset: 0, sort: "newest" }),
                 ]);
 
                 if (cancelled) return;
 
                 setAuthors(aRes.data || []);
                 setProjects(pRes.data || []);
+                setPressTours(ptRes.data || []);
 
                 const ev = eRes.data?.event;
                 if (!ev) throw new Error("Event not found");
@@ -72,6 +76,7 @@ export default function EditEvent() {
                 const ids = (ev.authors || []).map((x) => x.id);
                 setSelectedAuthorIds(ids);
                 setProjectId(ev.project_id ? String(ev.project_id) : "");
+                setParentEventId(ev.parent_event_id ? String(ev.parent_event_id) : "");
 
                 setLoading(false);
             } catch (err) {
@@ -127,6 +132,7 @@ export default function EditEvent() {
                 live_urls: liveURLsInput.split("\n").map(u => u.trim()).filter(Boolean),
                 author_ids: selectedAuthorIds,
                 project_id: projectId ? Number(projectId) : null,
+                parent_event_id: parentEventId ? Number(parentEventId) : null,
             });
             navigate(ROUTES.events);
         } catch (err) {
@@ -244,6 +250,16 @@ export default function EditEvent() {
                         placeholder={"https://youtube.com/...\nhttps://..."}
                         style={{ minHeight: 80 }}
                     />
+                </div>
+
+                <div className="eventform-section">
+                    <label>Part of Press Tour (optional):</label>
+                    <select value={parentEventId} onChange={(e) => setParentEventId(e.target.value)}>
+                        <option value="">— none —</option>
+                        {pressTours.filter(pt => String(pt.id) !== eventId).map((pt) => (
+                            <option key={pt.id} value={pt.id}>{pt.name}{pt.event_date ? ` (${pt.event_date})` : ""}</option>
+                        ))}
+                    </select>
                 </div>
 
                 <div className="eventform-section">

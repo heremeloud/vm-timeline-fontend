@@ -178,6 +178,15 @@ export default function EventCard({ event }) {
                     )}
                 </div>
 
+                {event.parent_event_id && event.parent_event_name && (
+                    <Link
+                        to={ROUTES.eventDetail(event.parent_event_id)}
+                        className="eventcard-press-tour-link"
+                    >
+                        🗓 {event.parent_event_name}
+                    </Link>
+                )}
+
                 {event.project_id && event.project_title && (
                     <Link
                         to={ROUTES.projectDetail(event.project_id)}
@@ -339,6 +348,23 @@ export default function EventCard({ event }) {
                                 </div>
                             ))}
                         </div>
+                    </div>
+                )}
+                {event.child_events?.length > 0 && (
+                    <div className="eventcard-interviews">
+                        <div className="eventcard-interviews-label">Interviews</div>
+                        {event.child_events.map((c) => (
+                            <Link
+                                key={c.id}
+                                to={ROUTES.eventDetail(c.id)}
+                                className="eventcard-interview-item"
+                            >
+                                {c.event_date && (
+                                    <span className="eventcard-interview-date">{c.event_date}</span>
+                                )}
+                                <span>{c.name}</span>
+                            </Link>
+                        ))}
                     </div>
                 )}
             </div>
