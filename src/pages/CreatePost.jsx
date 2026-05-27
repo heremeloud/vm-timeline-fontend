@@ -3,6 +3,7 @@ import { createPost } from "../api/postsService";
 import { getAuthors, ensureAuthor } from "../api/authorsService";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { ROUTES } from "../routes";
+import "../styles/EventForm.css";
 
 export default function CreatePost() {
     const navigate = useNavigate();
@@ -22,6 +23,7 @@ export default function CreatePost() {
 
     const [caption, setCaption] = useState("");
     const [captionTranslation, setCaptionTranslation] = useState("");
+    const [captionTranslationNote, setCaptionTranslationNote] = useState("");
     const [mediaURL, setMediaURL] = useState("");
     // Multiple media URLs for IG stories (no external_id)
     const [mediaURLs, setMediaURLs] = useState([""]);
@@ -65,7 +67,6 @@ export default function CreatePost() {
     const normalizeTikTokURL = (url) => {
         if (!url) return "";
         let clean = url.trim().split("?")[0];
-        // normalize mobile subdomain if you want
         clean = clean.replace("https://m.tiktok.com", "https://www.tiktok.com");
         if (!clean.startsWith("http")) clean = "https://" + clean;
         return clean;
@@ -73,7 +74,6 @@ export default function CreatePost() {
 
     const extractTikTokVideoId = (url) => {
         if (!url) return "";
-        // match .../video/<digits>
         const m = url.match(/\/video\/(\d+)/);
         return m?.[1] || "";
     };
@@ -114,7 +114,6 @@ export default function CreatePost() {
         try {
             let finalAuthor = author;
 
-            // If user chose + Add New Author
             if (author === "__new__") {
                 if (!newAuthorName.trim()) {
                     alert("Please enter the new author's name.");
@@ -123,7 +122,6 @@ export default function CreatePost() {
                 finalAuthor = newAuthorName.trim();
             }
 
-            // Ensure this author exists
             const authorRes = await ensureAuthor({
                 name: finalAuthor,
                 profile_photo_url:
@@ -131,7 +129,6 @@ export default function CreatePost() {
             });
             const authorId = authorRes.data.id;
 
-            // Clean + normalize URL
             let cleanURL = external_url;
             if (platform === "x") cleanURL = normalizeTweetURL(cleanURL);
             if (platform === "ig") cleanURL = normalizeInstagramURL(cleanURL);
@@ -139,15 +136,12 @@ export default function CreatePost() {
 
             const external_id = extractExternalId(cleanURL, platform);
 
-
-            // For IG stories (no external URL), use the multi-URL list
             const isIGStory = platform === "ig" && !cleanURL;
             const finalMediaUrl = isIGStory ? null : (mediaURL || null);
             const filteredMediaURLs = isIGStory
                 ? mediaURLs.map((u) => u.trim()).filter(Boolean)
                 : [];
 
-            // Create post
             await createPost({
                 platform,
                 external_url: cleanURL,
@@ -155,6 +149,7 @@ export default function CreatePost() {
                 author_id: authorId,
                 caption,
                 caption_translation: captionTranslation,
+                caption_translation_note: captionTranslationNote.trim() || null,
                 media_url: finalMediaUrl,
                 media_urls_json: JSON.stringify(filteredMediaURLs),
                 posted_at,
@@ -171,176 +166,169 @@ export default function CreatePost() {
     /** ---------------- RENDER UI ---------------- **/
 
     return (
-        <div style={{ padding: 20 }}>
+        <div style={{ padding: 20, maxWidth: 800, margin: "0 auto" }}>
             <h2>{parent_id ? "Add Tweet Reply" : "Create New Post"}</h2>
 
             {parent_id && (
-                <p style={{ color: "gray" }}>
-                    Replying to Post ID: {parent_id}
-                </p>
+                <p style={{ color: "gray" }}>Replying to Post ID: {parent_id}</p>
             )}
 
-            <form onSubmit={submit}>
-                {/* Platform */}
-                <label>Platform:</label>
-                <select
-                    value={platform}
-                    disabled={!!parent_id}
-                    onChange={(e) => setPlatform(e.target.value)}
-                >
-                    <option value="ig">Instagram</option>
-                    <option value="x">X (Twitter)</option>
-                    <option value="tt">TikTok</option>
-                </select>
+            <form className="eventform-form" onSubmit={submit}>
 
-                <br />
-                <br />
+                <div className="eventform-section">
+                    <label>Platform:</label>
+                    <select
+                        value={platform}
+                        disabled={!!parent_id}
+                        onChange={(e) => setPlatform(e.target.value)}
+                    >
+                        <option value="ig">Instagram</option>
+                        <option value="x">X (Twitter)</option>
+                        <option value="tt">TikTok</option>
+                    </select>
+                </div>
 
-                {/* Author */}
-                <label>Author:</label>
-                <select
-                    value={author}
-                    onChange={(e) => setAuthor(e.target.value)}
-                >
-                    <option value="">-- select author --</option>
-
-                    {authors.map((a) => (
-                        <option key={a.id} value={a.name}>
-                            {a.name}
-                        </option>
-                    ))}
-
-                    <option value="__new__">+ Add New Author</option>
-                </select>
+                <div className="eventform-section">
+                    <label>Author:</label>
+                    <select
+                        value={author}
+                        onChange={(e) => setAuthor(e.target.value)}
+                    >
+                        <option value="">-- select author --</option>
+                        {authors.map((a) => (
+                            <option key={a.id} value={a.name}>{a.name}</option>
+                        ))}
+                        <option value="__new__">+ Add New Author</option>
+                    </select>
+                </div>
 
                 {author === "__new__" && (
                     <>
-                        <br />
-                        <br />
+                        <div className="eventform-section">
+                            <label>New Author Name:</label>
+                            <input
+                                type="text"
+                                value={newAuthorName}
+                                onChange={(e) => setNewAuthorName(e.target.value)}
+                                placeholder="Enter name"
+                            />
+                        </div>
 
-                        <label>New Author Name:</label>
-                        <input
-                            type="text"
-                            value={newAuthorName}
-                            onChange={(e) => setNewAuthorName(e.target.value)}
-                            placeholder="Enter name"
-                            style={{ width: "100%" }}
-                        />
-
-                        <br />
-                        <br />
-
-                        <label>Profile Photo URL (optional):</label>
-                        <input
-                            type="text"
-                            value={newAuthorPhoto}
-                            onChange={(e) => setNewAuthorPhoto(e.target.value)}
-                            placeholder="https://..."
-                            style={{ width: "100%" }}
-                        />
+                        <div className="eventform-section">
+                            <label>Profile Photo URL (optional):</label>
+                            <input
+                                type="text"
+                                value={newAuthorPhoto}
+                                onChange={(e) => setNewAuthorPhoto(e.target.value)}
+                                placeholder="https://..."
+                            />
+                        </div>
                     </>
                 )}
 
-                <br />
-                <br />
+                <div className="eventform-section">
+                    <label>Post URL:</label>
+                    <input
+                        value={external_url}
+                        onChange={(e) => setExternalURL(e.target.value)}
+                        placeholder="Paste tweet or IG URL"
+                    />
+                </div>
 
-                {/* URL */}
-                <label>Post URL:</label>
-                <input
-                    value={external_url}
-                    onChange={(e) => setExternalURL(e.target.value)}
-                    placeholder="Paste tweet or IG URL"
-                    style={{ width: "100%" }}
-                />
+                <div className="eventform-section">
+                    <label>Caption / Tweet Text:</label>
+                    <textarea
+                        value={caption}
+                        onChange={(e) => setCaption(e.target.value)}
+                        placeholder="Optional original caption"
+                        style={{ minHeight: 80 }}
+                    />
+                </div>
 
-                <br />
-                <br />
+                <div className="eventform-section">
+                    <label>Translation:</label>
+                    <textarea
+                        value={captionTranslation}
+                        onChange={(e) => setCaptionTranslation(e.target.value)}
+                        placeholder="Optional translation"
+                        style={{ minHeight: 80 }}
+                    />
+                </div>
 
-                <label>Caption / Tweet Text:</label>
-                <textarea
-                    value={caption}
-                    onChange={(e) => setCaption(e.target.value)}
-                    placeholder="Optional original caption"
-                    style={{ width: "100%", height: 80 }}
-                />
+                <div className="eventform-section">
+                    <label>Translator's note (optional):</label>
+                    <input
+                        type="text"
+                        value={captionTranslationNote}
+                        onChange={(e) => setCaptionTranslationNote(e.target.value)}
+                        placeholder="e.g. slang, context, nuance…"
+                    />
+                </div>
 
-                <br />
-                <br />
+                <div className="eventform-section">
+                    {/* IG story: multi-URL list. Other platforms: single field. */}
+                    {platform === "ig" && !external_url.trim() ? (
+                        <>
+                            <label>Story Media URLs:</label>
+                            {mediaURLs.map((url, i) => (
+                                <div key={i} style={{ display: "flex", gap: 6, marginBottom: 6 }}>
+                                    <input
+                                        value={url}
+                                        onChange={(e) => {
+                                            const next = [...mediaURLs];
+                                            next[i] = e.target.value;
+                                            setMediaURLs(next);
+                                        }}
+                                        placeholder={`Media URL #${i + 1}`}
+                                        style={{ flex: 1 }}
+                                    />
+                                    {mediaURLs.length > 1 && (
+                                        <button
+                                            type="button"
+                                            onClick={() => setMediaURLs(mediaURLs.filter((_, j) => j !== i))}
+                                            style={{ color: "red", background: "none", border: "1px solid red", borderRadius: 4, cursor: "pointer", padding: "0 8px" }}
+                                        >
+                                            ✕
+                                        </button>
+                                    )}
+                                </div>
+                            ))}
+                            <button
+                                type="button"
+                                onClick={() => setMediaURLs([...mediaURLs, ""])}
+                                style={{ fontSize: "0.85rem", marginTop: 2, cursor: "pointer" }}
+                            >
+                                + Add another media URL
+                            </button>
+                        </>
+                    ) : (
+                        <>
+                            <label>Media URL (optional):</label>
+                            <input
+                                value={mediaURL}
+                                onChange={(e) => setMediaURL(e.target.value)}
+                                placeholder="Image / video URL"
+                            />
+                        </>
+                    )}
+                </div>
 
-                <label>Translation:</label>
-                <textarea
-                    value={captionTranslation}
-                    onChange={(e) => setCaptionTranslation(e.target.value)}
-                    placeholder="Optional translation"
-                    style={{ width: "100%", height: 80 }}
-                />
+                <div className="eventform-section">
+                    <label>Posted At:</label>
+                    <input
+                        type="date"
+                        value={posted_at}
+                        onChange={(e) => setPostedAt(e.target.value)}
+                        style={{ width: 180 }}
+                    />
+                </div>
 
-                <br />
-                <br />
+                <div className="eventform-section">
+                    <button type="submit">
+                        {parent_id ? "Save Reply" : "Save Post"}
+                    </button>
+                </div>
 
-                {/* IG story: multi-URL list. Other platforms: single field. */}
-                {platform === "ig" && !external_url.trim() ? (
-                    <div>
-                        <label>Story Media URLs:</label>
-                        {mediaURLs.map((url, i) => (
-                            <div key={i} style={{ display: "flex", gap: 6, marginBottom: 6 }}>
-                                <input
-                                    value={url}
-                                    onChange={(e) => {
-                                        const next = [...mediaURLs];
-                                        next[i] = e.target.value;
-                                        setMediaURLs(next);
-                                    }}
-                                    placeholder={`Media URL #${i + 1}`}
-                                    style={{ flex: 1 }}
-                                />
-                                {mediaURLs.length > 1 && (
-                                    <button
-                                        type="button"
-                                        onClick={() => setMediaURLs(mediaURLs.filter((_, j) => j !== i))}
-                                        style={{ color: "red", background: "none", border: "1px solid red", borderRadius: 4, cursor: "pointer", padding: "0 8px" }}
-                                    >
-                                        ✕
-                                    </button>
-                                )}
-                            </div>
-                        ))}
-                        <button
-                            type="button"
-                            onClick={() => setMediaURLs([...mediaURLs, ""])}
-                            style={{ fontSize: "0.85rem", marginTop: 2, cursor: "pointer" }}
-                        >
-                            + Add another media URL
-                        </button>
-                    </div>
-                ) : (
-                    <div>
-                        <label>Media URL (optional):</label>
-                        <input
-                            value={mediaURL}
-                            onChange={(e) => setMediaURL(e.target.value)}
-                            placeholder="Image / video URL"
-                            style={{ width: "100%" }}
-                        />
-                    </div>
-                )}
-
-                <br />
-                <br />
-
-                <label>Posted At:</label>
-                <input
-                    type="date"
-                    value={posted_at}
-                    onChange={(e) => setPostedAt(e.target.value)}
-                />
-
-                <br />
-                <br />
-
-                <button type="submit">
-                    {parent_id ? "Save Reply" : "Save Post"}
-                </button>
             </form>
         </div>
     );

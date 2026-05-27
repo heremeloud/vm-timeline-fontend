@@ -46,6 +46,19 @@ function buildTwitterQuery(term, eventDate) {
     return `${t} since:${d} until:${until}`;
 }
 
+const PROJECT_CATEGORY_EMOJI = {
+    series: "📺",
+    concert: "🎤",
+    movie: "🎬",
+    variety: "🎉",
+    "music video": "🎵",
+    other: "⭐",
+};
+
+function projectEmoji(category) {
+    return PROJECT_CATEGORY_EMOJI[category?.toLowerCase()] ?? "🎬";
+}
+
 async function copyToClipboard(text) {
     if (!text) return false;
 
@@ -164,6 +177,22 @@ export default function EventCard({ event }) {
                         </div>
                     )}
                 </div>
+
+                {event.project_id && event.project_title && (
+                    <Link
+                        to={ROUTES.projectDetail(event.project_id)}
+                        className="eventcard-project-link"
+                    >
+                        {event.project_thumbnail_url && (
+                            <img
+                                src={event.project_thumbnail_url}
+                                alt=""
+                                className="eventcard-project-thumb"
+                            />
+                        )}
+                        {projectEmoji(event.project_category)} {event.project_title}
+                    </Link>
+                )}
 
                 {(event.event_date || event.location) && (
                     <div className="eventcard-meta">

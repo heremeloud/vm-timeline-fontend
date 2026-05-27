@@ -144,6 +144,9 @@ export default function PostCard({ post }) {
             {post.caption_translation && (
                 <div className="post-caption-translation">
                     <p>{post.caption_translation}</p>
+                    {post.caption_translation_note && (
+                        <p className="post-translation-note">📝 {post.caption_translation_note}</p>
+                    )}
                 </div>
             )}
 

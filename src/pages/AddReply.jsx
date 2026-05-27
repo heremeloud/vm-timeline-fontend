@@ -4,6 +4,7 @@ import { getPost, createPost } from "../api/postsService";
 import { createText } from "../api/textsService";
 import { getAuthors, ensureAuthor } from "../api/authorsService";
 import { ROUTES } from "../routes";
+import "../styles/EventForm.css";
 
 // Normalize X → Twitter canonical URL
 function normalizeTweetURL(url) {
@@ -27,26 +28,20 @@ export default function AddReply() {
 
     const [parent, setParent] = useState(null);
 
-    // ---------------------------
-    // AUTHOR LOGIC
-    // ---------------------------
     const [authors, setAuthors] = useState([]);
     const [author, setAuthor] = useState("");
     const [newAuthorName, setNewAuthorName] = useState("");
     const [newAuthorPhoto, setNewAuthorPhoto] = useState("");
 
-    // Shared fields
     const [caption, setCaption] = useState("");
     const [translation, setTranslation] = useState("");
+    const [translationNote, setTranslationNote] = useState("");
     const [mediaURL, setMediaURL] = useState("");
     const [postedAt, setPostedAt] = useState("");
 
     // Twitter-only
     const [tweetURL, setTweetURL] = useState("");
 
-    // ---------------------------------------
-    // LOAD PARENT + AUTHORS
-    // ---------------------------------------
     useEffect(() => {
         async function load() {
             const aRes = await getAuthors();
@@ -70,11 +65,9 @@ export default function AddReply() {
     const isTwitter = parent.platform === "x" || parent.platform === "twitter";
     const isTikTok = parent.platform === "tt" || parent.platform === "tiktok";
 
-    // ---------------------------------------
-    // SUBMIT
-    // ---------------------------------------
-    async function submit() {
-        // determine final author name
+    async function submit(e) {
+        e.preventDefault();
+
         let finalAuthor = author;
 
         if (author === "__new__") {
@@ -90,7 +83,6 @@ export default function AddReply() {
             return;
         }
 
-        // create / ensure author exists
         const authorRes = await ensureAuthor({
             name: finalAuthor,
             profile_photo_url:
@@ -98,7 +90,6 @@ export default function AddReply() {
         });
         const authorId = authorRes.data.id;
 
-        // shared validation
         if (!postedAt.trim()) return alert("Date is required.");
 
         // -------------------- Instagram Reply --------------------
@@ -106,7 +97,6 @@ export default function AddReply() {
             if (!caption.trim() && !mediaURL.trim())
                 return alert("Instagram reply needs a caption or media URL.");
 
-            // Step 1: main TH comment
             const mainRes = await createText({
                 post_id: Number(postId),
                 type: "ig-reply",
@@ -121,13 +111,13 @@ export default function AddReply() {
 
             const parentCommentId = mainRes.data.id;
 
-            // Step 2: optional translation
             if (translation.trim()) {
                 await createText({
                     post_id: Number(postId),
                     type: "ig-translation",
                     language: "en",
                     content: translation,
+                    note: translationNote.trim() || null,
                     media_url: null,
                     author_id: authorId,
                     posted_at: postedAt,
@@ -137,12 +127,11 @@ export default function AddReply() {
             }
         }
 
-        // -------------------- TikTok Reply (same as IG, plain text) --------------------
+        // -------------------- TikTok Reply --------------------
         if (isTikTok) {
             if (!caption.trim() && !mediaURL.trim())
                 return alert("TikTok reply needs a caption or media URL.");
 
-            // Step 1: main TH comment
             const mainRes = await createText({
                 post_id: Number(postId),
                 type: "tt-reply",
@@ -157,13 +146,13 @@ export default function AddReply() {
 
             const parentCommentId = mainRes.data.id;
 
-            // Step 2: optional translation
             if (translation.trim()) {
                 await createText({
                     post_id: Number(postId),
                     type: "tt-translation",
                     language: "en",
                     content: translation,
+                    note: translationNote.trim() || null,
                     media_url: null,
                     author_id: authorId,
                     posted_at: postedAt,
@@ -188,6 +177,7 @@ export default function AddReply() {
                 external_id,
                 caption,
                 caption_translation: translation || null,
+                caption_translation_note: translationNote.trim() || null,
                 media_url: mediaURL || null,
                 author_id: authorId,
                 posted_at: postedAt,
@@ -198,9 +188,6 @@ export default function AddReply() {
         navigate(ROUTES.home);
     }
 
-    // ---------------------------------------
-    // RENDER UI
-    // ---------------------------------------
     const replyLabel = isInstagram
         ? "Instagram"
         : isTikTok
@@ -208,182 +195,200 @@ export default function AddReply() {
           : "Twitter";
 
     return (
-        <div style={{ padding: 20 }}>
+        <div style={{ padding: 20, maxWidth: 800, margin: "0 auto" }}>
             <h2>Add Reply ({replyLabel})</h2>
 
-            {/* AUTHOR */}
-            <label>Author:</label>
-            <select value={author} onChange={(e) => setAuthor(e.target.value)}>
-                <option value="">-- select author --</option>
+            <form className="eventform-form" onSubmit={submit}>
 
-                {authors.map((a) => (
-                    <option key={a.id} value={a.name}>
-                        {a.name}
-                    </option>
-                ))}
+                <div className="eventform-section">
+                    <label>Author:</label>
+                    <select value={author} onChange={(e) => setAuthor(e.target.value)}>
+                        <option value="">-- select author --</option>
+                        {authors.map((a) => (
+                            <option key={a.id} value={a.name}>{a.name}</option>
+                        ))}
+                        <option value="__new__">+ Add New Author</option>
+                    </select>
+                </div>
 
-                <option value="__new__">+ Add New Author</option>
-            </select>
+                {author === "__new__" && (
+                    <>
+                        <div className="eventform-section">
+                            <label>New Author Name:</label>
+                            <input
+                                type="text"
+                                value={newAuthorName}
+                                onChange={(e) => setNewAuthorName(e.target.value)}
+                                placeholder="Enter name"
+                            />
+                        </div>
 
-            {author === "__new__" && (
-                <>
-                    <br />
-                    <br />
+                        <div className="eventform-section">
+                            <label>Profile Photo URL (optional):</label>
+                            <input
+                                type="text"
+                                value={newAuthorPhoto}
+                                onChange={(e) => setNewAuthorPhoto(e.target.value)}
+                                placeholder="https://..."
+                            />
+                        </div>
+                    </>
+                )}
 
-                    <label>New Author Name:</label>
+                <div className="eventform-section">
+                    <label>Reply Date:</label>
                     <input
-                        type="text"
-                        value={newAuthorName}
-                        onChange={(e) => setNewAuthorName(e.target.value)}
-                        placeholder="Enter name"
-                        style={{ width: "100%" }}
+                        type="date"
+                        value={postedAt}
+                        onChange={(e) => setPostedAt(e.target.value)}
+                        style={{ width: 180 }}
                     />
+                </div>
 
-                    <br />
-                    <br />
+                {/* IG UI */}
+                {isInstagram && (
+                    <>
+                        <div className="eventform-section">
+                            <label>IG Comment (caption): *</label>
+                            <textarea
+                                value={caption}
+                                onChange={(e) => setCaption(e.target.value)}
+                                rows={4}
+                            />
+                        </div>
 
-                    <label>Profile Photo URL (optional):</label>
-                    <input
-                        type="text"
-                        value={newAuthorPhoto}
-                        onChange={(e) => setNewAuthorPhoto(e.target.value)}
-                        placeholder="https://..."
-                        style={{ width: "100%" }}
-                    />
-                </>
-            )}
+                        <div className="eventform-section">
+                            <label>Optional Translation:</label>
+                            <textarea
+                                value={translation}
+                                onChange={(e) => setTranslation(e.target.value)}
+                                rows={4}
+                            />
+                        </div>
 
-            <br />
-            <br />
+                        <div className="eventform-section">
+                            <label>Translator's note (optional):</label>
+                            <input
+                                type="text"
+                                value={translationNote}
+                                onChange={(e) => setTranslationNote(e.target.value)}
+                                placeholder="e.g. slang, context, nuance…"
+                            />
+                        </div>
 
-            {/* DATE */}
-            <label>Reply Date:</label>
-            <input
-                type="date"
-                value={postedAt}
-                onChange={(e) => setPostedAt(e.target.value)}
-            />
+                        <div className="eventform-section">
+                            <label>Optional Media URL:</label>
+                            <input
+                                type="text"
+                                value={mediaURL}
+                                onChange={(e) => setMediaURL(e.target.value)}
+                                placeholder="https://..."
+                            />
+                        </div>
+                    </>
+                )}
 
-            <br />
-            <br />
+                {/* TikTok UI */}
+                {isTikTok && (
+                    <>
+                        <div className="eventform-section">
+                            <label>TikTok Reply (caption): *</label>
+                            <textarea
+                                value={caption}
+                                onChange={(e) => setCaption(e.target.value)}
+                                rows={4}
+                            />
+                        </div>
 
-            {/* IG UI */}
-            {isInstagram && (
-                <>
-                    <label>IG Comment (caption): *</label>
-                    <textarea
-                        value={caption}
-                        onChange={(e) => setCaption(e.target.value)}
-                        rows={4}
-                        style={{ width: "100%" }}
-                    />
-                    <br />
-                    <br />
+                        <div className="eventform-section">
+                            <label>Optional Translation:</label>
+                            <textarea
+                                value={translation}
+                                onChange={(e) => setTranslation(e.target.value)}
+                                rows={4}
+                            />
+                        </div>
 
-                    <label>Optional Translation:</label>
-                    <textarea
-                        value={translation}
-                        onChange={(e) => setTranslation(e.target.value)}
-                        rows={4}
-                        style={{ width: "100%" }}
-                    />
-                    <br />
-                    <br />
+                        <div className="eventform-section">
+                            <label>Translator's note (optional):</label>
+                            <input
+                                type="text"
+                                value={translationNote}
+                                onChange={(e) => setTranslationNote(e.target.value)}
+                                placeholder="e.g. slang, context, nuance…"
+                            />
+                        </div>
 
-                    <label>Optional Media URL:</label>
-                    <input
-                        type="text"
-                        value={mediaURL}
-                        onChange={(e) => setMediaURL(e.target.value)}
-                        placeholder="https://..."
-                        style={{ width: "100%" }}
-                    />
-                </>
-            )}
+                        <div className="eventform-section">
+                            <label>Optional Media URL:</label>
+                            <input
+                                type="text"
+                                value={mediaURL}
+                                onChange={(e) => setMediaURL(e.target.value)}
+                                placeholder="https://..."
+                            />
+                        </div>
+                    </>
+                )}
 
-            {/* TIKTOK UI (same as IG) */}
-            {isTikTok && (
-                <>
-                    <label>TikTok Reply (caption): *</label>
-                    <textarea
-                        value={caption}
-                        onChange={(e) => setCaption(e.target.value)}
-                        rows={4}
-                        style={{ width: "100%" }}
-                    />
-                    <br />
-                    <br />
+                {/* Twitter UI */}
+                {isTwitter && (
+                    <>
+                        <div className="eventform-section">
+                            <label>Tweet URL: *</label>
+                            <input
+                                type="text"
+                                value={tweetURL}
+                                onChange={(e) => setTweetURL(e.target.value)}
+                                placeholder="https://x.com/.../status/12345"
+                            />
+                        </div>
 
-                    <label>Optional Translation:</label>
-                    <textarea
-                        value={translation}
-                        onChange={(e) => setTranslation(e.target.value)}
-                        rows={4}
-                        style={{ width: "100%" }}
-                    />
-                    <br />
-                    <br />
+                        <div className="eventform-section">
+                            <label>Tweet Text (caption): *</label>
+                            <textarea
+                                value={caption}
+                                onChange={(e) => setCaption(e.target.value)}
+                                rows={4}
+                            />
+                        </div>
 
-                    <label>Optional Media URL:</label>
-                    <input
-                        type="text"
-                        value={mediaURL}
-                        onChange={(e) => setMediaURL(e.target.value)}
-                        placeholder="https://..."
-                        style={{ width: "100%" }}
-                    />
-                </>
-            )}
+                        <div className="eventform-section">
+                            <label>Optional Translation:</label>
+                            <textarea
+                                value={translation}
+                                onChange={(e) => setTranslation(e.target.value)}
+                                rows={4}
+                            />
+                        </div>
 
-            {/* TWITTER UI */}
-            {isTwitter && (
-                <>
-                    <label>Tweet URL: *</label>
-                    <input
-                        type="text"
-                        value={tweetURL}
-                        onChange={(e) => setTweetURL(e.target.value)}
-                        placeholder="https://x.com/.../status/12345"
-                        style={{ width: "100%" }}
-                    />
-                    <br />
-                    <br />
+                        <div className="eventform-section">
+                            <label>Translator's note (optional):</label>
+                            <input
+                                type="text"
+                                value={translationNote}
+                                onChange={(e) => setTranslationNote(e.target.value)}
+                                placeholder="e.g. slang, context, nuance…"
+                            />
+                        </div>
 
-                    <label>Tweet Text (caption): *</label>
-                    <textarea
-                        value={caption}
-                        onChange={(e) => setCaption(e.target.value)}
-                        rows={4}
-                        style={{ width: "100%" }}
-                    />
-                    <br />
-                    <br />
+                        <div className="eventform-section">
+                            <label>Optional Media URL:</label>
+                            <input
+                                type="text"
+                                value={mediaURL}
+                                onChange={(e) => setMediaURL(e.target.value)}
+                                placeholder="https://..."
+                            />
+                        </div>
+                    </>
+                )}
 
-                    <label>Optional Translation:</label>
-                    <textarea
-                        value={translation}
-                        onChange={(e) => setTranslation(e.target.value)}
-                        rows={4}
-                        style={{ width: "100%" }}
-                    />
-                    <br />
-                    <br />
+                <div className="eventform-section">
+                    <button type="submit">Save Reply</button>
+                </div>
 
-                    <label>Optional Media URL:</label>
-                    <input
-                        type="text"
-                        value={mediaURL}
-                        onChange={(e) => setMediaURL(e.target.value)}
-                        placeholder="https://..."
-                        style={{ width: "100%" }}
-                    />
-                </>
-            )}
-
-            <br />
-            <br />
-
-            <button onClick={submit}>Save Reply</button>
+            </form>
         </div>
     );
 }

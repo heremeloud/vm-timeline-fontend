@@ -110,6 +110,41 @@ export default function ProjectDetail() {
                         <p className="project-detail-desc">{project.description}</p>
                     )}
 
+                    {(project.gmmtv_url || project.mydramalist_url) && (
+                        <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginTop: 8 }}>
+                            {project.gmmtv_url && (
+                                <a
+                                    href={project.gmmtv_url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="project-detail-ext-link"
+                                >
+                                    <img
+                                        src="/icons/gmmtv_logo.svg"
+                                        alt="GMMTV"
+                                        style={{ width: 13, height: 13, verticalAlign: "middle", marginRight: 5 }}
+                                    />
+                                    GMMTV ↗
+                                </a>
+                            )}
+                            {project.mydramalist_url && (
+                                <a
+                                    href={project.mydramalist_url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="project-detail-ext-link"
+                                >
+                                    <img
+                                        src="https://mydramalist.com/favicon.ico"
+                                        alt="MDL"
+                                        style={{ width: 13, height: 13, verticalAlign: "middle", marginRight: 5 }}
+                                    />
+                                    MyDramaList ↗
+                                </a>
+                            )}
+                        </div>
+                    )}
+
                     {isAdmin && (
                         <div className="project-detail-actions">
                             <Link to={ROUTES.editProject(project.id)}>
@@ -143,32 +178,55 @@ export default function ProjectDetail() {
                 </div>
             )}
 
+            {/* Linked Events */}
+            {project.events?.length > 0 && (
+                <div className="project-detail-events">
+                    <div className="project-detail-playlist-label">Events</div>
+                    {project.events.map((ev) => (
+                        <Link key={ev.id} to={ROUTES.eventDetail(ev.id)} className="project-detail-event-item">
+                            <span className="project-detail-event-date">
+                                {ev.event_date || "—"}
+                            </span>
+                            <span className="project-detail-event-name">{ev.name}</span>
+                            {ev.category && (
+                                <span className="project-detail-event-category">
+                                    {ev.category}
+                                </span>
+                            )}
+                        </Link>
+                    ))}
+                </div>
+            )}
+
             {/* YouTube Playlists */}
             {playlists.length > 0 ? (
                 <div className="project-detail-playlists">
-                    {playlists.map((pid, idx) => (
-                        <div key={pid} className="project-detail-playlist">
-                            <div className="project-detail-playlist-label">
-                                {playlists.length > 1 ? `Playlist ${idx + 1}` : "Playlist"}
+                    {playlists.map((entry, idx) => {
+                        const pid = typeof entry === "string" ? entry : entry.id;
+                        const name = typeof entry === "string" ? null : entry.name;
+                        const label = name || (playlists.length > 1 ? `Playlist ${idx + 1}` : "Playlist");
+                        return (
+                            <div key={pid} className="project-detail-playlist">
+                                <div className="project-detail-playlist-label">{label}</div>
+                                <div className="project-detail-embed">
+                                    <iframe
+                                        src={`https://www.youtube.com/embed/videoseries?list=${pid}`}
+                                        title={label}
+                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                        allowFullScreen
+                                    />
+                                </div>
+                                <a
+                                    href={`https://www.youtube.com/playlist?list=${pid}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="project-detail-playlist-link"
+                                >
+                                    Open full playlist on YouTube ↗
+                                </a>
                             </div>
-                            <div className="project-detail-embed">
-                                <iframe
-                                    src={`https://www.youtube.com/embed/videoseries?list=${pid}`}
-                                    title={`${project.title} playlist ${idx + 1}`}
-                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                    allowFullScreen
-                                />
-                            </div>
-                            <a
-                                href={`https://www.youtube.com/playlist?list=${pid}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="project-detail-playlist-link"
-                            >
-                                Open full playlist on YouTube ↗
-                            </a>
-                        </div>
-                    ))}
+                        );
+                    })}
                 </div>
             ) : (
                 <div style={{ marginTop: 24, opacity: 0.5 }}>No playlist linked yet.</div>

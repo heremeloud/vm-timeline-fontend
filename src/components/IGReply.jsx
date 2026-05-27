@@ -43,9 +43,8 @@ export default function IGReply({ pair }) {
 
     const [isEditing, setIsEditing] = useState(false);
     const [editCaption, setEditCaption] = useState(main.content);
-    const [editTranslation, setEditTranslation] = useState(
-        trans?.content || ""
-    );
+    const [editTranslation, setEditTranslation] = useState(trans?.content || "");
+    const [editNote, setEditNote] = useState(trans?.note || "");
 
     async function handleDelete() {
         if (!confirm("Delete this IG reply (caption + translation)?")) return;
@@ -62,6 +61,7 @@ export default function IGReply({ pair }) {
         await updateTextPair(main.id, {
             caption: editCaption,
             translation: editTranslation,
+            note: editNote || null,
         });
         window.location.reload();
     }
@@ -95,6 +95,11 @@ export default function IGReply({ pair }) {
                             {trans && (
                                 <div className="igreply-translation">
                                     {trans.content}
+                                    {trans.note && (
+                                        <div className="igreply-note">
+                                            📝 {trans.note}
+                                        </div>
+                                    )}
                                 </div>
                             )}
 
@@ -182,6 +187,14 @@ export default function IGReply({ pair }) {
                         rows={3}
                     />
 
+                    <label>Translator's note (optional):</label>
+                    <input
+                        type="text"
+                        value={editNote}
+                        onChange={(e) => setEditNote(e.target.value)}
+                        placeholder="e.g. slang, context, nuance…"
+                    />
+
                     <div className="igreply-edit-buttons">
                         <button onClick={saveEdit}>Save</button>
                         <button
@@ -189,6 +202,7 @@ export default function IGReply({ pair }) {
                                 setIsEditing(false);
                                 setEditCaption(main.content);
                                 setEditTranslation(trans?.content || "");
+                                setEditNote(trans?.note || "");
                             }}
                         >
                             Cancel

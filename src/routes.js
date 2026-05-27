@@ -1,6 +1,7 @@
 export const ROUTES = {
     home: "/",
     events: "/events",
+    eventDetail: (id) => `/events/${id}`,
     projects: "/projects",
     projectDetail: (id) => `/projects/${id}`,
     createProject: "/create-project",

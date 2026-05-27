@@ -55,6 +55,13 @@
     white-space: pre-wrap;
 }
 
+.post-translation-note {
+    margin-top: 4px;
+    font-size: 0.78rem;
+    color: #999;
+    font-style: italic;
+}
+
 .post-media img {
     width: 100%;
     border-radius: 8px;

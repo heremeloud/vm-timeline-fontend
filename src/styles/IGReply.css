@@ -53,6 +53,13 @@
     font-style: normal;
 }
 
+.igreply-note {
+    margin-top: 4px;
+    font-size: 0.78rem;
+    color: #999;
+    font-style: italic;
+}
+
 /* Admin action buttons */
 .igreply-actions {
     margin-top: 8px;

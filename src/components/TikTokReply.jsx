@@ -40,9 +40,8 @@ export default function TikTokReply({ pair }) {
 
     const [isEditing, setIsEditing] = useState(false);
     const [editCaption, setEditCaption] = useState(main.content);
-    const [editTranslation, setEditTranslation] = useState(
-        trans?.content || ""
-    );
+    const [editTranslation, setEditTranslation] = useState(trans?.content || "");
+    const [editNote, setEditNote] = useState(trans?.note || "");
 
     async function handleDelete() {
         if (!confirm("Delete this TikTok reply (caption + translation)?")) {
@@ -61,6 +60,7 @@ export default function TikTokReply({ pair }) {
         await updateTextPair(main.id, {
             caption: editCaption,
             translation: editTranslation,
+            note: editNote || null,
         });
         window.location.reload();
     }
@@ -90,6 +90,11 @@ export default function TikTokReply({ pair }) {
                             {trans && (
                                 <div className="igreply-translation">
                                     {trans.content}
+                                    {trans.note && (
+                                        <div className="igreply-note">
+                                            📝 {trans.note}
+                                        </div>
+                                    )}
                                 </div>
                             )}
 
@@ -171,6 +176,14 @@ export default function TikTokReply({ pair }) {
                         rows={3}
                     />
 
+                    <label>Translator's note (optional):</label>
+                    <input
+                        type="text"
+                        value={editNote}
+                        onChange={(e) => setEditNote(e.target.value)}
+                        placeholder="e.g. slang, context, nuance…"
+                    />
+
                     <div className="igreply-edit-buttons">
                         <button onClick={saveEdit}>Save</button>
                         <button
@@ -178,6 +191,7 @@ export default function TikTokReply({ pair }) {
                                 setIsEditing(false);
                                 setEditCaption(main.content);
                                 setEditTranslation(trans?.content || "");
+                                setEditNote(trans?.note || "");
                             }}
                         >
                             Cancel

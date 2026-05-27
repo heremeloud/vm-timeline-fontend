@@ -19,15 +19,25 @@ export default function CreateProject() {
     const [startDate, setStartDate] = useState("");
     const [endDate, setEndDate] = useState("");
     const [description, setDescription] = useState("");
-    const [playlistsInput, setPlaylistsInput] = useState("");
+    const [playlists, setPlaylists] = useState([{ name: "", id: "" }]);
     const [announcementUrl, setAnnouncementUrl] = useState("");
     const [tweetUrl, setTweetUrl] = useState("");
     const [mydramalistUrl, setMydramalistUrl] = useState("");
+    const [gmmtvUrl, setGmmtvUrl] = useState("");
     const [selectedAuthorIds, setSelectedAuthorIds] = useState([]);
 
     useEffect(() => {
         getAuthors().then((res) => setAuthors(res.data || []));
     }, []);
+
+    function extractPlaylistId(input) {
+        try {
+            const url = new URL(input.trim());
+            const list = url.searchParams.get("list");
+            if (list) return list;
+        } catch {}
+        return input.trim();
+    }
 
     function toggleAuthor(id) {
         setSelectedAuthorIds((prev) =>
@@ -47,9 +57,14 @@ export default function CreateProject() {
                 start_date: startDate || null,
                 end_date: endDate || null,
                 description: description || null,
-                playlist_ids: playlistsInput.split("\n").map(s => s.trim()).filter(Boolean),
+                playlist_ids: playlists.filter(p => p.id.trim()).map(p => ({
+                    id: p.id.trim(),
+                    ...(p.name.trim() ? { name: p.name.trim() } : {}),
+                })),
                 announcement_url: announcementUrl || null,
                 tweet_url: tweetUrl || null,
+                mydramalist_url: mydramalistUrl || null,
+                gmmtv_url: gmmtvUrl || null,
                 author_ids: selectedAuthorIds,
             });
             navigate(ROUTES.projects);
@@ -90,6 +105,16 @@ export default function CreateProject() {
                 </div>
 
                 <div className="eventform-section">
+                    <label>GMMTV Official URL <span style={{ fontWeight: 400, opacity: 0.6 }}>(optional)</span></label>
+                    <input value={gmmtvUrl} onChange={(e) => setGmmtvUrl(e.target.value)} placeholder="https://www.gmmtv.com/..." />
+                </div>
+
+                <div className="eventform-section">
+                    <label>MyDramaList URL <span style={{ fontWeight: 400, opacity: 0.6 }}>(optional)</span></label>
+                    <input value={mydramalistUrl} onChange={(e) => setMydramalistUrl(e.target.value)} placeholder="https://mydramalist.com/..." />
+                </div>
+
+                <div className="eventform-section">
                     <label>Year</label>
                     <input type="number" value={year} onChange={(e) => setYear(e.target.value)} placeholder="2024" style={{ width: 120 }} />
                 </div>
@@ -110,13 +135,43 @@ export default function CreateProject() {
                 </div>
 
                 <div className="eventform-section">
-                    <label>YouTube Playlist IDs <span style={{ fontWeight: 400, opacity: 0.6 }}>(one per line)</span></label>
-                    <textarea
-                        value={playlistsInput}
-                        onChange={(e) => setPlaylistsInput(e.target.value)}
-                        placeholder={"PLxxxxxxxx\nPLyyyyyyyy"}
-                        style={{ minHeight: 70 }}
-                    />
+                    <label>YouTube Playlists</label>
+                    {playlists.map((pl, i) => (
+                        <div key={i} style={{ display: "flex", gap: 6, marginBottom: 6, alignItems: "center" }}>
+                            <input
+                                value={pl.name}
+                                onChange={(e) => {
+                                    const next = [...playlists];
+                                    next[i] = { ...next[i], name: e.target.value };
+                                    setPlaylists(next);
+                                }}
+                                placeholder="Name (optional)"
+                                style={{ flex: 1 }}
+                            />
+                            <input
+                                value={pl.id}
+                                onChange={(e) => {
+                                    const next = [...playlists];
+                                    next[i] = { ...next[i], id: extractPlaylistId(e.target.value) };
+                                    setPlaylists(next);
+                                }}
+                                placeholder="PLxxxxxxxx or paste full URL"
+                                style={{ flex: 1 }}
+                            />
+                            {playlists.length > 1 && (
+                                <button
+                                    type="button"
+                                    onClick={() => setPlaylists(playlists.filter((_, j) => j !== i))}
+                                    style={{ color: "red", background: "none", border: "1px solid red", borderRadius: 4, cursor: "pointer", padding: "0 8px", flexShrink: 0 }}
+                                >✕</button>
+                            )}
+                        </div>
+                    ))}
+                    <button
+                        type="button"
+                        onClick={() => setPlaylists([...playlists, { name: "", id: "" }])}
+                        style={{ fontSize: "0.85rem", marginTop: 2, cursor: "pointer" }}
+                    >+ Add playlist</button>
                 </div>
 
                 <div className="eventform-section">
