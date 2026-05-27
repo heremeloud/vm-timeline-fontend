@@ -80,7 +80,8 @@ button {
 }
 
 button:hover {
-  background: #ff2a66;
+  background: linear-gradient(135deg, #955803 0%, #fff8ef 100%);
+  color: #4f2f05;
 }
 
 /* FORM INPUTS */

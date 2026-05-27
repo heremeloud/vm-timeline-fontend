@@ -5,6 +5,26 @@ import { ROUTES } from "../routes";
 import Avatar from "../components/Avatar";
 import "../styles/Projects.css";
 
+function getYouTubeEmbedUrl(url) {
+    const s = (url || "").trim();
+    if (!s) return "";
+    try {
+        const parsed = new URL(s.startsWith("http") ? s : `https://${s}`);
+        if (parsed.hostname.includes("youtu.be")) {
+            const id = parsed.pathname.replace("/", "").trim();
+            return id ? `https://www.youtube.com/embed/${id}` : "";
+        }
+        if (parsed.hostname.includes("youtube.com")) {
+            const v = parsed.searchParams.get("v");
+            if (v) return `https://www.youtube.com/embed/${v}`;
+            const parts = parsed.pathname.split("/").filter(Boolean);
+            const idx = parts.findIndex((p) => ["live", "embed", "shorts"].includes(p));
+            if (idx !== -1 && parts[idx + 1]) return `https://www.youtube.com/embed/${parts[idx + 1]}`;
+        }
+    } catch {}
+    return "";
+}
+
 function orderViewMimFirst(authors = []) {
     if (!Array.isArray(authors)) return [];
     const isView = (a) => (a?.name || "").toLowerCase().trim() === "view";
@@ -70,6 +90,15 @@ export default function ProjectDetail() {
                 )}
 
                 <div className="project-detail-info">
+                    {project.parent_project && (
+                        <Link to={ROUTES.projectDetail(project.parent_project.id)} className="project-detail-parent-link">
+                            {project.parent_project.category && (
+                                <span className="project-detail-parent-category">{project.parent_project.category.toUpperCase()}</span>
+                            )}
+                            ↩ {project.parent_project.title}
+                        </Link>
+                    )}
+
                     {project.category && (
                         <span className="project-card-category">
                             {project.category.toUpperCase()}
@@ -110,7 +139,7 @@ export default function ProjectDetail() {
                         <p className="project-detail-desc">{project.description}</p>
                     )}
 
-                    {(project.gmmtv_url || project.mydramalist_url) && (
+                    {(project.gmmtv_url || project.mydramalist_url || project.spotify_url || project.apple_music_url) && (
                         <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginTop: 8 }}>
                             {project.gmmtv_url && (
                                 <a
@@ -140,6 +169,36 @@ export default function ProjectDetail() {
                                         style={{ width: 13, height: 13, verticalAlign: "middle", marginRight: 5 }}
                                     />
                                     MyDramaList ↗
+                                </a>
+                            )}
+                            {project.spotify_url && (
+                                <a
+                                    href={project.spotify_url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="project-detail-ext-link"
+                                >
+                                    <img
+                                        src="https://open.spotifycdn.com/cdn/images/favicon32.b64ecc03.png"
+                                        alt="Spotify"
+                                        style={{ width: 13, height: 13, verticalAlign: "middle", marginRight: 5 }}
+                                    />
+                                    Spotify ↗
+                                </a>
+                            )}
+                            {project.apple_music_url && (
+                                <a
+                                    href={project.apple_music_url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="project-detail-ext-link"
+                                >
+                                    <img
+                                        src="https://music.apple.com/favicon.ico"
+                                        alt="Apple Music"
+                                        style={{ width: 13, height: 13, verticalAlign: "middle", marginRight: 5 }}
+                                    />
+                                    Apple Music ↗
                                 </a>
                             )}
                         </div>
@@ -178,25 +237,119 @@ export default function ProjectDetail() {
                 </div>
             )}
 
-            {/* Linked Events */}
-            {project.events?.length > 0 && (
+            {/* Child Projects */}
+            {project.child_projects?.length > 0 && (
                 <div className="project-detail-events">
-                    <div className="project-detail-playlist-label">Events</div>
-                    {project.events.map((ev) => (
-                        <Link key={ev.id} to={ROUTES.eventDetail(ev.id)} className="project-detail-event-item">
-                            <span className="project-detail-event-date">
-                                {ev.event_date || "—"}
-                            </span>
-                            <span className="project-detail-event-name">{ev.name}</span>
-                            {ev.category && (
-                                <span className="project-detail-event-category">
-                                    {ev.category}
-                                </span>
+                    <div className="project-detail-playlist-label">Related Projects</div>
+                    {project.child_projects.map((child) => (
+                        <Link key={child.id} to={ROUTES.projectDetail(child.id)} className="project-detail-child-project">
+                            {child.thumbnail_url && (
+                                <img src={child.thumbnail_url} alt={child.title} className="project-detail-child-thumb" />
+                            )}
+                            <span className="project-detail-event-name">{child.title}</span>
+                            {child.category && (
+                                <span className="project-detail-event-category">{child.category.toUpperCase()}</span>
                             )}
                         </Link>
                     ))}
                 </div>
             )}
+
+            {/* Linked Events */}
+            {project.events?.length > 0 && (
+                <div className="project-detail-events">
+                    <div className="project-detail-playlist-label">Events</div>
+                    {(() => {
+                        const allEvents = project.events;
+
+                        // Build parent_event_id → children map from the flat list
+                        const childrenByParentId = {};
+                        allEvents.forEach((ev) => {
+                            if (ev.parent_event_id) {
+                                if (!childrenByParentId[ev.parent_event_id]) childrenByParentId[ev.parent_event_id] = [];
+                                childrenByParentId[ev.parent_event_id].push(ev);
+                            }
+                        });
+
+                        // Collect all ids that are children of something
+                        const childIdSet = new Set();
+                        allEvents.forEach((ev) => {
+                            (ev.child_events || []).forEach((c) => childIdSet.add(c.id));
+                            if (ev.parent_event_id) childIdSet.add(ev.id);
+                        });
+
+                        const topLevel = allEvents.filter((ev) => !childIdSet.has(ev.id));
+
+                        return topLevel.map((ev) => {
+                            // Merge child_events already embedded + any derived from parent_event_id
+                            const direct = ev.child_events || [];
+                            const directIds = new Set(direct.map((c) => c.id));
+                            const derived = (childrenByParentId[ev.id] || []).filter((c) => !directIds.has(c.id));
+                            const children = [...direct, ...derived];
+
+                            return (
+                                <div key={ev.id}>
+                                    <Link to={ROUTES.eventDetail(ev.id)} className="project-detail-event-item">
+                                        <span className="project-detail-event-date">
+                                            {ev.event_date || "—"}
+                                        </span>
+                                        <span className="project-detail-event-name">{ev.name}</span>
+                                        {ev.category && (
+                                            <span className="project-detail-event-category">
+                                                {ev.category}
+                                            </span>
+                                        )}
+                                    </Link>
+                                    {children.length > 0 && (
+                                        <div className="project-detail-event-children">
+                                            {children.map((child) => (
+                                                <Link key={child.id} to={ROUTES.eventDetail(child.id)} className="project-detail-event-item project-detail-event-child">
+                                                    <span className="project-detail-event-date">
+                                                        {child.event_date || "—"}
+                                                    </span>
+                                                    <span className="project-detail-event-name">{child.name}</span>
+                                                    {child.category && (
+                                                        <span className="project-detail-event-category">
+                                                            {child.category}
+                                                        </span>
+                                                    )}
+                                                </Link>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            );
+                        });
+                    })()}
+                </div>
+            )}
+
+            {/* Single YouTube Video */}
+            {project.youtube_url && (() => {
+                const embedUrl = getYouTubeEmbedUrl(project.youtube_url);
+                if (!embedUrl) return null;
+                return (
+                    <div className="project-detail-playlist" style={{ marginTop: 28 }}>
+                        <div className="project-detail-playlist-label">Video</div>
+                        <div className="project-detail-embed">
+                            <iframe
+                                src={embedUrl}
+                                title="YouTube video"
+                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                allowFullScreen
+                            />
+                        </div>
+                        <a
+                            href={project.youtube_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="project-detail-playlist-link"
+                        >
+                            Watch on YouTube ↗
+                        </a>
+                    </div>
+                );
+            })()}
 
             {/* YouTube Playlists */}
             {playlists.length > 0 ? (

@@ -3,10 +3,9 @@ import { Link } from "react-router-dom";
 import { getProjects } from "../api/projectsService";
 import { ROUTES } from "../routes";
 import Avatar from "../components/Avatar";
+import { PROJECT_CATEGORIES } from "../constants/projectCategories";
 import "../styles/Home.css";
 import "../styles/Projects.css";
-
-const PROJECT_CATEGORIES = ["series", "concert", "movie", "variety", "music video", "other"];
 
 function orderViewMimFirst(authors = []) {
     if (!Array.isArray(authors)) return [];
@@ -79,6 +78,12 @@ export default function Projects() {
                             )}
 
                             <div className="project-card-title">{p.title}</div>
+
+                            {p.parent_project && (
+                                <div className="project-card-parent">
+                                    ↩ {p.parent_project.title}
+                                </div>
+                            )}
 
                             {(p.start_date || p.year) && (
                                 <div className="project-card-year">

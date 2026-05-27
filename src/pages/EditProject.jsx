@@ -1,11 +1,10 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { getProject, updateProject } from "../api/projectsService";
+import { getProject, updateProject, getProjects } from "../api/projectsService";
 import { getAuthors } from "../api/authorsService";
 import { ROUTES } from "../routes";
+import { PROJECT_CATEGORIES } from "../constants/projectCategories";
 import "../styles/EventForm.css";
-
-const PROJECT_CATEGORIES = ["series", "concert", "movie", "variety", "music video", "other"];
 
 export default function EditProject() {
     const { projectId } = useParams();
@@ -24,16 +23,23 @@ export default function EditProject() {
     const [playlists, setPlaylists] = useState([{ name: "", id: "" }]);
     const [announcementUrl, setAnnouncementUrl] = useState("");
     const [tweetUrl, setTweetUrl] = useState("");
+    const [youtubeUrl, setYoutubeUrl] = useState("");
     const [mydramalistUrl, setMydramalistUrl] = useState("");
     const [gmmtvUrl, setGmmtvUrl] = useState("");
+    const [spotifyUrl, setSpotifyUrl] = useState("");
+    const [appleMusicUrl, setAppleMusicUrl] = useState("");
+    const [parentProjectId, setParentProjectId] = useState("");
+    const [allProjects, setAllProjects] = useState([]);
     const [selectedAuthorIds, setSelectedAuthorIds] = useState([]);
 
     useEffect(() => {
         async function load() {
-            const [authRes, projRes] = await Promise.all([
+            const [authRes, projRes, allProjRes] = await Promise.all([
                 getAuthors(),
                 getProject(projectId),
+                getProjects(),
             ]);
+            setAllProjects(allProjRes.data || []);
             setAuthors(authRes.data || []);
 
             const p = projRes.data.project;
@@ -54,8 +60,12 @@ export default function EditProject() {
             setPlaylists(loaded.length > 0 ? loaded : [{ name: "", id: "" }]);
             setAnnouncementUrl(p.announcement_url || "");
             setTweetUrl(p.tweet_url || "");
+            setYoutubeUrl(p.youtube_url || "");
             setMydramalistUrl(p.mydramalist_url || "");
             setGmmtvUrl(p.gmmtv_url || "");
+            setSpotifyUrl(p.spotify_url || "");
+            setAppleMusicUrl(p.apple_music_url || "");
+            setParentProjectId(p.parent_project_id ? String(p.parent_project_id) : "");
             setSelectedAuthorIds((p.authors || []).map((a) => a.id));
             setLoading(false);
         }
@@ -95,8 +105,12 @@ export default function EditProject() {
                 })),
                 announcement_url: announcementUrl || null,
                 tweet_url: tweetUrl || null,
+                youtube_url: youtubeUrl || null,
                 mydramalist_url: mydramalistUrl || null,
                 gmmtv_url: gmmtvUrl || null,
+                spotify_url: spotifyUrl || null,
+                apple_music_url: appleMusicUrl || null,
+                parent_project_id: parentProjectId ? parseInt(parentProjectId) : null,
                 author_ids: selectedAuthorIds,
             });
             navigate(ROUTES.projectDetail(projectId));
@@ -146,6 +160,26 @@ export default function EditProject() {
                 <div className="eventform-section">
                     <label>MyDramaList URL <span style={{ fontWeight: 400, opacity: 0.6 }}>(optional)</span></label>
                     <input value={mydramalistUrl} onChange={(e) => setMydramalistUrl(e.target.value)} placeholder="https://mydramalist.com/..." />
+                </div>
+
+                <div className="eventform-section">
+                    <label>Spotify URL <span style={{ fontWeight: 400, opacity: 0.6 }}>(optional — album or track)</span></label>
+                    <input value={spotifyUrl} onChange={(e) => setSpotifyUrl(e.target.value)} placeholder="https://open.spotify.com/..." />
+                </div>
+
+                <div className="eventform-section">
+                    <label>Apple Music URL <span style={{ fontWeight: 400, opacity: 0.6 }}>(optional — album or track)</span></label>
+                    <input value={appleMusicUrl} onChange={(e) => setAppleMusicUrl(e.target.value)} placeholder="https://music.apple.com/..." />
+                </div>
+
+                <div className="eventform-section">
+                    <label>Part of Project <span style={{ fontWeight: 400, opacity: 0.6 }}>(optional — e.g. OST of a series)</span></label>
+                    <select value={parentProjectId} onChange={(e) => setParentProjectId(e.target.value)}>
+                        <option value="">— none —</option>
+                        {allProjects.filter((p) => String(p.id) !== projectId).map((p) => (
+                            <option key={p.id} value={p.id}>{p.title}</option>
+                        ))}
+                    </select>
                 </div>
 
                 <div className="eventform-section">
@@ -216,6 +250,11 @@ export default function EditProject() {
                 <div className="eventform-section">
                     <label>Tweet URL <span style={{ fontWeight: 400, opacity: 0.6 }}>(optional — media/teaser tweet)</span></label>
                     <input value={tweetUrl} onChange={(e) => setTweetUrl(e.target.value)} placeholder="https://x.com/..." />
+                </div>
+
+                <div className="eventform-section">
+                    <label>YouTube Video URL <span style={{ fontWeight: 400, opacity: 0.6 }}>(optional — single video, no playlist)</span></label>
+                    <input value={youtubeUrl} onChange={(e) => setYoutubeUrl(e.target.value)} placeholder="https://www.youtube.com/watch?v=..." />
                 </div>
 
                 <div className="eventform-section">

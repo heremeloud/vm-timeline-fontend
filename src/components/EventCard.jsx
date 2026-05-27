@@ -178,30 +178,34 @@ export default function EventCard({ event }) {
                     )}
                 </div>
 
-                {event.parent_event_id && event.parent_event_name && (
-                    <Link
-                        to={ROUTES.eventDetail(event.parent_event_id)}
-                        className="eventcard-press-tour-link"
-                    >
-                        🗓 {event.parent_event_name}
-                    </Link>
-                )}
-
-                {event.project_id && event.project_title && (
-                    <Link
-                        to={ROUTES.projectDetail(event.project_id)}
-                        className="eventcard-project-link"
-                    >
-                        {event.project_thumbnail_url && (
-                            <img
-                                src={event.project_thumbnail_url}
-                                alt=""
-                                className="eventcard-project-thumb"
-                            />
+                {(event.project_id && event.project_title) || (event.parent_event_id && event.parent_event_name) ? (
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 6 }}>
+                        {event.project_id && event.project_title && (
+                            <Link
+                                to={ROUTES.projectDetail(event.project_id)}
+                                className="eventcard-project-link"
+                            >
+                                {event.project_thumbnail_url && (
+                                    <img
+                                        src={event.project_thumbnail_url}
+                                        alt=""
+                                        className="eventcard-project-thumb"
+                                    />
+                                )}
+                                {projectEmoji(event.project_category)} {event.project_title}
+                            </Link>
                         )}
-                        {projectEmoji(event.project_category)} {event.project_title}
-                    </Link>
-                )}
+
+                        {event.parent_event_id && event.parent_event_name && (
+                            <Link
+                                to={ROUTES.eventDetail(event.parent_event_id)}
+                                className="eventcard-press-tour-link"
+                            >
+                                {event.parent_event_name}
+                            </Link>
+                        )}
+                    </div>
+                ) : null}
 
                 {(event.event_date || event.location) && (
                     <div className="eventcard-meta">

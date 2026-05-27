@@ -169,10 +169,11 @@
     font-size: 0.95rem;
     padding: 6px 12px;
     border-radius: 999px;
-    border: 1px solid rgba(0, 0, 0, 0.15);
+    border: 1px solid rgba(149, 88, 3, 0.24);
     background: #ffffff;
-    color: #111;                 
+    color: #4f2f05;
     opacity: 0.9;
+    transition: background 0.15s, border-color 0.15s, color 0.15s, opacity 0.15s, transform 0.15s;
 }
 
 /* when badge is a button */
@@ -184,10 +185,13 @@ button.eventcard-badge {
     line-height: 1.4;
     cursor: pointer;
     background: #ffffff;
-    color: #111;
+    color: #4f2f05;
 }
 
 .eventcard-badge-click:hover {
+    background: linear-gradient(135deg, #955803 0%, #fff8ef 100%);
+    border-color: rgba(149, 88, 3, 0.45);
+    color: #3c2303;
     opacity: 1;
     transform: translateY(-1px);
 }

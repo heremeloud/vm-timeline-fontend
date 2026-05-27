@@ -303,3 +303,77 @@
     flex-shrink: 0;
 }
 
+/* Parent project link (shown on child project detail page) */
+.project-detail-parent-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.8rem;
+    color: #a67c52;
+    text-decoration: none;
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+
+.project-detail-parent-link:hover {
+    text-decoration: underline;
+}
+
+.project-detail-parent-category {
+    font-size: 0.6rem;
+    font-weight: 700;
+    letter-spacing: 0.07em;
+    background: rgba(149, 88, 3, 0.12);
+    color: #955803;
+    border-radius: 999px;
+    padding: 1px 6px;
+}
+
+/* Child project rows on parent detail page */
+.project-detail-child-project {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 6px;
+    border-bottom: 1px solid #f7f7f7;
+    border-radius: 6px;
+    text-decoration: none;
+    color: inherit;
+    transition: background 0.12s;
+}
+
+.project-detail-child-project:hover {
+    background: #faf7f4;
+}
+
+.project-detail-child-thumb {
+    width: 32px;
+    height: 32px;
+    border-radius: 4px;
+    object-fit: cover;
+    flex-shrink: 0;
+}
+
+/* Parent badge on project grid card */
+.project-card-parent {
+    font-size: 0.7rem;
+    color: #a67c52;
+    font-weight: 500;
+    margin-top: 2px;
+}
+
+.project-detail-event-children {
+    margin-left: 18px;
+    padding-left: 12px;
+    border-left: 2px solid #f0ece8;
+}
+
+.project-detail-event-child {
+    opacity: 0.85;
+}
+
+.project-detail-event-child .project-detail-event-name {
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
