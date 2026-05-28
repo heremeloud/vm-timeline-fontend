@@ -1,0 +1,273 @@
+.archive-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 24px 20px 60px;
+}
+
+.archive-header {
+    text-align: center;
+    margin-bottom: 32px;
+}
+
+.archive-subtitle {
+    font-size: 1rem;
+    color: #888;
+    margin-top: 4px;
+}
+
+.archive-shared-fc {
+    display: inline-block;
+    margin-top: 10px;
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: #a67c52;
+    text-decoration: none;
+}
+
+.archive-shared-fc:hover {
+    text-decoration: underline;
+}
+
+.archive-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+}
+
+@media (max-width: 520px) {
+    .archive-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ── Profile card ── */
+.archive-card {
+    background: #fff;
+    border: 1px solid #eee;
+    border-radius: 16px;
+    padding: 28px 20px 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04);
+}
+
+.archive-photo-wrap {
+    width: 110px;
+    height: 110px;
+    border-radius: 50%;
+    overflow: hidden;
+    border: 3px solid #f0ece8;
+    flex-shrink: 0;
+    margin-bottom: 4px;
+}
+
+.archive-photo {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.archive-photo-placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: #955803;
+    background: #fdf6ee;
+}
+
+.archive-name {
+    font-size: 1.4rem;
+    font-weight: 700;
+    margin: 0;
+    text-align: center;
+}
+
+.archive-full-name {
+    font-size: 0.85rem;
+    color: #888;
+    text-align: center;
+    margin-top: -6px;
+}
+
+.archive-birthday {
+    font-size: 0.82rem;
+    color: #888;
+    text-align: center;
+}
+
+/* Clickable photo in edit mode */
+.archive-photo-upload {
+    cursor: pointer;
+    position: relative;
+}
+
+.archive-photo-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.35);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.4rem;
+    opacity: 0;
+    transition: opacity 0.15s;
+}
+
+.archive-photo-upload:hover .archive-photo-overlay {
+    opacity: 1;
+}
+
+/* ── Social links ── */
+.archive-links {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 100%;
+    margin-top: 8px;
+}
+
+.archive-link {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 14px;
+    border-radius: 10px;
+    border: 1px solid #eee;
+    text-decoration: none;
+    color: inherit;
+    font-size: 0.88rem;
+    font-weight: 500;
+    transition: background 0.12s, border-color 0.12s;
+}
+
+.archive-link:hover {
+    background: #faf7f4;
+    border-color: #ddd;
+}
+
+.archive-link-icon {
+    font-size: 1rem;
+    width: 20px;
+    text-align: center;
+    flex-shrink: 0;
+}
+
+.archive-link-img {
+    width: 18px;
+    height: 18px;
+    object-fit: contain;
+    flex-shrink: 0;
+}
+
+.archive-link-arrow {
+    margin-left: auto;
+    font-size: 0.8rem;
+    opacity: 0.4;
+}
+
+/* ── Admin edit button ── */
+.archive-edit-btn {
+    margin-top: 12px;
+    padding: 6px 18px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background: none;
+    font-size: 0.82rem;
+    cursor: pointer;
+    color: #888;
+    transition: background 0.12s, color 0.12s;
+}
+
+.archive-edit-btn:hover {
+    background: #faf7f4;
+    color: #333;
+}
+
+/* ── Edit mode fields ── */
+.archive-edit-fields {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 4px;
+}
+
+.archive-edit-row {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.archive-edit-row label {
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #aaa;
+}
+
+.archive-edit-row input {
+    padding: 6px 10px;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    width: 100%;
+    box-sizing: border-box;
+    outline: none;
+    transition: border-color 0.12s;
+}
+
+.archive-edit-row input:focus {
+    border-color: #a67c52;
+}
+
+.archive-edit-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+    width: 100%;
+}
+
+.archive-save-btn {
+    flex: 1;
+    padding: 8px;
+    background: #955803;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.88rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.12s;
+}
+
+.archive-save-btn:hover:not(:disabled) {
+    opacity: 0.85;
+}
+
+.archive-save-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.archive-cancel-btn {
+    padding: 8px 16px;
+    background: none;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 0.88rem;
+    cursor: pointer;
+    color: #888;
+    transition: background 0.12s;
+}
+
+.archive-cancel-btn:hover:not(:disabled) {
+    background: #f5f5f5;
+}

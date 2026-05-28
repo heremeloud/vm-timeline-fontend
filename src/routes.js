@@ -1,5 +1,6 @@
 export const ROUTES = {
     home: "/",
+    archive: "/archive",
     events: "/events",
     eventDetail: (id) => `/events/${id}`,
     projects: "/projects",

@@ -18,6 +18,7 @@ import Projects from "./pages/Projects";
 import ProjectDetail from "./pages/ProjectDetail";
 import CreateProject from "./pages/CreateProject";
 import EditProject from "./pages/EditProject";
+import Archive from "./pages/Archive";
 
 import "./App.css";
 
@@ -28,6 +29,7 @@ function App() {
             <Routes>
                 {/* PUBLIC ROUTES */}
                 <Route path="/" element={<Home />} />
+                <Route path="/archive" element={<Archive />} />
                 <Route path="/post/:postId" element={<PostPage />} />
                 <Route path="/events" element={<Events />} />
                 <Route path="/events/:eventId" element={<EventDetail />} />

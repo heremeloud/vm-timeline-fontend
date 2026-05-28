@@ -1,4 +1,4 @@
-import { NavLink } from "react-router-dom";
+import { NavLink, Link } from "react-router-dom";
 import "../styles/Header.css";
 import { ROUTES } from "../routes";
 
@@ -6,7 +6,9 @@ export default function Header() {
     return (
         <header className="main-header">
             <div className="header-inner">
-                <h2 className="site-title">ViewMim Archive</h2>
+                <Link to={ROUTES.archive} className="site-title-link">
+                    <h2 className="site-title">ViewMim Archive</h2>
+                </Link>
 
                 <nav className="nav-links">
                     <NavLink
