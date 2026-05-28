@@ -81,6 +81,42 @@
     margin-bottom: 24px;
 }
 
+/* Events page two-row filter layout */
+.filter-bar.filter-bar--two-row {
+    display: grid;
+    grid-template-columns: max-content 1px max-content;
+    align-items: center;
+    justify-content: center;
+    column-gap: 8px;
+    row-gap: 8px;
+}
+
+.filter-bar--two-row .filter-row {
+    display: contents;
+}
+
+.filter-bar--two-row .filter-row .filter-group:first-child,
+.filter-bar--two-row .filter-row .filter-group:last-child {
+    justify-self: start;
+}
+
+.filter-bar--two-row .filter-row .filter-group:first-child label {
+    min-width: 94px;
+}
+
+.filter-bar--two-row .filter-row .filter-group:last-child label {
+    min-width: 42px;
+}
+
+.filter-bar--two-row .filter-row .filter-group:first-child input,
+.filter-bar--two-row .filter-row .filter-group:first-child select {
+    width: 160px;
+}
+
+.filter-bar--two-row .filter-row .filter-group:last-child select {
+    width: 150px;
+}
+
 .filter-group {
     display: flex;
     align-items: center;

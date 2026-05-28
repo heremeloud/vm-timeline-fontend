@@ -153,7 +153,7 @@ select {
 
 /* Optionally: align label + select horizontally on large screens */
 @media (min-width: 700px) {
-  .filter-bar {
+  .filter-bar:not(.filter-bar--two-row) {
     flex-direction: row;
     justify-content: center;
     gap: 25px;

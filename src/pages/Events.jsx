@@ -12,6 +12,7 @@ export default function Events() {
     const [sortOrder, setSortOrder] = useState("newest");
     const [nameFilter, setNameFilter] = useState("");
     const [categoryFilter, setCategoryFilter] = useState("");
+    const [authorFilter, setAuthorFilter] = useState("");
 
     const [page, setPage] = useState(1);
     const [jumpPage, setJumpPage] = useState("");
@@ -26,6 +27,7 @@ export default function Events() {
             sort: sortOrder,
             name: nameFilter.trim() || undefined,
             category: categoryFilter || undefined,
+            author: authorFilter || undefined,
         });
         return res.data || [];
     }
@@ -109,7 +111,7 @@ export default function Events() {
     useEffect(() => {
         load();
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [sortOrder, nameFilter, categoryFilter, page]);
+    }, [sortOrder, nameFilter, categoryFilter, authorFilter, page]);
 
     // Reset pagination knowledge on filter change
     useEffect(() => {
@@ -117,7 +119,7 @@ export default function Events() {
         setPage(1);
         setJumpPage("");
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [sortOrder, nameFilter, categoryFilter]);
+    }, [sortOrder, nameFilter, categoryFilter, authorFilter]);
 
     const nextDisabled = lastPage ? page >= lastPage : events.length < LIMIT;
 
@@ -127,6 +129,7 @@ export default function Events() {
                 <h1 style={{ marginBottom: "0.2rem" }}>ViewMim</h1>
                 <h1 style={{ marginTop: "0.2rem" }}>🤎Events🤍</h1>
                 <p>Event timeline (fanmeets, shows, lives, etc.)</p>
+                <p><strong>- solo events in 2025: work in progress - </strong></p>
                 <small style={{ opacity: 0.7 }}>
                     ※ Click a badge to copy the Twitter search query (⚠️ be aware of Twitter's search limit) ※
                 </small>
@@ -134,38 +137,51 @@ export default function Events() {
             </div>
 
             {/* Filters */}
-            <div className="filter-bar">
-                <div className="filter-group">
-                    <label>Event Name</label>
-                    <input
-                        type="text"
-                        value={nameFilter}
-                        onChange={(e) => setNameFilter(e.target.value)}
-                        placeholder="Search…"
-                        style={{ width: 140 }}
-                    />
+            <div className="filter-bar filter-bar--two-row">
+                <div className="filter-row">
+                    <div className="filter-group">
+                        <label>Event Name</label>
+                        <input
+                            type="text"
+                            value={nameFilter}
+                            onChange={(e) => setNameFilter(e.target.value)}
+                            placeholder="Search…"
+                        />
+                    </div>
+
+                    <div className="filter-divider" />
+
+                    <div className="filter-group">
+                        <label>Artist</label>
+                        <select value={authorFilter} onChange={(e) => setAuthorFilter(e.target.value)}>
+                            <option value="">All</option>
+                            <option value="viewmim">ViewMim</option>
+                            <option value="view">View</option>
+                            <option value="mim">Mim</option>
+                        </select>
+                    </div>
                 </div>
 
-                <div className="filter-divider" />
+                <div className="filter-row">
+                    <div className="filter-group">
+                        <label>Category</label>
+                        <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)}>
+                            <option value="">All</option>
+                            {EVENT_CATEGORIES.map((c) => (
+                                <option key={c.value} value={c.value}>{c.label}</option>
+                            ))}
+                        </select>
+                    </div>
 
-                <div className="filter-group">
-                    <label>Category</label>
-                    <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)}>
-                        <option value="">All</option>
-                        {EVENT_CATEGORIES.map((c) => (
-                            <option key={c.value} value={c.value}>{c.label}</option>
-                        ))}
-                    </select>
-                </div>
+                    <div className="filter-divider" />
 
-                <div className="filter-divider" />
-
-                <div className="filter-group">
-                    <label>Sort</label>
-                    <select value={sortOrder} onChange={(e) => setSortOrder(e.target.value)}>
-                        <option value="newest">Newest First</option>
-                        <option value="oldest">Oldest First</option>
-                    </select>
+                    <div className="filter-group">
+                        <label>Sort</label>
+                        <select value={sortOrder} onChange={(e) => setSortOrder(e.target.value)}>
+                            <option value="newest">Newest First</option>
+                            <option value="oldest">Oldest First</option>
+                        </select>
+                    </div>
                 </div>
             </div>
 
