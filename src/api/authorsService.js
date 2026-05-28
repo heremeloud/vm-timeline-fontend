@@ -7,9 +7,7 @@ export const updateAuthor = (id, data) => api.patch(`/authors/${id}`, data);
 export const uploadAuthorPhoto = (id, file) => {
     const form = new FormData();
     form.append("file", file);
-    return api.post(`/authors/${id}/upload-photo`, form, {
-        headers: { "Content-Type": "multipart/form-data" },
-    });
+    return api.post(`/authors/${id}/upload-photo`, form);
 };
 
 export const ensureAuthor = (data) => api.post("/authors/ensure", data);

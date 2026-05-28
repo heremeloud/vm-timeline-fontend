@@ -214,7 +214,7 @@ export default function Archive() {
     return (
         <div className="archive-container">
             <div className="archive-header">
-                <h1 style={{ marginBottom: "0.2rem" }}>ViewMim</h1>
+                <h1 style={{ marginBottom: "0.2rem" }}>🤎ViewMim🤍</h1>
                 <p className="archive-subtitle">View & Mim</p>
                 <a href={VIEWMIM_FC.url} target="_blank" rel="noopener noreferrer" className="archive-shared-fc">
                     🐶🐝 {VIEWMIM_FC.label} ↗
