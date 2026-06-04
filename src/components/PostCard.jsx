@@ -55,38 +55,16 @@ export default function PostCard({ post }) {
         };
     }, [post.id, isTwitter]);
 
-    // IG reply grouping (type names must match what you save in PostText.type)
-    const igReplyPairs = useMemo(() => {
+    // IG replies — flat list (translation + note live on the same record)
+    const igReplies = useMemo(() => {
         if (!isInstagram) return [];
-        const byMain = {};
-
-        comments.forEach((c) => {
-            const key = c.parent_comment_id ?? c.id;
-            if (!byMain[key]) byMain[key] = { main: null, translation: null };
-
-            // If your DB uses "ig-comment" instead, change these two strings.
-            if (c.type === "ig-reply") byMain[key].main = c;
-            if (c.type === "ig-translation") byMain[key].translation = c;
-        });
-
-        return Object.values(byMain).filter((p) => p.main);
+        return comments.filter((c) => c.type === "ig-reply");
     }, [comments, isInstagram]);
 
-    // TikTok reply grouping (type names must match what you save in PostText.type)
-    const ttReplyPairs = useMemo(() => {
+    // TikTok replies — flat list
+    const ttReplies = useMemo(() => {
         if (!isTikTok) return [];
-        const byMain = {};
-
-        comments.forEach((c) => {
-            const key = c.parent_comment_id ?? c.id;
-            if (!byMain[key]) byMain[key] = { main: null, translation: null };
-
-            // If you use "tt-comment" instead of "tt-reply", change this.
-            if (c.type === "tt-reply") byMain[key].main = c;
-            if (c.type === "tt-translation") byMain[key].translation = c;
-        });
-
-        return Object.values(byMain).filter((p) => p.main);
+        return comments.filter((c) => c.type === "tt-reply");
     }, [comments, isTikTok]);
 
     return (
@@ -158,20 +136,20 @@ export default function PostCard({ post }) {
                 </div>
             )}
 
-            {isInstagram && igReplyPairs.length > 0 && (
+            {isInstagram && igReplies.length > 0 && (
                 <div className="reply-section">
                     <span className="reply-section-label">Instagram Reply</span>
-                    {igReplyPairs.map((pair) => (
-                        <IGReply key={pair.main.id} pair={pair} />
+                    {igReplies.map((reply) => (
+                        <IGReply key={reply.id} reply={reply} />
                     ))}
                 </div>
             )}
 
-            {isTikTok && ttReplyPairs.length > 0 && (
+            {isTikTok && ttReplies.length > 0 && (
                 <div className="reply-section">
                     <span className="reply-section-label">TikTok Reply</span>
-                    {ttReplyPairs.map((pair) => (
-                        <TikTokReply key={pair.main.id} pair={pair} />
+                    {ttReplies.map((reply) => (
+                        <TikTokReply key={reply.id} reply={reply} />
                     ))}
                 </div>
             )}

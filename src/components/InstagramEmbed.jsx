@@ -43,52 +43,62 @@ function MediaItem({ url, caption }) {
 }
 
 // -------------------------------------------------------
-// Carousel for multiple media items
+// Carousel for multiple media items (each item is {url, text, translation, note})
 // -------------------------------------------------------
-function MediaCarousel({ urls, caption }) {
+function MediaCarousel({ items, caption }) {
     const [idx, setIdx] = useState(0);
-    const total = urls.length;
+    const total = items.length;
+    const current = items[idx] || {};
+    const displayUrl = typeof current === "string" ? current : current.url;
+    const text = current.text || null;
+    const translation = current.translation || null;
+    const note = current.note || null;
 
     return (
-        <div style={{ position: "relative" }}>
-            <MediaItem url={urls[idx]} caption={caption} />
+        <div>
+            <div style={{ position: "relative" }}>
+                <MediaItem url={displayUrl} caption={caption} />
 
-            {total > 1 && (
-                <>
-                    {/* Prev */}
-                    {idx > 0 && (
-                        <button
-                            onClick={() => setIdx((i) => i - 1)}
-                            style={navBtn("left")}
-                            aria-label="Previous"
-                        >
-                            ‹
-                        </button>
-                    )}
-
-                    {/* Next */}
-                    {idx < total - 1 && (
-                        <button
-                            onClick={() => setIdx((i) => i + 1)}
-                            style={navBtn("right")}
-                            aria-label="Next"
-                        >
-                            ›
-                        </button>
-                    )}
-
-                    {/* Dot indicators */}
-                    <div style={dotsWrap}>
-                        {urls.map((_, i) => (
+                {total > 1 && (
+                    <>
+                        {idx > 0 && (
                             <button
-                                key={i}
-                                onClick={() => setIdx(i)}
-                                style={dotStyle(i === idx)}
-                                aria-label={`Slide ${i + 1}`}
-                            />
-                        ))}
-                    </div>
-                </>
+                                onClick={() => setIdx((i) => i - 1)}
+                                style={navBtn("left")}
+                                aria-label="Previous"
+                            >
+                                ‹
+                            </button>
+                        )}
+                        {idx < total - 1 && (
+                            <button
+                                onClick={() => setIdx((i) => i + 1)}
+                                style={navBtn("right")}
+                                aria-label="Next"
+                            >
+                                ›
+                            </button>
+                        )}
+                        <div style={dotsWrap}>
+                            {items.map((_, i) => (
+                                <button
+                                    key={i}
+                                    onClick={() => setIdx(i)}
+                                    style={dotStyle(i === idx)}
+                                    aria-label={`Slide ${i + 1}`}
+                                />
+                            ))}
+                        </div>
+                    </>
+                )}
+            </div>
+
+            {/* Per-slide translation / note (no original text shown) */}
+            {translation && (
+                <div className="post-caption-translation">
+                    <p>{translation}</p>
+                    {note && <p className="post-translation-note">📝 {note}</p>}
+                </div>
             )}
         </div>
     );
@@ -135,7 +145,7 @@ const dotStyle = (active) => ({
 export default function InstagramEmbed({
     external_url,
     media_url,
-    media_urls = [],   // new: array from API
+    media_urls = [],   // array of {url, text, translation, note} objects (or legacy strings)
     caption = "",
     author_name,
     author_photo,
@@ -144,16 +154,20 @@ export default function InstagramEmbed({
     const igUrl = (external_url || "").trim();
     const singleMediaUrl = (media_url || "").trim();
 
-    // Build the final list of URLs to display:
-    // prefer media_urls array (new), fall back to single media_url (legacy)
-    const allUrls = media_urls.length > 0
-        ? media_urls
+    // Build normalized items array: [{url, text, translation, note}]
+    // prefer media_urls (new), fall back to single media_url (legacy)
+    const allItems = media_urls.length > 0
+        ? media_urls.map((item) =>
+            typeof item === "string"
+                ? { url: item, text: null, translation: null, note: null }
+                : item
+        )
         : singleMediaUrl
-            ? [singleMediaUrl]
+            ? [{ url: singleMediaUrl, text: null, translation: null, note: null }]
             : [];
 
     const hasIGEmbed = igUrl.length > 0;
-    const hasMedia = allUrls.length > 0;
+    const hasMedia = allItems.length > 0;
 
     // Instagram embed processing
     useEffect(() => {
@@ -212,15 +226,15 @@ export default function InstagramEmbed({
                                 style={{ fontWeight: 600, marginBottom: 6 }}
                             >
                                 {author_name}
-                                {allUrls.length > 1 && (
+                                {allItems.length > 1 && (
                                     <span style={{ fontWeight: 400, fontSize: "0.8rem", marginLeft: 8, opacity: 0.6 }}>
-                                        {allUrls.length} stories
+                                        {allItems.length} stories
                                     </span>
                                 )}
                             </div>
                         )}
 
-                        <MediaCarousel urls={allUrls} caption={caption} />
+                        <MediaCarousel items={allItems} caption={caption} />
                     </div>
                 </div>
             </div>

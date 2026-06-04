@@ -24,7 +24,7 @@ export default function EditPost() {
     const [captionTranslation, setCaptionTranslation] = useState("");
     const [captionTranslationNote, setCaptionTranslationNote] = useState("");
     const [mediaURL, setMediaURL] = useState("");
-    const [mediaURLs, setMediaURLs] = useState([""]);
+    const [mediaItems, setMediaItems] = useState([{ url: "", text: "", translation: "", note: "" }]);
     const [postedAt, setPostedAt] = useState("");
 
     // -----------------------------
@@ -93,12 +93,17 @@ export default function EditPost() {
             setCaptionTranslation(p.caption_translation || "");
             setCaptionTranslationNote(p.caption_translation_note || "");
             setMediaURL(p.media_url || "");
+            // media_urls is now an array of objects {url, text, translation, note}
             const parsed = p.media_urls && p.media_urls.length > 0
-                ? p.media_urls
+                ? p.media_urls.map((item) =>
+                    typeof item === "string"
+                        ? { url: item, text: "", translation: "", note: "" }
+                        : { url: item.url || "", text: item.text || "", translation: item.translation || "", note: item.note || "" }
+                )
                 : p.media_url
-                    ? [p.media_url]
-                    : [""];
-            setMediaURLs(parsed);
+                    ? [{ url: p.media_url, text: "", translation: "", note: "" }]
+                    : [{ url: "", text: "", translation: "", note: "" }];
+            setMediaItems(parsed);
             setPostedAt(p.posted_at || "");
 
             setLoading(false);
@@ -122,8 +127,16 @@ export default function EditPost() {
 
         const newId = extractExternalId(newURL, platform);
         const isIGStory = platform === "ig" && !newURL.trim();
-        const filteredMediaURLs = isIGStory
-            ? mediaURLs.map((u) => u.trim()).filter(Boolean)
+        const filteredMediaItems = isIGStory
+            ? mediaItems
+                .map((item) => ({ ...item, url: item.url.trim() }))
+                .filter((item) => item.url)
+                .map((item) => ({
+                    url: item.url,
+                    text: item.text.trim() || null,
+                    translation: item.translation.trim() || null,
+                    note: item.note.trim() || null,
+                }))
             : [];
 
         await updatePost(postId, {
@@ -135,7 +148,7 @@ export default function EditPost() {
             caption_translation: captionTranslation,
             caption_translation_note: captionTranslationNote.trim() || null,
             media_url: isIGStory ? null : (mediaURL || null),
-            media_urls_json: JSON.stringify(filteredMediaURLs),
+            media_urls_json: JSON.stringify(filteredMediaItems),
             posted_at: postedAt,
         });
 
@@ -223,36 +236,70 @@ export default function EditPost() {
                 <div className="eventform-section">
                     {platform === "ig" && !externalURL.trim() ? (
                         <>
-                            <label>Story Media URLs:</label>
-                            {mediaURLs.map((url, i) => (
-                                <div key={i} style={{ display: "flex", gap: 6, marginBottom: 6 }}>
-                                    <input
-                                        value={url}
+                            <label>Story Items:</label>
+                            {mediaItems.map((item, i) => (
+                                <div key={i} style={{ border: "1px solid #ddd", borderRadius: 8, padding: 10, marginBottom: 10 }}>
+                                    <div style={{ display: "flex", gap: 6, marginBottom: 6 }}>
+                                        <input
+                                            value={item.url}
+                                            onChange={(e) => {
+                                                const next = [...mediaItems];
+                                                next[i] = { ...next[i], url: e.target.value };
+                                                setMediaItems(next);
+                                            }}
+                                            placeholder={`Media URL #${i + 1}`}
+                                            style={{ flex: 1 }}
+                                        />
+                                        {mediaItems.length > 1 && (
+                                            <button
+                                                type="button"
+                                                onClick={() => setMediaItems(mediaItems.filter((_, j) => j !== i))}
+                                                style={{ color: "red", background: "none", border: "1px solid red", borderRadius: 4, cursor: "pointer", padding: "0 8px" }}
+                                            >
+                                                ✕
+                                            </button>
+                                        )}
+                                    </div>
+                                    <textarea
+                                        value={item.text}
                                         onChange={(e) => {
-                                            const next = [...mediaURLs];
-                                            next[i] = e.target.value;
-                                            setMediaURLs(next);
+                                            const next = [...mediaItems];
+                                            next[i] = { ...next[i], text: e.target.value };
+                                            setMediaItems(next);
                                         }}
-                                        placeholder={`Media URL #${i + 1}`}
-                                        style={{ flex: 1 }}
+                                        placeholder="Text (optional)"
+                                        rows={2}
+                                        style={{ width: "100%", marginBottom: 4, boxSizing: "border-box" }}
                                     />
-                                    {mediaURLs.length > 1 && (
-                                        <button
-                                            type="button"
-                                            onClick={() => setMediaURLs(mediaURLs.filter((_, j) => j !== i))}
-                                            style={{ color: "red", background: "none", border: "1px solid red", borderRadius: 4, cursor: "pointer", padding: "0 8px" }}
-                                        >
-                                            ✕
-                                        </button>
-                                    )}
+                                    <textarea
+                                        value={item.translation}
+                                        onChange={(e) => {
+                                            const next = [...mediaItems];
+                                            next[i] = { ...next[i], translation: e.target.value };
+                                            setMediaItems(next);
+                                        }}
+                                        placeholder="Translation (optional)"
+                                        rows={2}
+                                        style={{ width: "100%", marginBottom: 4, boxSizing: "border-box" }}
+                                    />
+                                    <input
+                                        value={item.note}
+                                        onChange={(e) => {
+                                            const next = [...mediaItems];
+                                            next[i] = { ...next[i], note: e.target.value };
+                                            setMediaItems(next);
+                                        }}
+                                        placeholder="Translator's note (optional)"
+                                        style={{ width: "100%", boxSizing: "border-box" }}
+                                    />
                                 </div>
                             ))}
                             <button
                                 type="button"
-                                onClick={() => setMediaURLs([...mediaURLs, ""])}
+                                onClick={() => setMediaItems([...mediaItems, { url: "", text: "", translation: "", note: "" }])}
                                 style={{ fontSize: "0.85rem", marginTop: 2, cursor: "pointer" }}
                             >
-                                + Add another media URL
+                                + Add another story item
                             </button>
                         </>
                     ) : (

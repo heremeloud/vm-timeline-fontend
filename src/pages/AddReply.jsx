@@ -97,34 +97,19 @@ export default function AddReply() {
             if (!caption.trim() && !mediaURL.trim())
                 return alert("Instagram reply needs a caption or media URL.");
 
-            const mainRes = await createText({
+            await createText({
                 post_id: Number(postId),
                 type: "ig-reply",
                 language: "th",
-                content: caption,
+                content: caption || null,
+                translation: translation.trim() || null,
+                note: translationNote.trim() || null,
                 media_url: mediaURL || null,
                 author_id: authorId,
                 posted_at: postedAt,
                 source: "manual",
                 parent_comment_id: null,
             });
-
-            const parentCommentId = mainRes.data.id;
-
-            if (translation.trim()) {
-                await createText({
-                    post_id: Number(postId),
-                    type: "ig-translation",
-                    language: "en",
-                    content: translation,
-                    note: translationNote.trim() || null,
-                    media_url: null,
-                    author_id: authorId,
-                    posted_at: postedAt,
-                    source: "manual",
-                    parent_comment_id: parentCommentId,
-                });
-            }
         }
 
         // -------------------- TikTok Reply --------------------
@@ -132,34 +117,19 @@ export default function AddReply() {
             if (!caption.trim() && !mediaURL.trim())
                 return alert("TikTok reply needs a caption or media URL.");
 
-            const mainRes = await createText({
+            await createText({
                 post_id: Number(postId),
                 type: "tt-reply",
                 language: "th",
-                content: caption,
+                content: caption || null,
+                translation: translation.trim() || null,
+                note: translationNote.trim() || null,
                 media_url: mediaURL || null,
                 author_id: authorId,
                 posted_at: postedAt,
                 source: "manual",
                 parent_comment_id: null,
             });
-
-            const parentCommentId = mainRes.data.id;
-
-            if (translation.trim()) {
-                await createText({
-                    post_id: Number(postId),
-                    type: "tt-translation",
-                    language: "en",
-                    content: translation,
-                    note: translationNote.trim() || null,
-                    media_url: null,
-                    author_id: authorId,
-                    posted_at: postedAt,
-                    source: "manual",
-                    parent_comment_id: parentCommentId,
-                });
-            }
         }
 
         // -------------------- Twitter Reply --------------------

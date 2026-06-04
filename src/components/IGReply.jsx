@@ -37,14 +37,13 @@ function isVideo(url) {
     );
 }
 
-export default function IGReply({ pair }) {
-    const main = pair.main;
-    const trans = pair.translation;
+export default function IGReply({ reply }) {
+    const main = reply;
 
     const [isEditing, setIsEditing] = useState(false);
-    const [editCaption, setEditCaption] = useState(main.content);
-    const [editTranslation, setEditTranslation] = useState(trans?.content || "");
-    const [editNote, setEditNote] = useState(trans?.note || "");
+    const [editCaption, setEditCaption] = useState(main.content || "");
+    const [editTranslation, setEditTranslation] = useState(main.translation || "");
+    const [editNote, setEditNote] = useState(main.note || "");
 
     async function handleDelete() {
         if (!confirm("Delete this IG reply (caption + translation)?")) return;
@@ -92,12 +91,12 @@ export default function IGReply({ pair }) {
                             )}
 
                             {/* Translation */}
-                            {trans && (
+                            {main.translation && (
                                 <div className="igreply-translation">
-                                    {trans.content}
-                                    {trans.note && (
+                                    {main.translation}
+                                    {main.note && (
                                         <div className="igreply-note">
-                                            📝 {trans.note}
+                                            📝 {main.note}
                                         </div>
                                     )}
                                 </div>
@@ -200,9 +199,9 @@ export default function IGReply({ pair }) {
                         <button
                             onClick={() => {
                                 setIsEditing(false);
-                                setEditCaption(main.content);
-                                setEditTranslation(trans?.content || "");
-                                setEditNote(trans?.note || "");
+                                setEditCaption(main.content || "");
+                                setEditTranslation(main.translation || "");
+                                setEditNote(main.note || "");
                             }}
                         >
                             Cancel

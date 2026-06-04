@@ -25,8 +25,8 @@ export default function CreatePost() {
     const [captionTranslation, setCaptionTranslation] = useState("");
     const [captionTranslationNote, setCaptionTranslationNote] = useState("");
     const [mediaURL, setMediaURL] = useState("");
-    // Multiple media URLs for IG stories (no external_id)
-    const [mediaURLs, setMediaURLs] = useState([""]);
+    // Multiple media items for IG stories: [{url, text, translation, note}]
+    const [mediaItems, setMediaItems] = useState([{ url: "", text: "", translation: "", note: "" }]);
 
     // Author list from backend
     const [authors, setAuthors] = useState([]);
@@ -138,8 +138,16 @@ export default function CreatePost() {
 
             const isIGStory = platform === "ig" && !cleanURL;
             const finalMediaUrl = isIGStory ? null : (mediaURL || null);
-            const filteredMediaURLs = isIGStory
-                ? mediaURLs.map((u) => u.trim()).filter(Boolean)
+            const filteredMediaItems = isIGStory
+                ? mediaItems
+                    .map((item) => ({ ...item, url: item.url.trim() }))
+                    .filter((item) => item.url)
+                    .map((item) => ({
+                        url: item.url,
+                        text: item.text.trim() || null,
+                        translation: item.translation.trim() || null,
+                        note: item.note.trim() || null,
+                    }))
                 : [];
 
             await createPost({
@@ -151,7 +159,7 @@ export default function CreatePost() {
                 caption_translation: captionTranslation,
                 caption_translation_note: captionTranslationNote.trim() || null,
                 media_url: finalMediaUrl,
-                media_urls_json: JSON.stringify(filteredMediaURLs),
+                media_urls_json: JSON.stringify(filteredMediaItems),
                 posted_at,
                 parent_id: parent_id || null,
             });
@@ -266,39 +274,73 @@ export default function CreatePost() {
                 </div>
 
                 <div className="eventform-section">
-                    {/* IG story: multi-URL list. Other platforms: single field. */}
+                    {/* IG story: multi-item list with optional text/translation/note per item */}
                     {platform === "ig" && !external_url.trim() ? (
                         <>
-                            <label>Story Media URLs:</label>
-                            {mediaURLs.map((url, i) => (
-                                <div key={i} style={{ display: "flex", gap: 6, marginBottom: 6 }}>
-                                    <input
-                                        value={url}
+                            <label>Story Items:</label>
+                            {mediaItems.map((item, i) => (
+                                <div key={i} style={{ border: "1px solid #ddd", borderRadius: 8, padding: 10, marginBottom: 10 }}>
+                                    <div style={{ display: "flex", gap: 6, marginBottom: 6 }}>
+                                        <input
+                                            value={item.url}
+                                            onChange={(e) => {
+                                                const next = [...mediaItems];
+                                                next[i] = { ...next[i], url: e.target.value };
+                                                setMediaItems(next);
+                                            }}
+                                            placeholder={`Media URL #${i + 1}`}
+                                            style={{ flex: 1 }}
+                                        />
+                                        {mediaItems.length > 1 && (
+                                            <button
+                                                type="button"
+                                                onClick={() => setMediaItems(mediaItems.filter((_, j) => j !== i))}
+                                                style={{ color: "red", background: "none", border: "1px solid red", borderRadius: 4, cursor: "pointer", padding: "0 8px" }}
+                                            >
+                                                ✕
+                                            </button>
+                                        )}
+                                    </div>
+                                    <textarea
+                                        value={item.text}
                                         onChange={(e) => {
-                                            const next = [...mediaURLs];
-                                            next[i] = e.target.value;
-                                            setMediaURLs(next);
+                                            const next = [...mediaItems];
+                                            next[i] = { ...next[i], text: e.target.value };
+                                            setMediaItems(next);
                                         }}
-                                        placeholder={`Media URL #${i + 1}`}
-                                        style={{ flex: 1 }}
+                                        placeholder="Text (optional)"
+                                        rows={2}
+                                        style={{ width: "100%", marginBottom: 4, boxSizing: "border-box" }}
                                     />
-                                    {mediaURLs.length > 1 && (
-                                        <button
-                                            type="button"
-                                            onClick={() => setMediaURLs(mediaURLs.filter((_, j) => j !== i))}
-                                            style={{ color: "red", background: "none", border: "1px solid red", borderRadius: 4, cursor: "pointer", padding: "0 8px" }}
-                                        >
-                                            ✕
-                                        </button>
-                                    )}
+                                    <textarea
+                                        value={item.translation}
+                                        onChange={(e) => {
+                                            const next = [...mediaItems];
+                                            next[i] = { ...next[i], translation: e.target.value };
+                                            setMediaItems(next);
+                                        }}
+                                        placeholder="Translation (optional)"
+                                        rows={2}
+                                        style={{ width: "100%", marginBottom: 4, boxSizing: "border-box" }}
+                                    />
+                                    <input
+                                        value={item.note}
+                                        onChange={(e) => {
+                                            const next = [...mediaItems];
+                                            next[i] = { ...next[i], note: e.target.value };
+                                            setMediaItems(next);
+                                        }}
+                                        placeholder="Translator's note (optional)"
+                                        style={{ width: "100%", boxSizing: "border-box" }}
+                                    />
                                 </div>
                             ))}
                             <button
                                 type="button"
-                                onClick={() => setMediaURLs([...mediaURLs, ""])}
+                                onClick={() => setMediaItems([...mediaItems, { url: "", text: "", translation: "", note: "" }])}
                                 style={{ fontSize: "0.85rem", marginTop: 2, cursor: "pointer" }}
                             >
-                                + Add another media URL
+                                + Add another story item
                             </button>
                         </>
                     ) : (
