@@ -77,8 +77,10 @@
     display: flex;
     flex-wrap: nowrap;
     align-items: center;
+    justify-content: center;
     gap: 4px;
     margin-bottom: 24px;
+    width: 100%;
 }
 
 /* Events page two-row filter layout */
