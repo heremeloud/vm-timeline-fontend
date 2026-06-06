@@ -39,6 +39,8 @@ function App() {
                 <Route path="/events/:eventId" element={<EventDetail />} />
                 <Route path="/projects" element={<Projects />} />
                 <Route path="/projects/:projectId" element={<ProjectDetail />} />
+                <Route path="/specials" element={<Topics />} />
+                <Route path="/specials/:topicId" element={<TopicDetail />} />
 
                 {/* ADMIN LOGIN */}
                 <Route path="/admin" element={<AdminLogin />} />
@@ -49,24 +51,6 @@ function App() {
                     element={
                         <ProtectedRoute>
                             <ManageDisplay />
-                        </ProtectedRoute>
-                    }
-                />
-
-                <Route
-                    path="/specials"
-                    element={
-                        <ProtectedRoute>
-                            <Topics />
-                        </ProtectedRoute>
-                    }
-                />
-
-                <Route
-                    path="/specials/:topicId"
-                    element={
-                        <ProtectedRoute>
-                            <TopicDetail />
                         </ProtectedRoute>
                     }
                 />

@@ -15,6 +15,7 @@ function formatTopicDateRange(topic) {
 
 export default function Topics() {
     const [topics, setTopics] = useState([]);
+    const isAdmin = !!localStorage.getItem("jwt");
 
     useEffect(() => {
         async function load() {
@@ -64,9 +65,11 @@ export default function Topics() {
                 ))}
             </div>
 
-            <Link to={ROUTES.createTopic}>
-                <button className="fab-button">+</button>
-            </Link>
+            {isAdmin && (
+                <Link to={ROUTES.createTopic}>
+                    <button className="fab-button">+</button>
+                </Link>
+            )}
         </div>
     );
 }

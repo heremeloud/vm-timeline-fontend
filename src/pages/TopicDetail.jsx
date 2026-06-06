@@ -57,6 +57,7 @@ function getDateTimeInputValue(item) {
 
 export default function TopicDetail() {
     const { topicId } = useParams();
+    const isAdmin = !!localStorage.getItem("jwt");
     const [topic, setTopic] = useState(null);
     const [loading, setLoading] = useState(true);
     const [editingTimeId, setEditingTimeId] = useState(null);
@@ -116,14 +117,14 @@ export default function TopicDetail() {
 
     return (
         <div className="topic-detail-container">
-            <Link to={ROUTES.topics} className="topic-detail-back">↩ Back to Specials</Link>
+            <Link to={ROUTES.topics} className="topic-detail-back">← Back to Specials</Link>
 
             <div className="topic-detail-header">
                 {topic.cover_url && (
                     <img src={topic.cover_url} alt={topic.title} className="topic-detail-cover" />
                 )}
 
-                <div>
+                <div className="topic-detail-info">
                     <h1 className="topic-detail-title">{topic.title}</h1>
                     {topic.original_title && (
                         <div className="topic-detail-original">{topic.original_title}</div>
@@ -135,22 +136,24 @@ export default function TopicDetail() {
                         <p className="topic-detail-desc">{topic.description}</p>
                     )}
 
-                    <div className="topic-actions">
-                        <Link to={ROUTES.editTopic(topic.id)}>
-                            <button>Edit</button>
-                        </Link>
-                        <button
-                            className="btn-delete"
-                            onClick={async () => {
-                                if (confirm("Delete this special?")) {
-                                    await deleteTopic(topic.id);
-                                    window.location.href = ROUTES.topics;
-                                }
-                            }}
-                        >
-                            Delete
-                        </button>
-                    </div>
+                    {isAdmin && (
+                        <div className="topic-actions">
+                            <Link to={ROUTES.editTopic(topic.id)}>
+                                <button>Edit</button>
+                            </Link>
+                            <button
+                                className="btn-delete"
+                                onClick={async () => {
+                                    if (confirm("Delete this special?")) {
+                                        await deleteTopic(topic.id);
+                                        window.location.href = ROUTES.topics;
+                                    }
+                                }}
+                            >
+                                Delete
+                            </button>
+                        </div>
+                    )}
                 </div>
             </div>
 
@@ -158,7 +161,7 @@ export default function TopicDetail() {
                 {items.map((item) => (
                     <div className="topic-timeline-item" key={item.id}>
                         <div className="topic-timeline-time">
-                            {editingTimeId === item.id ? (
+                            {isAdmin && editingTimeId === item.id ? (
                                 <div style={{ display: "grid", gap: 6 }}>
                                     <input
                                         type="datetime-local"
@@ -189,16 +192,18 @@ export default function TopicDetail() {
                             ) : (
                                 <>
                                     <strong>{formatDateTime(item.happened_at || item.post?.posted_at)}</strong>
-                                    <button
-                                        type="button"
-                                        onClick={() => {
-                                            setEditingTimeId(item.id);
-                                            setTimeDraft(getDateTimeInputValue(item));
-                                        }}
-                                        style={{ marginTop: 6, fontSize: "0.8rem" }}
-                                    >
-                                        Edit time
-                                    </button>
+                                    {isAdmin && (
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setEditingTimeId(item.id);
+                                                setTimeDraft(getDateTimeInputValue(item));
+                                            }}
+                                            style={{ marginTop: 6, fontSize: "0.8rem" }}
+                                        >
+                                            Edit time
+                                        </button>
+                                    )}
                                 </>
                             )}
                             {item.label && <div>{item.label}</div>}
@@ -212,9 +217,11 @@ export default function TopicDetail() {
                 {items.length === 0 && <p>No posts added yet.</p>}
             </div>
 
-            <Link to={ROUTES.editTopic(topic.id)}>
-                <button className="fab-button topic-edit-fab">Edit</button>
-            </Link>
+            {isAdmin && (
+                <Link to={ROUTES.editTopic(topic.id)}>
+                    <button className="fab-button topic-edit-fab">Edit</button>
+                </Link>
+            )}
         </div>
     );
 }
