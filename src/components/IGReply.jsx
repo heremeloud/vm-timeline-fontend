@@ -127,6 +127,7 @@ export default function IGReply({ reply }) {
                                             controls
                                             playsInline
                                             muted
+                                            autoPlay
                                             preload="metadata"
                                             onError={(e) =>
                                                 (e.target.style.display =
