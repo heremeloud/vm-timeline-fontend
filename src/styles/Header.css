@@ -51,3 +51,17 @@
     color: #111;
     border-bottom: 2px solid #955803;
 }
+
+@media (max-width: 600px) {
+    .site-title {
+        font-size: 0.95rem;
+    }
+
+    .nav-links {
+        gap: 12px;
+    }
+
+    .nav-link {
+        font-size: 0.82rem;
+    }
+}

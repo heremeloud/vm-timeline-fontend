@@ -144,8 +144,9 @@ select {
 /* Center filter area */
 .filter-bar {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
+  justify-content: center;
   gap: 12px;
   margin-bottom: 30px;
   width: 100%;
