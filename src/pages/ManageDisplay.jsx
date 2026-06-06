@@ -1,33 +1,75 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { getAuthors, updateAuthor } from "../api/authorsService";
-import { getAdminPosts, updatePost } from "../api/postsService";
+import { deletePost, getAdminPosts, updatePost } from "../api/postsService";
+import { getAdminEvents, updateEvent } from "../api/eventsService";
+import { getAdminProjects, updateProject } from "../api/projectsService";
+import { getAdminTopics, updateTopic } from "../api/topicsService";
 import { ROUTES } from "../routes";
 import "../styles/EventForm.css";
 
+const LIMIT = 25;
+const TABS = ["posts", "events", "projects", "specials", "authors"];
+
+function itemStatus(isVisible, extraVisible = true) {
+    return isVisible && extraVisible ? "public" : "hidden";
+}
+
 export default function ManageDisplay() {
+    const [activeTab, setActiveTab] = useState("posts");
     const [authors, setAuthors] = useState([]);
-    const [posts, setPosts] = useState([]);
+    const [items, setItems] = useState([]);
+    const [page, setPage] = useState(1);
     const [platformFilter, setPlatformFilter] = useState("all");
     const [authorFilter, setAuthorFilter] = useState("all");
     const [loading, setLoading] = useState(true);
     const [savingKey, setSavingKey] = useState("");
 
-    async function load() {
+    const offset = (page - 1) * LIMIT;
+
+    useEffect(() => {
+        async function loadAuthors() {
+            const res = await getAuthors();
+            setAuthors(res.data || []);
+        }
+        loadAuthors();
+    }, []);
+
+    useEffect(() => {
+        setPage(1);
+    }, [activeTab, platformFilter, authorFilter]);
+
+    async function loadItems() {
         setLoading(true);
-        const [authorsRes, postsRes] = await Promise.all([
-            getAuthors(),
-            getAdminPosts({ limit: 250, sort: "newest", platform: platformFilter }),
-        ]);
-        setAuthors(authorsRes.data || []);
-        setPosts(postsRes.data || []);
+
+        if (activeTab === "posts") {
+            const res = await getAdminPosts({
+                limit: LIMIT,
+                offset,
+                sort: "newest",
+                platform: platformFilter,
+            });
+            setItems(res.data || []);
+        } else if (activeTab === "events") {
+            const res = await getAdminEvents({ limit: LIMIT, offset, sort: "newest" });
+            setItems(res.data || []);
+        } else if (activeTab === "projects") {
+            const res = await getAdminProjects({ limit: LIMIT, offset, sort: "newest" });
+            setItems(res.data || []);
+        } else if (activeTab === "specials") {
+            const res = await getAdminTopics();
+            setItems((res.data || []).slice(offset, offset + LIMIT));
+        } else {
+            setItems(authors);
+        }
+
         setLoading(false);
     }
 
     useEffect(() => {
-        load();
+        loadItems();
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [platformFilter]);
+    }, [activeTab, page, platformFilter, authors.length]);
 
     const authorById = useMemo(() => {
         const map = new Map();
@@ -35,170 +77,243 @@ export default function ManageDisplay() {
         return map;
     }, [authors]);
 
-    const filteredPosts = posts.filter((post) => {
-        if (authorFilter === "all") return true;
-        return String(post.author_id || "") === authorFilter;
-    });
+    const visibleItems = activeTab === "posts" && authorFilter !== "all"
+        ? items.filter((post) => String(post.author_id || "") === authorFilter)
+        : items;
 
-    async function toggleAuthor(author) {
-        const key = `author-${author.id}`;
+    async function updateRow(type, id, data) {
+        if (type === "posts") return updatePost(id, data);
+        if (type === "events") return updateEvent(id, data);
+        if (type === "projects") return updateProject(id, data);
+        if (type === "specials") return updateTopic(id, data);
+        return updateAuthor(id, data);
+    }
+
+    async function toggleVisibility(type, item) {
+        const id = item.id;
+        const key = `${type}-${id}`;
+        const field = type === "authors" ? "show_on_timeline" : "is_visible";
+        const nextValue = !item[field];
+
         setSavingKey(key);
-        const nextValue = !author.show_on_timeline;
+        await updateRow(type, id, { [field]: nextValue });
 
-        await updateAuthor(author.id, { show_on_timeline: nextValue });
+        if (type === "authors") {
+            setAuthors((current) =>
+                current.map((author) =>
+                    author.id === id ? { ...author, [field]: nextValue } : author
+                )
+            );
+        }
 
-        setAuthors((current) =>
-            current.map((item) =>
-                item.id === author.id
-                    ? { ...item, show_on_timeline: nextValue }
-                    : item
+        setItems((current) =>
+            current.map((row) =>
+                row.id === id ? { ...row, [field]: nextValue } : row
             )
         );
         setSavingKey("");
     }
 
-    async function togglePost(post) {
-        const key = `post-${post.id}`;
+    async function deletePostRow(post) {
+        if (!confirm("Delete this post? This also deletes its replies/comments.")) return;
+
+        const key = `posts-${post.id}`;
         setSavingKey(key);
-        const nextValue = !post.is_visible;
 
-        await updatePost(post.id, { is_visible: nextValue });
-
-        setPosts((current) =>
-            current.map((item) =>
-                item.id === post.id
-                    ? { ...item, is_visible: nextValue }
-                    : item
-            )
-        );
-        setSavingKey("");
+        try {
+            await deletePost(post.id);
+            setItems((current) => current.filter((row) => row.id !== post.id));
+        } catch (err) {
+            console.error("Delete post failed:", err);
+            alert("Delete failed: " + (err.response?.data?.detail || err.message));
+        } finally {
+            setSavingKey("");
+        }
     }
+
+    const nextDisabled = visibleItems.length < LIMIT;
 
     return (
         <div className="eventform-container">
-            <h2>Manage Timeline Display</h2>
-
+            <h2>Manage Display</h2>
             <p style={{ opacity: 0.75, marginTop: 0 }}>
-                Saved posts appear publicly only when both the author is allowed and the post is visible.
+                Control which saved content appears in public-facing lists.
             </p>
 
-            <section className="eventform-section eventform-form">
-                <h3>Authors</h3>
-                <div className="eventform-participants-box" style={{ maxHeight: 260 }}>
-                    {authors.map((author) => (
-                        <label className="eventform-participant-item" key={author.id}>
-                            <input
-                                type="checkbox"
-                                checked={!!author.show_on_timeline}
-                                disabled={savingKey === `author-${author.id}`}
-                                onChange={() => toggleAuthor(author)}
-                            />
-                            <span>
-                                {author.name}
-                                <small style={{ marginLeft: 8, opacity: 0.65 }}>
-                                    {author.show_on_timeline ? "allowed" : "hidden"}
-                                </small>
-                            </span>
-                        </label>
-                    ))}
-                </div>
-            </section>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 16 }}>
+                {TABS.map((tab) => (
+                    <button
+                        key={tab}
+                        type="button"
+                        onClick={() => setActiveTab(tab)}
+                        style={{
+                            padding: "8px 12px",
+                            borderRadius: 8,
+                            border: "1px solid rgba(0,0,0,0.15)",
+                            cursor: "pointer",
+                            background: activeTab === tab ? "#a67c52" : "#fff",
+                            color: activeTab === tab ? "#fff" : "inherit",
+                        }}
+                    >
+                        {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                    </button>
+                ))}
+            </div>
 
-            <section className="eventform-section eventform-form">
-                <h3>Posts</h3>
-
-                <div style={{ display: "grid", gap: 12, gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))" }}>
-                    <div>
-                        <label>Platform</label>
-                        <select
-                            value={platformFilter}
-                            onChange={(e) => setPlatformFilter(e.target.value)}
-                        >
-                            <option value="all">All</option>
-                            <option value="ig">Instagram</option>
-                            <option value="x">X</option>
-                            <option value="tt">TikTok</option>
-                        </select>
+            {activeTab === "posts" && (
+                <section className="eventform-section eventform-form">
+                    <div style={{ display: "grid", gap: 12, gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))" }}>
+                        <div>
+                            <label>Platform</label>
+                            <select value={platformFilter} onChange={(e) => setPlatformFilter(e.target.value)}>
+                                <option value="all">All</option>
+                                <option value="ig">Instagram</option>
+                                <option value="x">X</option>
+                                <option value="tt">TikTok</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label>Author</label>
+                            <select value={authorFilter} onChange={(e) => setAuthorFilter(e.target.value)}>
+                                <option value="all">All</option>
+                                {authors.map((author) => (
+                                    <option key={author.id} value={author.id}>{author.name}</option>
+                                ))}
+                            </select>
+                        </div>
                     </div>
+                </section>
+            )}
 
-                    <div>
-                        <label>Author</label>
-                        <select
-                            value={authorFilter}
-                            onChange={(e) => setAuthorFilter(e.target.value)}
-                        >
-                            <option value="all">All</option>
-                            {authors.map((author) => (
-                                <option key={author.id} value={author.id}>
-                                    {author.name}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
-                </div>
+            <section className="eventform-section eventform-form">
+                <h3>{activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}</h3>
 
                 {loading ? (
                     <p>Loading...</p>
                 ) : (
-                    <div style={{ display: "grid", gap: 10, marginTop: 16 }}>
-                        {filteredPosts.map((post) => {
-                            const author = authorById.get(post.author_id);
-                            const canDisplay = !!post.is_visible && !!author?.show_on_timeline;
+                    <div style={{ display: "grid", gap: 10 }}>
+                        {visibleItems.map((item) => (
+                            <DisplayRow
+                                key={`${activeTab}-${item.id}`}
+                                tab={activeTab}
+                                item={item}
+                                author={authorById.get(item.author_id)}
+                                saving={savingKey === `${activeTab}-${item.id}`}
+                                onToggle={() => toggleVisibility(activeTab, item)}
+                                onDelete={activeTab === "posts" ? () => deletePostRow(item) : undefined}
+                            />
+                        ))}
 
-                            return (
-                                <div
-                                    key={post.id}
-                                    style={{
-                                        border: "1px solid rgba(0, 0, 0, 0.15)",
-                                        borderRadius: 8,
-                                        padding: 12,
-                                        display: "grid",
-                                        gap: 8,
-                                    }}
-                                >
-                                    <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "flex-start" }}>
-                                        <div>
-                                            <strong>{post.author_name || "Unknown author"}</strong>
-                                            <span style={{ marginLeft: 8, opacity: 0.65 }}>
-                                                {post.platform} - {post.posted_at || "no date"}
-                                            </span>
-                                            <div style={{ fontSize: "0.9rem", opacity: 0.8, marginTop: 4 }}>
-                                                {post.caption || post.external_url || "No caption"}
-                                            </div>
-                                        </div>
+                        {visibleItems.length === 0 && <p>No items found.</p>}
+                    </div>
+                )}
 
-                                        <span style={{ whiteSpace: "nowrap", color: canDisplay ? "#2f7d32" : "#9a3412" }}>
-                                            {canDisplay ? "public" : "hidden"}
-                                        </span>
-                                    </div>
-
-                                    <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
-                                        <label style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 0 }}>
-                                            <input
-                                                type="checkbox"
-                                                checked={!!post.is_visible}
-                                                disabled={savingKey === `post-${post.id}`}
-                                                onChange={() => togglePost(post)}
-                                            />
-                                            Post visible
-                                        </label>
-
-                                        <Link to={ROUTES.editPost(post.id)}>Edit post</Link>
-
-                                        {post.external_url && (
-                                            <a href={post.external_url} target="_blank" rel="noreferrer">
-                                                Open source
-                                            </a>
-                                        )}
-                                    </div>
-                                </div>
-                            );
-                        })}
-
-                        {filteredPosts.length === 0 && <p>No posts found.</p>}
+                {activeTab !== "authors" && (
+                    <div style={{ display: "flex", gap: 12, alignItems: "center", justifyContent: "center", marginTop: 18 }}>
+                        <button
+                            type="button"
+                            onClick={() => setPage((current) => Math.max(1, current - 1))}
+                            disabled={page === 1}
+                        >
+                            Prev
+                        </button>
+                        <span>Page {page}</span>
+                        <button
+                            type="button"
+                            onClick={() => setPage((current) => current + 1)}
+                            disabled={nextDisabled}
+                        >
+                            Next
+                        </button>
                     </div>
                 )}
             </section>
+        </div>
+    );
+}
+
+function DisplayRow({ tab, item, author, saving, onToggle, onDelete }) {
+    const isAuthor = tab === "authors";
+    const isVisible = isAuthor ? item.show_on_timeline : item.is_visible;
+    const extraVisible = tab === "posts" ? !!author?.show_on_timeline : true;
+    const status = itemStatus(isVisible, extraVisible);
+
+    let title = item.title || item.name || item.author_name || item.original_title || `#${item.id}`;
+    let meta = "";
+    let editUrl = "";
+
+    if (tab === "posts") {
+        title = item.author_name || "Unknown author";
+        meta = `${item.platform} - ${item.posted_at || "no date"} - ${item.caption || item.external_url || "No caption"}`;
+        editUrl = ROUTES.editPost(item.id);
+    } else if (tab === "events") {
+        meta = `${item.event_date || "no date"}${item.category ? ` - ${item.category}` : ""}`;
+        editUrl = ROUTES.editEvent(item.id);
+    } else if (tab === "projects") {
+        meta = `${item.start_date || item.year || "no date"}${item.category ? ` - ${item.category}` : ""}`;
+        editUrl = ROUTES.editProject(item.id);
+    } else if (tab === "specials") {
+        meta = `${item.start_date || "no start"}${item.end_date ? ` - ${item.end_date}` : ""}`;
+        editUrl = ROUTES.editTopic(item.id);
+    } else {
+        title = item.name;
+        meta = isVisible ? "allowed on timeline" : "hidden from timeline";
+    }
+
+    return (
+        <div
+            style={{
+                border: "1px solid rgba(0, 0, 0, 0.15)",
+                borderRadius: 8,
+                padding: 12,
+                display: "grid",
+                gap: 8,
+            }}
+        >
+            <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "flex-start" }}>
+                <div>
+                    <strong>{title}</strong>
+                    <div style={{ fontSize: "0.9rem", opacity: 0.75, marginTop: 4 }}>{meta}</div>
+                    {tab === "posts" && author && !author.show_on_timeline && (
+                        <div style={{ fontSize: "0.82rem", color: "#9a3412", marginTop: 4 }}>
+                            Author is hidden, so this post stays hidden publicly.
+                        </div>
+                    )}
+                </div>
+
+                <span style={{ whiteSpace: "nowrap", color: status === "public" ? "#2f7d32" : "#9a3412" }}>
+                    {status}
+                </span>
+            </div>
+
+            <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
+                <label style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 0 }}>
+                    <input
+                        type="checkbox"
+                        checked={!!isVisible}
+                        disabled={saving}
+                        onChange={onToggle}
+                    />
+                    {isAuthor ? "Author allowed" : "Visible"}
+                </label>
+
+                {editUrl && <Link to={editUrl}>Edit</Link>}
+
+                {tab === "posts" && item.external_url && (
+                    <a href={item.external_url} target="_blank" rel="noreferrer">Open source</a>
+                )}
+
+                {tab === "posts" && (
+                    <button
+                        type="button"
+                        className="btn-delete"
+                        disabled={saving}
+                        onClick={onDelete}
+                    >
+                        Delete
+                    </button>
+                )}
+            </div>
         </div>
     );
 }

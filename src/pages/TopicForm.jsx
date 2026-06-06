@@ -451,7 +451,7 @@ export default function TopicForm() {
                                                 onChange={(e) => updateNewPost(index, "platform", e.target.value)}
                                             >
                                                 <option value="ig">Instagram</option>
-                                                <option value="x">X</option>
+                                                <option value="x">X (Twitter)</option>
                                                 <option value="tt">TikTok</option>
                                             </select>
                                         </div>

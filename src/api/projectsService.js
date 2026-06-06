@@ -8,6 +8,12 @@ export const getProjects = ({ sort, category } = {}) => {
 
 export const getProject = (id) => api.get(`/projects/${id}`);
 
+export const getAdminProjects = ({ limit = 50, offset = 0, sort = "newest", category } = {}) => {
+    let url = `/projects/admin?limit=${limit}&offset=${offset}&sort=${sort}`;
+    if (category) url += `&category=${encodeURIComponent(category)}`;
+    return api.get(url);
+};
+
 export const createProject = (data) => api.post("/projects", data);
 
 export const updateProject = (id, data) => api.patch(`/projects/${id}`, data);

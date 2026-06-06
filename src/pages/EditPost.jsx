@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { getAdminPost, updatePost } from "../api/postsService";
 import { getAuthors } from "../api/authorsService";
 import { ROUTES } from "../routes";
+import { isImage, isVideo } from "../utils/media";
 import "../styles/EventForm.css";
 
 export default function EditPost() {
@@ -116,6 +117,12 @@ export default function EditPost() {
     if (loading) return <div>Loading...</div>;
     if (!post) return <div>Post not found</div>;
 
+    const previewItems = platform === "ig" && !externalURL.trim()
+        ? mediaItems.filter((item) => item.url.trim())
+        : mediaURL.trim()
+            ? [{ url: mediaURL.trim(), text: "", translation: "", note: "" }]
+            : [];
+
     // -----------------------------
     // SAVE CHANGES
     // -----------------------------
@@ -164,6 +171,13 @@ export default function EditPost() {
     return (
         <div style={{ padding: 20, maxWidth: 800, margin: "0 auto" }}>
             <h2>Edit Post #{postId}</h2>
+
+            <CompactPostPreview
+                platform={platform}
+                externalURL={externalURL}
+                caption={caption}
+                previewItems={previewItems}
+            />
 
             <form className="eventform-form" onSubmit={saveChanges}>
 
@@ -343,6 +357,130 @@ export default function EditPost() {
                 </div>
 
             </form>
+        </div>
+    );
+}
+
+function CompactPostPreview({ platform, externalURL, caption, previewItems }) {
+    const hasExternal = !!externalURL.trim();
+    const hasMedia = previewItems.length > 0;
+
+    if (!hasExternal && !hasMedia && !caption) return null;
+
+    return (
+        <div
+            className="eventform-section"
+            style={{
+                border: "1px solid rgba(0,0,0,0.14)",
+                borderRadius: 8,
+                padding: 12,
+                background: "#fff",
+            }}
+        >
+            <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center" }}>
+                <strong style={{ fontSize: "0.95rem" }}>Current preview</strong>
+                <span style={{ fontSize: "0.82rem", opacity: 0.65 }}>{platform}</span>
+            </div>
+
+            {hasExternal && (
+                <a
+                    href={externalURL}
+                    target="_blank"
+                    rel="noreferrer"
+                    style={{ display: "block", marginTop: 8, fontSize: "0.86rem", wordBreak: "break-all" }}
+                >
+                    {externalURL}
+                </a>
+            )}
+
+            {hasMedia && (
+                <div
+                    style={{
+                        display: "grid",
+                        gridTemplateColumns: "repeat(auto-fill, minmax(82px, 1fr))",
+                        gap: 8,
+                        marginTop: 10,
+                    }}
+                >
+                    {previewItems.map((item, index) => (
+                        <CompactMediaTile key={`${item.url}-${index}`} item={item} index={index} />
+                    ))}
+                </div>
+            )}
+
+            {caption && (
+                <div
+                    style={{
+                        marginTop: 10,
+                        fontSize: "0.86rem",
+                        opacity: 0.78,
+                        whiteSpace: "nowrap",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                    }}
+                >
+                    {caption}
+                </div>
+            )}
+        </div>
+    );
+}
+
+function CompactMediaTile({ item, index }) {
+    const url = item.url.trim();
+
+    return (
+        <div style={{ minWidth: 0 }}>
+            <div
+                style={{
+                    position: "relative",
+                    width: "100%",
+                    aspectRatio: "1 / 1",
+                    borderRadius: 8,
+                    overflow: "hidden",
+                    background: "#f4f4f4",
+                    border: "1px solid rgba(0,0,0,0.08)",
+                }}
+            >
+                {isVideo(url) ? (
+                    <video
+                        src={url}
+                        muted
+                        playsInline
+                        preload="metadata"
+                        style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+                    />
+                ) : isImage(url) ? (
+                    <img
+                        src={url}
+                        alt=""
+                        loading="lazy"
+                        style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+                    />
+                ) : (
+                    <div style={{ padding: 8, fontSize: "0.72rem", wordBreak: "break-word" }}>Media</div>
+                )}
+
+                <span
+                    style={{
+                        position: "absolute",
+                        left: 6,
+                        top: 6,
+                        borderRadius: 999,
+                        padding: "2px 6px",
+                        background: "rgba(0,0,0,0.62)",
+                        color: "#fff",
+                        fontSize: "0.7rem",
+                    }}
+                >
+                    {index + 1}
+                </span>
+            </div>
+            {(item.translation || item.note) && (
+                <div style={{ marginTop: 4, fontSize: "0.72rem", opacity: 0.7 }}>
+                    {item.translation ? "translation" : "note"}
+                </div>
+            )}
         </div>
     );
 }

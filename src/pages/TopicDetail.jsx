@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { deleteTopic, getTopic } from "../api/topicsService";
+import { deleteTopic, getTopic, updateTopicItemTime } from "../api/topicsService";
 import { ROUTES } from "../routes";
 import PostCard from "../components/PostCard";
 import "../styles/Home.css";
@@ -49,10 +49,19 @@ function getTopicPost(item) {
     };
 }
 
+function getDateTimeInputValue(item) {
+    if (item.happened_at) return item.happened_at;
+    if (item.post?.posted_at) return `${item.post.posted_at.slice(0, 10)}T00:00`;
+    return "";
+}
+
 export default function TopicDetail() {
     const { topicId } = useParams();
     const [topic, setTopic] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [editingTimeId, setEditingTimeId] = useState(null);
+    const [timeDraft, setTimeDraft] = useState("");
+    const [savingTimeId, setSavingTimeId] = useState(null);
 
     useEffect(() => {
         async function load() {
@@ -81,6 +90,29 @@ export default function TopicDetail() {
 
     if (loading) return <div style={{ padding: 20 }}>Loading...</div>;
     if (!topic) return <div style={{ padding: 20 }}>Special not found.</div>;
+
+    async function saveApproxTime(item) {
+        setSavingTimeId(item.id);
+
+        try {
+            const nextTime = timeDraft.trim() || null;
+            await updateTopicItemTime(item.id, { happened_at: nextTime });
+
+            setTopic((current) => ({
+                ...current,
+                items: (current.items || []).map((row) =>
+                    row.id === item.id ? { ...row, happened_at: nextTime } : row
+                ),
+            }));
+            setEditingTimeId(null);
+            setTimeDraft("");
+        } catch (err) {
+            console.error("Save approximate time failed:", err);
+            alert("Could not save approximate time.");
+        } finally {
+            setSavingTimeId(null);
+        }
+    }
 
     return (
         <div className="topic-detail-container">
@@ -126,7 +158,49 @@ export default function TopicDetail() {
                 {items.map((item) => (
                     <div className="topic-timeline-item" key={item.id}>
                         <div className="topic-timeline-time">
-                            <strong>{formatDateTime(item.happened_at || item.post?.posted_at)}</strong>
+                            {editingTimeId === item.id ? (
+                                <div style={{ display: "grid", gap: 6 }}>
+                                    <input
+                                        type="datetime-local"
+                                        value={timeDraft}
+                                        onChange={(e) => setTimeDraft(e.target.value)}
+                                        style={{ width: "100%", boxSizing: "border-box" }}
+                                    />
+                                    <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                                        <button
+                                            type="button"
+                                            onClick={() => saveApproxTime(item)}
+                                            disabled={savingTimeId === item.id}
+                                        >
+                                            Save
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setEditingTimeId(null);
+                                                setTimeDraft("");
+                                            }}
+                                            disabled={savingTimeId === item.id}
+                                        >
+                                            Cancel
+                                        </button>
+                                    </div>
+                                </div>
+                            ) : (
+                                <>
+                                    <strong>{formatDateTime(item.happened_at || item.post?.posted_at)}</strong>
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setEditingTimeId(item.id);
+                                            setTimeDraft(getDateTimeInputValue(item));
+                                        }}
+                                        style={{ marginTop: 6, fontSize: "0.8rem" }}
+                                    >
+                                        Edit time
+                                    </button>
+                                </>
+                            )}
                             {item.label && <div>{item.label}</div>}
                             {item.note && <div className="topic-timeline-note">{item.note}</div>}
                         </div>
