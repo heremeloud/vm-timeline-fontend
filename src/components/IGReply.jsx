@@ -125,6 +125,9 @@ export default function IGReply({ reply }) {
                                         <video
                                             src={main.media_url}
                                             controls
+                                            playsInline
+                                            muted
+                                            preload="metadata"
                                             onError={(e) =>
                                                 (e.target.style.display =
                                                     "none")

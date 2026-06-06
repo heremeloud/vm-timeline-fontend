@@ -12,6 +12,7 @@ function MediaItem({ url, caption }) {
                 src={url}
                 controls
                 playsInline
+                muted
                 preload="metadata"
                 style={{
                     width: "100%",
