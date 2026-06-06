@@ -160,7 +160,7 @@ export default function Home() {
             </div>
 
             {/* Filters */}
-            <div className="filter-bar">
+            <div className="filter-bar filter-bar--two-row">
                 <div className="filter-group">
                     <label>Platform</label>
                     <select

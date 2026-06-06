@@ -101,20 +101,20 @@
 }
 
 .filter-bar--two-row .filter-row .filter-group:first-child label {
-    min-width: 94px;
+    min-width: 90px;
 }
 
 .filter-bar--two-row .filter-row .filter-group:last-child label {
-    min-width: 42px;
+    min-width: 40px;
 }
 
 .filter-bar--two-row .filter-row .filter-group:first-child input,
 .filter-bar--two-row .filter-row .filter-group:first-child select {
-    width: 160px;
+    width: 140px;
 }
 
 .filter-bar--two-row .filter-row .filter-group:last-child select {
-    width: 150px;
+    width: 140px;
 }
 
 .filter-group {

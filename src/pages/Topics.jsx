@@ -34,7 +34,7 @@ export default function Topics() {
         <div className="home-container">
             <div className="home-header">
                 <h1 style={{ marginBottom: "0.2rem" }}>ViewMim</h1>
-                <h1 style={{ marginTop: "0.2rem" }}>🤎Special🤍</h1>
+                <h1 style={{ marginTop: "0.2rem" }}>🤎Specials🤍</h1>
                 <p>Little timelines of the moments that matter</p>
                 <p><strong>- work in progress - </strong></p>
                 <hr />

@@ -131,7 +131,9 @@ export default function Events() {
                 <p>Event timeline (fanmeets, shows, lives, etc.)</p>
                 <p><strong>- solo events in 2025: work in progress - </strong></p>
                 <small style={{ opacity: 0.7 }}>
-                    ※ Click a badge to copy the Twitter search query (⚠️ be aware of Twitter's search limit) ※
+                    ※ Click a badge to copy the Twitter search query ※
+                    <br />
+                    (⚠️ be aware of Twitter's search limit) 
                 </small>
                 <hr />
             </div>
