@@ -41,6 +41,18 @@
     margin-top: 20px;
 }
 
+.tweet-embed-wrapper {
+    width: 100%;
+    max-width: 550px;
+    min-width: 0;
+    margin: 0 auto;
+}
+
+.tweet-embed-wrapper iframe,
+.tweet-embed-wrapper twitter-widget {
+    width: 100% !important;
+}
+
 .post-caption {
     margin-top: 20px;
 }

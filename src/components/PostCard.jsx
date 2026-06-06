@@ -13,7 +13,7 @@ import IGReply from "./IGReply";
 import TweetReply from "./TweetReply";
 import TikTokReply from "./TikTokReply";
 
-export default function PostCard({ post }) {
+export default function PostCard({ post, showReplies = true }) {
     const isInstagram = post.platform === "ig" || post.platform === "instagram";
     const isTwitter = post.platform === "x" || post.platform === "twitter";
     const isTikTok = post.platform === "tt" || post.platform === "tiktok";
@@ -26,6 +26,14 @@ export default function PostCard({ post }) {
 
         async function load() {
             try {
+                if (!showReplies) {
+                    if (!cancelled) {
+                        setComments([]);
+                        setChildrenPosts([]);
+                    }
+                    return;
+                }
+
                 // Always load PostText (used by IG + TikTok)
                 const cRes = await getTextsByPost(post.id);
                 if (!cancelled) setComments(cRes.data);
@@ -53,7 +61,7 @@ export default function PostCard({ post }) {
         return () => {
             cancelled = true;
         };
-    }, [post.id, isTwitter]);
+    }, [post.id, isTwitter, showReplies]);
 
     // IG replies — flat list (translation + note live on the same record)
     const igReplies = useMemo(() => {
@@ -136,7 +144,7 @@ export default function PostCard({ post }) {
                 </div>
             )}
 
-            {isInstagram && igReplies.length > 0 && (
+            {showReplies && isInstagram && igReplies.length > 0 && (
                 <div className="reply-section">
                     <span className="reply-section-label">Instagram Reply</span>
                     {igReplies.map((reply) => (
@@ -145,7 +153,7 @@ export default function PostCard({ post }) {
                 </div>
             )}
 
-            {isTikTok && ttReplies.length > 0 && (
+            {showReplies && isTikTok && ttReplies.length > 0 && (
                 <div className="reply-section">
                     <span className="reply-section-label">TikTok Reply</span>
                     {ttReplies.map((reply) => (
@@ -154,7 +162,7 @@ export default function PostCard({ post }) {
                 </div>
             )}
 
-            {isTwitter && childrenPosts.length > 0 && (
+            {showReplies && isTwitter && childrenPosts.length > 0 && (
                 <div className="reply-section">
                     <span className="reply-section-label">Tweet Reply</span>
                     {childrenPosts.map((child) => (

@@ -19,6 +19,10 @@ import ProjectDetail from "./pages/ProjectDetail";
 import CreateProject from "./pages/CreateProject";
 import EditProject from "./pages/EditProject";
 import Archive from "./pages/Archive";
+import ManageDisplay from "./pages/ManageDisplay";
+import Topics from "./pages/Topics";
+import TopicDetail from "./pages/TopicDetail";
+import TopicForm from "./pages/TopicForm";
 
 import "./App.css";
 
@@ -40,6 +44,51 @@ function App() {
                 <Route path="/admin" element={<AdminLogin />} />
 
                 {/* PROTECTED ROUTES */}
+                <Route
+                    path="/manage-display"
+                    element={
+                        <ProtectedRoute>
+                            <ManageDisplay />
+                        </ProtectedRoute>
+                    }
+                />
+
+                <Route
+                    path="/specials"
+                    element={
+                        <ProtectedRoute>
+                            <Topics />
+                        </ProtectedRoute>
+                    }
+                />
+
+                <Route
+                    path="/specials/:topicId"
+                    element={
+                        <ProtectedRoute>
+                            <TopicDetail />
+                        </ProtectedRoute>
+                    }
+                />
+
+                <Route
+                    path="/create-special"
+                    element={
+                        <ProtectedRoute>
+                            <TopicForm />
+                        </ProtectedRoute>
+                    }
+                />
+
+                <Route
+                    path="/edit-special/:topicId"
+                    element={
+                        <ProtectedRoute>
+                            <TopicForm />
+                        </ProtectedRoute>
+                    }
+                />
+
                 <Route
                     path="/create-post"
                     element={

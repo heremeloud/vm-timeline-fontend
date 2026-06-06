@@ -38,6 +38,15 @@ export default function Header() {
                     >
                         Projects
                     </NavLink>
+
+                    <NavLink
+                        to={ROUTES.topics}
+                        className={({ isActive }) =>
+                            isActive ? "nav-link active" : "nav-link"
+                        }
+                    >
+                        Specials
+                    </NavLink>
                 </nav>
             </div>
         </header>

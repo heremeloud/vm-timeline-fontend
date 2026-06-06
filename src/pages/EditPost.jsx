@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { getPost, updatePost } from "../api/postsService";
+import { getAdminPost, updatePost } from "../api/postsService";
 import { getAuthors } from "../api/authorsService";
 import { ROUTES } from "../routes";
 import "../styles/EventForm.css";
@@ -26,6 +26,7 @@ export default function EditPost() {
     const [mediaURL, setMediaURL] = useState("");
     const [mediaItems, setMediaItems] = useState([{ url: "", text: "", translation: "", note: "" }]);
     const [postedAt, setPostedAt] = useState("");
+    const [isVisible, setIsVisible] = useState(true);
 
     // -----------------------------
     // URL NORMALIZATION HELPERS
@@ -81,7 +82,7 @@ export default function EditPost() {
             const aRes = await getAuthors();
             setAuthors(aRes.data);
 
-            const res = await getPost(postId);
+            const res = await getAdminPost(postId);
             const p = res.data.post;
 
             setPost(p);
@@ -105,6 +106,7 @@ export default function EditPost() {
                     : [{ url: "", text: "", translation: "", note: "" }];
             setMediaItems(parsed);
             setPostedAt(p.posted_at || "");
+            setIsVisible(p.is_visible ?? true);
 
             setLoading(false);
         }
@@ -150,6 +152,7 @@ export default function EditPost() {
             media_url: isIGStory ? null : (mediaURL || null),
             media_urls_json: JSON.stringify(filteredMediaItems),
             posted_at: postedAt,
+            is_visible: isVisible,
         });
 
         navigate(ROUTES.home);
@@ -322,6 +325,17 @@ export default function EditPost() {
                         onChange={(e) => setPostedAt(e.target.value)}
                         style={{ width: 180 }}
                     />
+                </div>
+
+                <div className="eventform-section">
+                    <label style={{ display: "flex", alignItems: "center", gap: 8, fontWeight: 600 }}>
+                        <input
+                            type="checkbox"
+                            checked={isVisible}
+                            onChange={(e) => setIsVisible(e.target.checked)}
+                        />
+                        Show this post on the public timeline
+                    </label>
                 </div>
 
                 <div className="eventform-section">
