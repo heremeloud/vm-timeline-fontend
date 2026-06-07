@@ -297,6 +297,14 @@
         font-size: 0.72rem;
     }
 
+    .archive-full-name {
+        line-height: 1.25;
+        min-height: 2.5em;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
     .archive-link {
         gap: 6px;
         padding: 8px 7px;
