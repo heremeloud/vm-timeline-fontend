@@ -126,12 +126,7 @@ select {
   background: white !important;
 }
 
-/* Center the header area */
-.home-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
+/* (duplicate removed — handled above) */
 
 /* Header block max width */
 .home-header {

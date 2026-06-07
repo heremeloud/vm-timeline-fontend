@@ -139,7 +139,7 @@ export default function Events() {
             </div>
 
             {/* Filters */}
-            <div className="filter-bar filter-bar--two-row">
+            <div className="filter-bar filter-bar--two-row filter-bar--events">
                 <div className="filter-row">
                     <div className="filter-group">
                         <label>Event Name</label>

@@ -7,6 +7,9 @@
     grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
     gap: 20px;
     margin-bottom: 40px;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 0 16px;
 }
 
 .project-card {
