@@ -4,6 +4,8 @@ export const getTopics = () => api.get("/topics/");
 
 export const getAdminTopics = () => api.get("/topics/admin");
 
+export const getAdminTopic = (id) => api.get(`/topics/admin/${id}`);
+
 export const getTopic = (id) => api.get(`/topics/${id}`);
 
 export const createTopic = (data) => api.post("/topics/", data);

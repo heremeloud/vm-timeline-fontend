@@ -2,16 +2,9 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { getTopics } from "../api/topicsService";
 import { ROUTES } from "../routes";
+import { formatCardDateRange } from "../utils/cardDate";
 import "../styles/Home.css";
 import "../styles/Topics.css";
-
-function formatTopicDateRange(topic) {
-    if (!topic.start_date && !topic.end_date) return "";
-    if (topic.start_date && topic.end_date && topic.start_date !== topic.end_date) {
-        return `${topic.start_date} - ${topic.end_date}`;
-    }
-    return topic.start_date || topic.end_date || "";
-}
 
 export default function Topics() {
     const [topics, setTopics] = useState([]);
@@ -42,7 +35,7 @@ export default function Topics() {
 
             <div className="topic-grid">
                 {topics.map((topic) => (
-                    <Link key={topic.id} to={ROUTES.topicDetail(topic.id)} className="topic-card">
+                    <Link key={topic.id} to={ROUTES.topicDetail(topic.slug || topic.id)} className="topic-card">
                         <div className="topic-card-thumb">
                             {topic.cover_url
                                 ? <img src={topic.cover_url} alt={topic.title} />
@@ -51,11 +44,8 @@ export default function Topics() {
                         </div>
                         <div className="topic-card-body">
                             <div className="topic-card-title">{topic.title}</div>
-                            {formatTopicDateRange(topic) && (
-                                <div className="topic-card-meta">{formatTopicDateRange(topic)}</div>
-                            )}
-                            {topic.original_title && (
-                                <div className="topic-card-meta">{topic.original_title}</div>
+                            {formatCardDateRange(topic) && (
+                                <div className="topic-card-meta topic-card-date">{formatCardDateRange(topic)}</div>
                             )}
                             {topic.description && (
                                 <div className="topic-card-meta">{topic.description}</div>

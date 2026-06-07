@@ -5,6 +5,7 @@ import { getTextsByPost } from "../api/textsService";
 import { getThread, deletePost } from "../api/postsService";
 import { ROUTES } from "../routes";
 
+import { isVideo } from "../utils/media";
 import InstagramEmbed from "./InstagramEmbed";
 import TweetEmbed from "./TweetEmbed";
 import TikTokEmbed from "./TikTokEmbed";
@@ -101,29 +102,66 @@ export default function PostCard({ post, showReplies = true }) {
                 </div>
             )}
             <div className="post-embed">
-                {isInstagram && (
-                    <InstagramEmbed
-                        external_url={post.external_url}
-                        media_url={post.media_url}
-                        media_urls={post.media_urls || []}
-                        caption={post.caption}
-                        author_id={post.author_id}
-                        author_name={post.author_name}
-                        author_photo={post.author_photo}
-                    />
-                )}
+                {post.is_adult ? (
+                    <div className="post-adult-card">
+                        {post.author_name && (
+                            <div className="post-adult-author">{post.author_name}</div>
+                        )}
+                        {post.external_url && (
+                            <a href={post.external_url} target="_blank" rel="noopener noreferrer" className="post-adult-source">
+                                {isInstagram ? "Instagram post" : isTwitter ? "Tweet" : "TikTok"} ↗
+                            </a>
+                        )}
+                        {post.caption && (
+                            <p className="post-adult-caption">{post.caption}</p>
+                        )}
+                        {post.caption_translation && (
+                            <p className="post-adult-translation">{post.caption_translation}</p>
+                        )}
+                        {post.caption_translation_note && (
+                            <p className="post-adult-note">📝 {post.caption_translation_note}</p>
+                        )}
+                        {post.media_url && (
+                            isVideo(post.media_url) ? (
+                                <video
+                                    src={post.media_url}
+                                    controls
+                                    playsInline
+                                    muted
+                                    className="post-adult-media"
+                                />
+                            ) : (
+                                <img src={post.media_url} alt="" className="post-adult-media" />
+                            )
+                        )}
+                    </div>
+                ) : (
+                    <>
+                        {isInstagram && (
+                            <InstagramEmbed
+                                external_url={post.external_url}
+                                media_url={post.media_url}
+                                media_urls={post.media_urls || []}
+                                caption={post.caption}
+                                author_id={post.author_id}
+                                author_name={post.author_name}
+                                author_photo={post.author_photo}
+                            />
+                        )}
 
-                {isTwitter && <TweetEmbed url={post.external_url} />}
+                        {isTwitter && <TweetEmbed url={post.external_url} />}
 
-                {isTikTok && (
-                    <TikTokEmbed
-                        external_url={post.external_url}
-                        media_url={post.media_url}
-                        caption={post.caption}
-                        author_id={post.author_id}
-                        author_name={post.author_name}
-                        author_photo={post.author_photo}
-                    />
+                        {isTikTok && (
+                            <TikTokEmbed
+                                external_url={post.external_url}
+                                media_url={post.media_url}
+                                caption={post.caption}
+                                author_id={post.author_id}
+                                author_name={post.author_name}
+                                author_photo={post.author_photo}
+                            />
+                        )}
+                    </>
                 )}
             </div>
 

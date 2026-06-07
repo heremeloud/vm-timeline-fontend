@@ -30,14 +30,8 @@
 
 .archive-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 24px;
-}
-
-@media (max-width: 520px) {
-    .archive-grid {
-        grid-template-columns: 1fr;
-    }
 }
 
 /* ── Profile card ── */
@@ -270,4 +264,57 @@
 
 .archive-cancel-btn:hover:not(:disabled) {
     background: #f5f5f5;
+}
+
+@media (max-width: 520px) {
+    .archive-container {
+        padding-left: 12px;
+        padding-right: 12px;
+    }
+
+    .archive-grid {
+        gap: 10px;
+    }
+
+    .archive-card {
+        padding: 18px 8px 16px;
+        border-radius: 12px;
+        gap: 8px;
+    }
+
+    .archive-photo-wrap {
+        width: clamp(70px, 22vw, 92px);
+        height: clamp(70px, 22vw, 92px);
+        border-width: 2px;
+    }
+
+    .archive-name {
+        font-size: 1.1rem;
+    }
+
+    .archive-full-name,
+    .archive-birthday {
+        font-size: 0.72rem;
+    }
+
+    .archive-link {
+        gap: 6px;
+        padding: 8px 7px;
+        border-radius: 8px;
+        font-size: clamp(0.68rem, 2.8vw, 0.78rem);
+    }
+
+    .archive-link-img {
+        width: 15px;
+        height: 15px;
+    }
+
+    .archive-link-icon {
+        width: 16px;
+        font-size: 0.88rem;
+    }
+
+    .archive-link-arrow {
+        display: none;
+    }
 }

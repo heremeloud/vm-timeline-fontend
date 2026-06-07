@@ -6,12 +6,21 @@ import { ROUTES } from "../routes";
 import { PROJECT_CATEGORIES } from "../constants/projectCategories";
 import "../styles/EventForm.css";
 
+function slugify(value) {
+    return value
+        .toLowerCase()
+        .trim()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-+|-+$/g, "");
+}
+
 export default function CreateProject() {
     const navigate = useNavigate();
     const [authors, setAuthors] = useState([]);
 
     const [title, setTitle] = useState("");
     const [originalTitle, setOriginalTitle] = useState("");
+    const [slug, setSlug] = useState("");
     const [category, setCategory] = useState("");
     const [thumbnailUrl, setThumbnailUrl] = useState("");
     const [year, setYear] = useState("");
@@ -56,6 +65,7 @@ export default function CreateProject() {
             await createProject({
                 title,
                 original_title: originalTitle || null,
+                slug: slug || null,
                 category: category || null,
                 thumbnail_url: thumbnailUrl || null,
                 year: year ? parseInt(year) : null,
@@ -90,12 +100,33 @@ export default function CreateProject() {
 
                 <div className="eventform-section">
                     <label>Title *</label>
-                    <input value={title} onChange={(e) => setTitle(e.target.value)} required placeholder="e.g. Girl Rules Series" />
+                    <input
+                        value={title}
+                        onChange={(e) => {
+                            const nextTitle = e.target.value;
+                            setTitle(nextTitle);
+                            if (!slug.trim()) setSlug(slugify(nextTitle));
+                        }}
+                        required
+                        placeholder="e.g. Girl Rules Series"
+                    />
                 </div>
 
                 <div className="eventform-section">
                     <label>Original Title <span style={{ fontWeight: 400, opacity: 0.6 }}>(Thai)</span></label>
                     <input value={originalTitle} onChange={(e) => setOriginalTitle(e.target.value)} placeholder="e.g. สาวน้อยสุดเก่ง" />
+                </div>
+
+                <div className="eventform-section">
+                    <label>URL slug</label>
+                    <input
+                        value={slug}
+                        onChange={(e) => setSlug(slugify(e.target.value))}
+                        placeholder="girl-rules-series"
+                    />
+                    <div style={{ fontSize: "0.85rem", opacity: 0.7, marginTop: 4 }}>
+                        Public URL: /projects/{slug || "your-project-slug"}
+                    </div>
                 </div>
 
                 <div className="eventform-section">

@@ -26,6 +26,7 @@ export default function CreatePost() {
     const [captionTranslationNote, setCaptionTranslationNote] = useState("");
     const [mediaURL, setMediaURL] = useState("");
     const [isVisible, setIsVisible] = useState(true);
+    const [isAdult, setIsAdult] = useState(false);
     // Multiple media items for IG stories: [{url, text, translation, note}]
     const [mediaItems, setMediaItems] = useState([{ url: "", text: "", translation: "", note: "" }]);
 
@@ -164,6 +165,7 @@ export default function CreatePost() {
                 posted_at,
                 parent_id: parent_id || null,
                 is_visible: isVisible,
+                is_adult: isAdult,
             });
 
             navigate(ROUTES.home);
@@ -379,6 +381,17 @@ export default function CreatePost() {
                     <small style={{ opacity: 0.7 }}>
                         New authors are hidden until you allow them at /manage-display.
                     </small>
+                </div>
+
+                <div className="eventform-section">
+                    <label style={{ display: "flex", alignItems: "center", gap: 8, fontWeight: 600, color: "#b00" }}>
+                        <input
+                            type="checkbox"
+                            checked={isAdult}
+                            onChange={(e) => setIsAdult(e.target.checked)}
+                        />
+                        🔞 Adult content (hides embed, shows link only)
+                    </label>
                 </div>
 
                 <div className="eventform-section">

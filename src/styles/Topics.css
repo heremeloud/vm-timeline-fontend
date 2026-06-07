@@ -64,6 +64,12 @@
     color: #999;
 }
 
+.topic-card-date {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
 .topic-detail-container {
     max-width: 880px;
     margin: 0 auto;

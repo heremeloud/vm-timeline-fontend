@@ -1,15 +1,19 @@
 import { useEffect, useState } from "react";
 import { deletePost, updatePost } from "../api/postsService";
 import TweetEmbed from "./TweetEmbed";
+import { isVideo } from "../utils/media";
+import "../styles/PostCard.css";
 
 export default function TweetReply({ reply }) {
     const [isEditing, setIsEditing] = useState(false);
 
+    const [editUrl, setEditUrl] = useState(reply.external_url || "");
     const [editCaption, setEditCaption] = useState(reply.caption);
     const [editTranslation, setEditTranslation] = useState(
         reply.caption_translation
     );
     const [editMedia, setEditMedia] = useState(reply.media_url);
+    const [editIsAdult, setEditIsAdult] = useState(reply.is_adult ?? false);
 
     useEffect(() => {
         // whenever edited reply comes back from server → re-render embed
@@ -36,9 +40,11 @@ export default function TweetReply({ reply }) {
 
     async function saveEdit() {
         await updatePost(reply.id, {
+            external_url: editUrl || null,
             caption: editCaption,
             caption_translation: editTranslation,
             media_url: editMedia || null,
+            is_adult: editIsAdult,
         });
 
         window.location.reload();
@@ -46,46 +52,57 @@ export default function TweetReply({ reply }) {
 
     return (
         <div style={{ padding: "14px 0", borderBottom: "1px solid #eee" }}>
-            {/* ALWAYS keep the tweet embed here */}
-            <TweetEmbed url={reply.external_url} />
-
             {/* Show translation + buttons only when not editing */}
             {!isEditing && (
                 <>
-                    {reply.caption_translation && (
-                        <div
-                            style={{
-                                opacity: 0.7,
-                                whiteSpace: "pre-wrap",
-                                wordBreak: "break-word",
-                                marginTop: "6px",
-                            }}
-                        >
-                            {reply.caption_translation}
+                    {reply.is_adult ? (
+                        <div className="post-adult-card">
+                            {reply.author_name && (
+                                <div className="post-adult-author">{reply.author_name}</div>
+                            )}
+                            {reply.external_url && (
+                                <a href={reply.external_url} target="_blank" rel="noopener noreferrer" className="post-adult-source">
+                                    Tweet ↗
+                                </a>
+                            )}
+                            {reply.caption && (
+                                <p className="post-adult-caption">{reply.caption}</p>
+                            )}
+                            {reply.caption_translation && (
+                                <p className="post-adult-translation">{reply.caption_translation}</p>
+                            )}
+                            {reply.media_url && (
+                                isVideo(reply.media_url) ? (
+                                    <video
+                                        src={reply.media_url}
+                                        controls
+                                        playsInline
+                                        muted
+                                        className="post-adult-media"
+                                    />
+                                ) : (
+                                    <img src={reply.media_url} alt="" className="post-adult-media" />
+                                )
+                            )}
                         </div>
+                    ) : (
+                        <>
+                            <TweetEmbed url={reply.external_url} />
+                            {reply.caption_translation && (
+                                <div style={{ opacity: 0.7, whiteSpace: "pre-wrap", wordBreak: "break-word", marginTop: "6px" }}>
+                                    {reply.caption_translation}
+                                </div>
+                            )}
+                            {reply.media_url && (
+                                <img src={reply.media_url} alt="reply-media" style={{ maxWidth: "100%", marginTop: 10 }} />
+                            )}
+                        </>
                     )}
 
-                    {reply.media_url && (
-                        <img
-                            src={reply.media_url}
-                            alt="reply-media"
-                            style={{ maxWidth: "100%", marginTop: 10 }}
-                        />
-                    )}
                     {localStorage.getItem("jwt") && (
                         <div style={{ marginTop: 8, display: "flex", gap: 10 }}>
-                            <button
-                                onClick={() => setIsEditing(true)}
-                                className="btn btn-edit"
-                            >
-                                Edit
-                            </button>
-                            <button
-                                onClick={handleDelete}
-                                className="btn btn-delete"
-                            >
-                                Delete
-                            </button>
+                            <button onClick={() => setIsEditing(true)} className="btn btn-edit">Edit</button>
+                            <button onClick={handleDelete} className="btn btn-delete">Delete</button>
                         </div>
                     )}
                 </>
@@ -94,6 +111,14 @@ export default function TweetReply({ reply }) {
             {/* ================= EDIT MODE ================= */}
             {isEditing && (
                 <div style={{ marginTop: 10 }}>
+                    <label>Tweet URL:</label>
+                    <input
+                        type="text"
+                        value={editUrl}
+                        onChange={(e) => setEditUrl(e.target.value)}
+                        style={{ width: "100%" }}
+                    />
+                    <br />
                     <label>Caption:</label>
                     <textarea
                         value={editCaption}
@@ -117,6 +142,16 @@ export default function TweetReply({ reply }) {
                         onChange={(e) => setEditMedia(e.target.value)}
                         style={{ resize: "none", width: "100%" }}
                     />
+
+                    <label style={{ display: "flex", alignItems: "center", gap: 6, fontWeight: 600, color: "#b00", margin: "10px 0 4px", width: "auto", cursor: "pointer" }}>
+                        <input
+                            type="checkbox"
+                            checked={editIsAdult}
+                            onChange={(e) => setEditIsAdult(e.target.checked)}
+                            style={{ width: "auto", margin: 0 }}
+                        />
+                        🔞 Adult content
+                    </label>
 
                     <div style={{ display: "flex", gap: 10 }}>
                         <button onClick={saveEdit} className="btn btn-primary">

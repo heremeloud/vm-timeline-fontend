@@ -17,6 +17,7 @@ const SOCIAL_FIELDS = [
     { key: "instagram_url", label: "Instagram",     imgSrc: "https://cdn.simpleicons.org/instagram",      placeholder: "https://instagram.com/..." },
     { key: "tiktok_url",    label: "TikTok",        imgSrc: "https://cdn.simpleicons.org/tiktok/000000",  placeholder: "https://tiktok.com/@..." },
     { key: "gmmtv_url",     label: "GMMTV",         imgSrc: "/icons/gmmtv_logo.svg",                     placeholder: "https://www.gmmtv.com/..." },
+    { key: "mydramalist_url", label: "MyDramaList", imgSrc: "https://mydramalist.com/favicon.ico",       placeholder: "https://mydramalist.com/people/..." },
     { key: "fc_url",        label: "Official FC",   imgSrc: null,                                         placeholder: "https://..." },
 ];
 
@@ -47,6 +48,7 @@ function ProfileCard({ author: initialAuthor, defaultPhoto, fcLink, fcIcon = "ðŸ
             instagram_url: author.instagram_url || "",
             tiktok_url: author.tiktok_url || "",
             gmmtv_url: author.gmmtv_url || "",
+            mydramalist_url: author.mydramalist_url || "",
             fc_url: author.fc_url || "",   // individual FC
         });
         setPhotoFile(null);

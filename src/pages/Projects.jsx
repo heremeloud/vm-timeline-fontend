@@ -4,6 +4,7 @@ import { getProjects } from "../api/projectsService";
 import { ROUTES } from "../routes";
 import Avatar from "../components/Avatar";
 import { PROJECT_CATEGORIES } from "../constants/projectCategories";
+import { formatCardDateRange } from "../utils/cardDate";
 import "../styles/Home.css";
 import "../styles/Projects.css";
 
@@ -62,7 +63,7 @@ export default function Projects() {
             {/* Project Cards Grid */}
             <div className="projects-grid">
                 {projects.map((p) => (
-                    <Link key={p.id} to={ROUTES.projectDetail(p.id)} className="project-card">
+                    <Link key={p.id} to={ROUTES.projectDetail(p.slug || p.id)} className="project-card">
                         <div className="project-card-thumb">
                             {p.thumbnail_url
                                 ? <img src={p.thumbnail_url} alt={p.title} />
@@ -71,27 +72,19 @@ export default function Projects() {
                         </div>
 
                         <div className="project-card-body">
-                            {p.category && (
-                                <span className="project-card-category">
-                                    {p.category.toUpperCase()}
-                                </span>
-                            )}
+                            <span className={`project-card-category ${p.category ? "" : "project-card-category--empty"}`}>
+                                {p.category ? p.category.toUpperCase() : "\u00a0"}
+                            </span>
 
                             <div className="project-card-title">{p.title}</div>
 
-                            {p.parent_project && (
-                                <div className="project-card-parent">
-                                    ↩ {p.parent_project.title}
-                                </div>
-                            )}
+                            <div className={`project-card-parent ${p.parent_project ? "" : "project-card-parent--empty"}`}>
+                                {p.parent_project ? `↩ ${p.parent_project.title}` : "\u00a0"}
+                            </div>
 
-                            {(p.start_date || p.year) && (
-                                <div className="project-card-year">
-                                    {p.start_date
-                                        ? p.start_date + (p.end_date ? ` – ${p.end_date}` : "")
-                                        : p.year}
-                                </div>
-                            )}
+                            <div className={`project-card-year ${p.start_date || p.year ? "" : "project-card-year--empty"}`}>
+                                {formatCardDateRange(p) || "\u00a0"}
+                            </div>
 
                             {p.authors?.length > 0 && (
                                 <div className="project-card-authors">

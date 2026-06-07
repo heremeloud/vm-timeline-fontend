@@ -91,7 +91,7 @@ export default function ProjectDetail() {
 
                 <div className="project-detail-info">
                     {project.parent_project && (
-                        <Link to={ROUTES.projectDetail(project.parent_project.id)} className="project-detail-parent-link">
+                        <Link to={ROUTES.projectDetail(project.parent_project.slug || project.parent_project.id)} className="project-detail-parent-link">
                             {project.parent_project.category && (
                                 <span className="project-detail-parent-category">{project.parent_project.category.toUpperCase()}</span>
                             )}
@@ -242,7 +242,7 @@ export default function ProjectDetail() {
                 <div className="project-detail-events">
                     <div className="project-detail-playlist-label">Related Projects</div>
                     {project.child_projects.map((child) => (
-                        <Link key={child.id} to={ROUTES.projectDetail(child.id)} className="project-detail-child-project">
+                        <Link key={child.id} to={ROUTES.projectDetail(child.slug || child.id)} className="project-detail-child-project">
                             {child.thumbnail_url && (
                                 <img src={child.thumbnail_url} alt={child.title} className="project-detail-child-thumb" />
                             )}

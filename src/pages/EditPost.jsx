@@ -28,6 +28,7 @@ export default function EditPost() {
     const [mediaItems, setMediaItems] = useState([{ url: "", text: "", translation: "", note: "" }]);
     const [postedAt, setPostedAt] = useState("");
     const [isVisible, setIsVisible] = useState(true);
+    const [isAdult, setIsAdult] = useState(false);
 
     // -----------------------------
     // URL NORMALIZATION HELPERS
@@ -108,6 +109,7 @@ export default function EditPost() {
             setMediaItems(parsed);
             setPostedAt(p.posted_at || "");
             setIsVisible(p.is_visible ?? true);
+            setIsAdult(p.is_adult ?? false);
 
             setLoading(false);
         }
@@ -160,6 +162,7 @@ export default function EditPost() {
             media_urls_json: JSON.stringify(filteredMediaItems),
             posted_at: postedAt,
             is_visible: isVisible,
+            is_adult: isAdult,
         });
 
         navigate(ROUTES.home);
@@ -349,6 +352,17 @@ export default function EditPost() {
                             onChange={(e) => setIsVisible(e.target.checked)}
                         />
                         Show this post on the public timeline
+                    </label>
+                </div>
+
+                <div className="eventform-section">
+                    <label style={{ display: "flex", alignItems: "center", gap: 8, fontWeight: 600, color: "#b00" }}>
+                        <input
+                            type="checkbox"
+                            checked={isAdult}
+                            onChange={(e) => setIsAdult(e.target.checked)}
+                        />
+                        🔞 Adult content (hides embed, shows link only)
                     </label>
                 </div>
 

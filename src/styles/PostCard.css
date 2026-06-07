@@ -1,3 +1,55 @@
+.post-adult-card {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.post-adult-author {
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: #555;
+}
+
+.post-adult-source {
+    font-size: 0.88rem;
+    color: #955803;
+    text-decoration: none;
+    display: inline-block;
+}
+
+.post-adult-source:hover {
+    text-decoration: underline;
+}
+
+.post-adult-caption {
+    font-size: 0.9rem;
+    white-space: pre-wrap;
+    margin: 0;
+    line-height: 1.5;
+}
+
+.post-adult-translation {
+    font-size: 0.9rem;
+    white-space: pre-wrap;
+    opacity: 0.72;
+    margin: 0;
+    line-height: 1.5;
+}
+
+.post-adult-note {
+    font-size: 0.82rem;
+    color: #888;
+    margin: 0;
+}
+
+.post-adult-media {
+    width: 100%;
+    max-width: 500px;
+    border-radius: 10px;
+    margin-top: 4px;
+    display: block;
+}
+
 .post-wrapper {
     /* width: 100%; */
     /* max-width:750px; */

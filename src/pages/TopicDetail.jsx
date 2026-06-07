@@ -33,19 +33,27 @@ function getSortTime(item) {
 }
 
 function getTopicPost(item) {
-    const mediaIndex = item.media_index;
-    if (mediaIndex === null || mediaIndex === undefined || mediaIndex === "") {
+    const selectedIndexes = item.media_indices?.length
+        ? item.media_indices
+        : item.media_index !== null && item.media_index !== undefined && item.media_index !== ""
+            ? [Number(item.media_index)]
+            : [];
+
+    if (selectedIndexes.length === 0) {
         return item.post;
     }
 
     const mediaItems = item.post?.media_urls || [];
-    const selectedMedia = mediaItems[Number(mediaIndex)];
-    if (!selectedMedia) return item.post;
+    const selectedMediaItems = selectedIndexes
+        .map((index) => mediaItems[Number(index)])
+        .filter(Boolean);
+
+    if (selectedMediaItems.length === 0) return item.post;
 
     return {
         ...item.post,
-        media_urls: [selectedMedia],
-        media_url: selectedMedia.url || item.post.media_url,
+        media_urls: selectedMediaItems,
+        media_url: selectedMediaItems[0]?.url || item.post.media_url,
     };
 }
 
@@ -126,9 +134,6 @@ export default function TopicDetail() {
 
                 <div className="topic-detail-info">
                     <h1 className="topic-detail-title">{topic.title}</h1>
-                    {topic.original_title && (
-                        <div className="topic-detail-original">{topic.original_title}</div>
-                    )}
                     {formatTopicDateRange(topic) && (
                         <div className="topic-detail-original">{formatTopicDateRange(topic)}</div>
                     )}

@@ -16,6 +16,7 @@ export default function Home() {
     const [jumpPage, setJumpPage] = useState("");
 
     const [lastPage, setLastPage] = useState(null); // discovered last page
+    const [lastUpdated, setLastUpdated] = useState(null);
     const LIMIT = 10;
 
     // Fetch ONLY the base posts for a page (no replies)
@@ -130,6 +131,19 @@ export default function Home() {
         }
     }
 
+    // Fetch the most recent post once to show last updated date
+    useEffect(() => {
+        getPosts({ limit: 1, offset: 0, sort: "newest" }).then((res) => {
+            const newest = res.data?.[0];
+            if (newest?.posted_at) {
+                const raw = newest.posted_at;
+                const normalized = raw.includes("T") ? raw : `${raw}T00:00`;
+                const date = new Date(normalized);
+                setLastUpdated(date.toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" }));
+            }
+        }).catch(() => {});
+    }, []);
+
     // Load whenever page/filter/sort changes
     useEffect(() => {
         load();
@@ -152,7 +166,7 @@ export default function Home() {
                 <h1 style={{ marginBottom: "0.2rem" }}>ViewMim Interaction</h1>
                 <h1 style={{ marginTop: "0.2rem" }}>🤎Timeline🤍</h1>
                 <p>Collecting ViewMim social media interactions</p>
-                <p>Last update: June 5, 2026</p>
+                {lastUpdated && <p>Last update: {lastUpdated}</p>}
                 <small style={{ opacity: 0.7 }}>
                     ※ IG stories are included starting 2026 ※
                 </small>

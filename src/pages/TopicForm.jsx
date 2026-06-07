@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { createPost, getAdminPosts } from "../api/postsService";
 import { ensureAuthor, getAuthors } from "../api/authorsService";
-import { createTopic, getTopic, updateTopic } from "../api/topicsService";
+import { createTopic, getAdminTopic, updateTopic } from "../api/topicsService";
 import { ROUTES } from "../routes";
 import "../styles/EventForm.css";
 import "../styles/Topics.css";
@@ -31,6 +31,7 @@ function createEmptyItem(sortOrder = 0) {
         note: "",
         show_replies: true,
         media_index: "",
+        media_indices: [],
         sort_order: sortOrder,
     };
 }
@@ -77,13 +78,21 @@ function getDefaultApproxTime(post) {
     return `${post.posted_at.slice(0, 10)}T00:00`;
 }
 
+function slugify(value) {
+    return value
+        .toLowerCase()
+        .trim()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-+|-+$/g, "");
+}
+
 export default function TopicForm() {
     const { topicId } = useParams();
     const navigate = useNavigate();
     const isEdit = !!topicId;
 
     const [title, setTitle] = useState("");
-    const [originalTitle, setOriginalTitle] = useState("");
+    const [slug, setSlug] = useState("");
     const [description, setDescription] = useState("");
     const [coverUrl, setCoverUrl] = useState("");
     const [startDate, setStartDate] = useState("");
@@ -111,10 +120,10 @@ export default function TopicForm() {
 
         async function loadTopic() {
             try {
-                const res = await getTopic(topicId);
+                const res = await getAdminTopic(topicId);
                 const topic = res.data.topic;
                 setTitle(topic.title || "");
-                setOriginalTitle(topic.original_title || "");
+                setSlug(topic.slug || "");
                 setDescription(topic.description || "");
                 setCoverUrl(topic.cover_url || "");
                 setStartDate(topic.start_date || "");
@@ -131,6 +140,11 @@ export default function TopicForm() {
                             note: item.note || "",
                             show_replies: item.show_replies ?? true,
                             media_index: item.media_index ?? "",
+                            media_indices: item.media_indices?.length
+                                ? item.media_indices
+                                : item.media_index !== null && item.media_index !== undefined
+                                    ? [item.media_index]
+                                    : [],
                             sort_order: item.sort_order ?? index,
                         }))
                         : [createEmptyItem()]
@@ -282,13 +296,14 @@ export default function TopicForm() {
                     note: item.note.trim() || null,
                     show_replies: item.show_replies ?? true,
                     media_index: item.media_index === "" ? null : Number(item.media_index),
+                    media_indices: item.media_indices || [],
                     sort_order: index,
                 });
             }
 
             const payload = {
                 title,
-                original_title: originalTitle || null,
+                slug: slug || null,
                 description: description || null,
                 cover_url: coverUrl || null,
                 start_date: startDate || null,
@@ -301,7 +316,7 @@ export default function TopicForm() {
                 ? await updateTopic(topicId, payload)
                 : await createTopic(payload);
 
-            const savedTopicId = res.data?.id || res.data?.topic?.id || topicId;
+            const savedTopicId = res.data?.slug || res.data?.topic?.slug || res.data?.id || res.data?.topic?.id || topicId;
             if (!savedTopicId) {
                 navigate(ROUTES.topics);
                 return;
@@ -323,12 +338,27 @@ export default function TopicForm() {
             <form className="eventform-form" onSubmit={submit}>
                 <div className="eventform-section">
                     <label>Title</label>
-                    <input value={title} onChange={(e) => setTitle(e.target.value)} required />
+                    <input
+                        value={title}
+                        onChange={(e) => {
+                            const nextTitle = e.target.value;
+                            setTitle(nextTitle);
+                            if (!slug.trim()) setSlug(slugify(nextTitle));
+                        }}
+                        required
+                    />
                 </div>
 
                 <div className="eventform-section">
-                    <label>Original title</label>
-                    <input value={originalTitle} onChange={(e) => setOriginalTitle(e.target.value)} />
+                    <label>URL slug</label>
+                    <input
+                        value={slug}
+                        onChange={(e) => setSlug(slugify(e.target.value))}
+                        placeholder="viewmim-birthday-2026"
+                    />
+                    <small style={{ opacity: 0.7 }}>
+                        Public URL: /specials/{slug || "your-special-slug"}
+                    </small>
                 </div>
 
                 <div className="eventform-section">
@@ -559,17 +589,58 @@ export default function TopicForm() {
                                 {canSelectStory && (
                                     <div>
                                         <label>Story display</label>
-                                        <select
-                                            value={item.media_index ?? ""}
-                                            onChange={(e) => updateItem(index, "media_index", e.target.value)}
+                                        <small style={{ display: "block", opacity: 0.7, marginBottom: 6 }}>
+                                            Leave all unchecked to show all grouped stories.
+                                        </small>
+                                        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 8 }}>
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    const allIndexes = selectedPostMediaItems.map((_, mediaIndex) => mediaIndex);
+                                                    updateItem(index, "media_indices", allIndexes);
+                                                    updateItem(index, "media_index", "");
+                                                }}
+                                            >
+                                                Select all
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    updateItem(index, "media_indices", []);
+                                                    updateItem(index, "media_index", "");
+                                                }}
+                                            >
+                                                Clear
+                                            </button>
+                                        </div>
+                                        <div
+                                            style={{
+                                                display: "grid",
+                                                gridTemplateColumns: "repeat(auto-fit, minmax(96px, 1fr))",
+                                                gap: 6,
+                                            }}
                                         >
-                                            <option value="">All grouped stories</option>
                                             {selectedPostMediaItems.map((media, mediaIndex) => (
-                                                <option key={`${media.url || mediaIndex}-${mediaIndex}`} value={mediaIndex}>
+                                                <label
+                                                    key={`${media.url || mediaIndex}-${mediaIndex}`}
+                                                    style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 0, fontWeight: 400 }}
+                                                >
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={(item.media_indices || []).includes(mediaIndex)}
+                                                        onChange={(e) => {
+                                                            const current = item.media_indices || [];
+                                                            const next = e.target.checked
+                                                                ? [...current, mediaIndex].sort((a, b) => a - b)
+                                                                : current.filter((value) => value !== mediaIndex);
+                                                            updateItem(index, "media_indices", next);
+                                                            updateItem(index, "media_index", next.length === 1 ? String(next[0]) : "");
+                                                        }}
+                                                    />
                                                     Story {mediaIndex + 1}
-                                                </option>
+                                                </label>
                                             ))}
-                                        </select>
+                                        </div>
                                     </div>
                                 )}
 
