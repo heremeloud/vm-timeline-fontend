@@ -7,7 +7,7 @@ const api = setupCache(axios.create({
     ttl: 1000 * 60 * 10,  // cache 10 minutes
 });
 
-const api = axios.create({
+// const api = axios.create({
 //     baseURL: import.meta.env.VITE_API_URL || "http://localhost:8000",
 // });
 
