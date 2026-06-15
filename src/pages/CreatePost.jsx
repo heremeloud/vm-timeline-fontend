@@ -5,6 +5,21 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { ROUTES } from "../routes";
 import "../styles/EventForm.css";
 
+const emptyStoryItem = () => ({ url: "", text: "", translation: "", note: "" });
+
+const getStoryItemCount = (quantity) =>
+    Math.min(100, Math.max(1, Math.floor(Number(quantity) || 1)));
+
+const getSequentialStoryUrl = (url, offset) => {
+    const cleanUrl = url.trim();
+    const match = cleanUrl.match(/^(.*?)(\d+)(\.[^/.?#]+)([?#].*)?$/);
+    if (!match) return "";
+
+    const [, prefix, numberText, extension, suffix = ""] = match;
+    const nextNumber = String(Number(numberText) + offset).padStart(numberText.length, "0");
+    return `${prefix}${nextNumber}${extension}${suffix}`;
+};
+
 export default function CreatePost() {
     const navigate = useNavigate();
     const [params] = useSearchParams();
@@ -28,7 +43,8 @@ export default function CreatePost() {
     const [isVisible, setIsVisible] = useState(true);
     const [isAdult, setIsAdult] = useState(false);
     // Multiple media items for IG stories: [{url, text, translation, note}]
-    const [mediaItems, setMediaItems] = useState([{ url: "", text: "", translation: "", note: "" }]);
+    const [mediaItems, setMediaItems] = useState([emptyStoryItem()]);
+    const [storyItemQuantity, setStoryItemQuantity] = useState(10);
 
     // Author list from backend
     const [authors, setAuthors] = useState([]);
@@ -110,6 +126,31 @@ export default function CreatePost() {
     }, [parent_id]);
 
     /** ---------------- SUBMIT ---------------- **/
+
+    const addStoryItems = (quantity) => {
+        const count = getStoryItemCount(quantity);
+        setMediaItems((items) => [
+            ...items,
+            ...Array.from({ length: count }, emptyStoryItem),
+        ]);
+    };
+
+    const generateStoryItemUrls = () => {
+        const firstUrl = mediaItems[0]?.url.trim() || "";
+        const firstGeneratedUrl = getSequentialStoryUrl(firstUrl, 0);
+        if (!firstGeneratedUrl) {
+            alert("Paste a first media URL ending in a number before the file extension.");
+            return;
+        }
+
+        const count = getStoryItemCount(storyItemQuantity);
+        setMediaItems((items) =>
+            Array.from({ length: count }, (_, i) => ({
+                ...(items[i] || emptyStoryItem()),
+                url: getSequentialStoryUrl(firstUrl, i),
+            })),
+        );
+    };
 
     const submit = async (e) => {
         e.preventDefault();
@@ -341,11 +382,36 @@ export default function CreatePost() {
                             ))}
                             <button
                                 type="button"
-                                onClick={() => setMediaItems([...mediaItems, { url: "", text: "", translation: "", note: "" }])}
+                                onClick={() => addStoryItems(1)}
                                 style={{ fontSize: "0.85rem", marginTop: 2, cursor: "pointer" }}
                             >
                                 + Add another story item
                             </button>
+                            <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8, flexWrap: "wrap" }}>
+                                <input
+                                    type="number"
+                                    min="1"
+                                    max="100"
+                                    value={storyItemQuantity}
+                                    onChange={(e) => setStoryItemQuantity(e.target.value)}
+                                    style={{ width: 90 }}
+                                    aria-label="Story item quantity"
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => addStoryItems(storyItemQuantity)}
+                                    style={{ fontSize: "0.85rem", cursor: "pointer" }}
+                                >
+                                    + Add story items
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={generateStoryItemUrls}
+                                    style={{ fontSize: "0.85rem", cursor: "pointer" }}
+                                >
+                                    Generate story URLs
+                                </button>
+                            </div>
                         </>
                     ) : (
                         <>
