@@ -16,6 +16,16 @@ export const getAdminPosts = ({ limit = 100, offset = 0, sort = "newest", platfo
     return api.get(url);
 };
 
+export const searchAdminPosts = ({ q, limit = 50, offset = 0, platform } = {}) => {
+    const params = new URLSearchParams({
+        q: q || "",
+        limit: String(limit),
+        offset: String(offset),
+    });
+    if (platform && platform !== "all") params.set("platform", platform);
+    return api.get(`/posts/admin/search?${params.toString()}`);
+};
+
 export const getThread = (id) => api.get(`/posts/${id}/thread`);
 
 export const createPost = (data) => api.post("/posts/", data);

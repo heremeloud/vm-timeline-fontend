@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { getAuthors, updateAuthor } from "../api/authorsService";
-import { deletePost, getAdminPosts, updatePost } from "../api/postsService";
+import { deletePost, getAdminPosts, searchAdminPosts, updatePost } from "../api/postsService";
 import { getAdminEvents, updateEvent } from "../api/eventsService";
 import { getAdminProjects, updateProject } from "../api/projectsService";
 import { getAdminTopics, updateTopic } from "../api/topicsService";
@@ -22,6 +22,8 @@ export default function ManageDisplay() {
     const [page, setPage] = useState(1);
     const [platformFilter, setPlatformFilter] = useState("all");
     const [authorFilter, setAuthorFilter] = useState("all");
+    const [postSearch, setPostSearch] = useState("");
+    const [submittedPostSearch, setSubmittedPostSearch] = useState("");
     const [loading, setLoading] = useState(true);
     const [savingKey, setSavingKey] = useState("");
 
@@ -37,13 +39,19 @@ export default function ManageDisplay() {
 
     useEffect(() => {
         setPage(1);
-    }, [activeTab, platformFilter, authorFilter]);
+    }, [activeTab, platformFilter, authorFilter, submittedPostSearch]);
 
     async function loadItems() {
         setLoading(true);
 
         if (activeTab === "posts") {
-            const res = await getAdminPosts({
+            const searchTerm = submittedPostSearch.trim();
+            const res = searchTerm ? await searchAdminPosts({
+                q: searchTerm,
+                limit: LIMIT,
+                offset,
+                platform: platformFilter,
+            }) : await getAdminPosts({
                 limit: LIMIT,
                 offset,
                 sort: "newest",
@@ -69,7 +77,7 @@ export default function ManageDisplay() {
     useEffect(() => {
         loadItems();
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [activeTab, page, platformFilter, authors.length]);
+    }, [activeTab, page, platformFilter, submittedPostSearch, authors.length]);
 
     const authorById = useMemo(() => {
         const map = new Map();
@@ -131,7 +139,18 @@ export default function ManageDisplay() {
         }
     }
 
+    function submitPostSearch(e) {
+        e.preventDefault();
+        setSubmittedPostSearch(postSearch.trim());
+    }
+
+    function clearPostSearch() {
+        setPostSearch("");
+        setSubmittedPostSearch("");
+    }
+
     const nextDisabled = visibleItems.length < LIMIT;
+    const isSearchingPosts = activeTab === "posts" && submittedPostSearch.trim();
 
     return (
         <div className="eventform-container">
@@ -182,6 +201,29 @@ export default function ManageDisplay() {
                             </select>
                         </div>
                     </div>
+
+                    <form onSubmit={submitPostSearch} style={{ display: "grid", gap: 8, marginTop: 12 }}>
+                        <label>Search post and reply text</label>
+                        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                            <input
+                                type="search"
+                                value={postSearch}
+                                onChange={(e) => setPostSearch(e.target.value)}
+                                placeholder="Search captions, translations, replies, notes"
+                            />
+                            <button type="submit">Search</button>
+                            {submittedPostSearch && (
+                                <button type="button" onClick={clearPostSearch}>
+                                    Clear
+                                </button>
+                            )}
+                        </div>
+                        {submittedPostSearch && (
+                            <div style={{ fontSize: "0.85rem", opacity: 0.75 }}>
+                                Showing matches for "{submittedPostSearch}"
+                            </div>
+                        )}
+                    </form>
                 </section>
             )}
 
@@ -194,13 +236,14 @@ export default function ManageDisplay() {
                     <div style={{ display: "grid", gap: 10 }}>
                         {visibleItems.map((item) => (
                             <DisplayRow
-                                key={`${activeTab}-${item.id}`}
+                                key={`${activeTab}-${item.result_id || item.id}`}
                                 tab={activeTab}
                                 item={item}
                                 author={authorById.get(item.author_id)}
+                                isSearchResult={!!isSearchingPosts}
                                 saving={savingKey === `${activeTab}-${item.id}`}
                                 onToggle={() => toggleVisibility(activeTab, item)}
-                                onDelete={activeTab === "posts" ? () => deletePostRow(item) : undefined}
+                                onDelete={activeTab === "posts" && !isSearchingPosts ? () => deletePostRow(item) : undefined}
                             />
                         ))}
 
@@ -232,20 +275,31 @@ export default function ManageDisplay() {
     );
 }
 
-function DisplayRow({ tab, item, author, saving, onToggle, onDelete }) {
+function DisplayRow({ tab, item, author, isSearchResult = false, saving, onToggle, onDelete }) {
     const isAuthor = tab === "authors";
+    const isReplySearchResult = tab === "posts" && isSearchResult && item.result_type !== "post";
+    const canManageDisplay = !isReplySearchResult;
     const isVisible = isAuthor ? item.show_on_timeline : item.is_visible;
-    const extraVisible = tab === "posts" ? !!author?.show_on_timeline : true;
+    const extraVisible = tab === "posts" && !isReplySearchResult ? !!author?.show_on_timeline : true;
     const status = itemStatus(isVisible, extraVisible);
 
     let title = item.title || item.name || item.author_name || item.original_title || `#${item.id}`;
     let meta = "";
     let editUrl = "";
+    let appUrl = "";
 
     if (tab === "posts") {
-        title = item.author_name || "Unknown author";
-        meta = `${item.platform} - ${item.posted_at || "no date"} - ${item.caption || item.external_url || "No caption"}`;
-        editUrl = ROUTES.editPost(item.id);
+        if (isSearchResult && item.result_type !== "post") {
+            title = item.author_name || item.post_author_name || "Reply match";
+            meta = `${item.result_type} - ${item.posted_at || "no date"} - ${item.match_text || "No text"}`;
+            editUrl = ROUTES.editPost(item.target_post_id);
+            appUrl = ROUTES.postDetail(item.target_post_id);
+        } else {
+            title = item.author_name || "Unknown author";
+            meta = `${item.platform} - ${item.posted_at || "no date"} - ${item.caption || item.external_url || "No caption"}`;
+            editUrl = ROUTES.editPost(item.target_post_id || item.id);
+            appUrl = ROUTES.postDetail(item.target_post_id || item.id);
+        }
     } else if (tab === "events") {
         meta = `${item.event_date || "no date"}${item.category ? ` - ${item.category}` : ""}`;
         editUrl = ROUTES.editEvent(item.id);
@@ -274,7 +328,7 @@ function DisplayRow({ tab, item, author, saving, onToggle, onDelete }) {
                 <div>
                     <strong>{title}</strong>
                     <div style={{ fontSize: "0.9rem", opacity: 0.75, marginTop: 4 }}>{meta}</div>
-                    {tab === "posts" && author && !author.show_on_timeline && (
+                    {tab === "posts" && !isReplySearchResult && author && !author.show_on_timeline && (
                         <div style={{ fontSize: "0.82rem", color: "#9a3412", marginTop: 4 }}>
                             Author is hidden, so this post stays hidden publicly.
                         </div>
@@ -287,17 +341,21 @@ function DisplayRow({ tab, item, author, saving, onToggle, onDelete }) {
             </div>
 
             <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
-                <label style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 0 }}>
-                    <input
-                        type="checkbox"
-                        checked={!!isVisible}
-                        disabled={saving}
-                        onChange={onToggle}
-                    />
-                    {isAuthor ? "Author allowed" : "Visible"}
-                </label>
+                {canManageDisplay && (
+                    <label style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 0 }}>
+                        <input
+                            type="checkbox"
+                            checked={!!isVisible}
+                            disabled={saving}
+                            onChange={onToggle}
+                        />
+                        {isAuthor ? "Author allowed" : "Visible"}
+                    </label>
+                )}
 
                 {editUrl && <Link to={editUrl}>Edit</Link>}
+
+                {appUrl && <Link to={appUrl}>View in app</Link>}
 
                 {tab === "posts" && item.external_url && (
                     <a href={item.external_url} target="_blank" rel="noreferrer">Open source</a>
@@ -309,6 +367,7 @@ function DisplayRow({ tab, item, author, saving, onToggle, onDelete }) {
                         className="btn-delete"
                         disabled={saving}
                         onClick={onDelete}
+                        style={{ display: onDelete ? undefined : "none" }}
                     >
                         Delete
                     </button>

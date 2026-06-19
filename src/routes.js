@@ -13,6 +13,7 @@ export const ROUTES = {
     topicDetail: (id) => `/specials/${id}`,
     createTopic: "/create-special",
     editTopic: (id) => `/edit-special/${id}`,
+    postDetail: (id) => `/post/${id}`,
     createPost: "/create-post",
     editPost: (id) => `/edit-post/${id}`,
     addReply: (id) => `/add-reply/${id}`,

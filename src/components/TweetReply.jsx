@@ -12,6 +12,9 @@ export default function TweetReply({ reply }) {
     const [editTranslation, setEditTranslation] = useState(
         reply.caption_translation
     );
+    const [editTranslationNote, setEditTranslationNote] = useState(
+        reply.caption_translation_note || ""
+    );
     const [editMedia, setEditMedia] = useState(reply.media_url);
     const [editIsAdult, setEditIsAdult] = useState(reply.is_adult ?? false);
 
@@ -43,6 +46,7 @@ export default function TweetReply({ reply }) {
             external_url: editUrl || null,
             caption: editCaption,
             caption_translation: editTranslation,
+            caption_translation_note: editTranslationNote.trim() || null,
             media_url: editMedia || null,
             is_adult: editIsAdult,
         });
@@ -71,6 +75,9 @@ export default function TweetReply({ reply }) {
                             {reply.caption_translation && (
                                 <p className="post-adult-translation">{reply.caption_translation}</p>
                             )}
+                            {reply.caption_translation_note && (
+                                <p className="post-adult-note">📝 {reply.caption_translation_note}</p>
+                            )}
                             {reply.media_url && (
                                 isVideo(reply.media_url) ? (
                                     <video
@@ -92,6 +99,9 @@ export default function TweetReply({ reply }) {
                                 <div style={{ opacity: 0.7, whiteSpace: "pre-wrap", wordBreak: "break-word", marginTop: "6px" }}>
                                     {reply.caption_translation}
                                 </div>
+                            )}
+                            {reply.caption_translation_note && (
+                                <p className="post-translation-note">📝 {reply.caption_translation_note}</p>
                             )}
                             {reply.media_url && (
                                 <img src={reply.media_url} alt="reply-media" style={{ maxWidth: "100%", marginTop: 10 }} />
@@ -132,6 +142,14 @@ export default function TweetReply({ reply }) {
                         value={editTranslation}
                         onChange={(e) => setEditTranslation(e.target.value)}
                         rows={3}
+                        style={{ resize: "none", width: "100%" }}
+                    />
+                    <br />
+                    <label>Translator's note (optional):</label>
+                    <textarea
+                        value={editTranslationNote}
+                        onChange={(e) => setEditTranslationNote(e.target.value)}
+                        rows={2}
                         style={{ resize: "none", width: "100%" }}
                     />
                     <br />
