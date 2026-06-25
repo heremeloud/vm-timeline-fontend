@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { deletePost, updatePost } from "../api/postsService";
 import TweetEmbed from "./TweetEmbed";
-import { isVideo } from "../utils/media";
+import AdultTweetCard from "./AdultTweetCard";
 import "../styles/PostCard.css";
 
 export default function TweetReply({ reply }) {
@@ -60,38 +60,7 @@ export default function TweetReply({ reply }) {
             {!isEditing && (
                 <>
                     {reply.is_adult ? (
-                        <div className="post-adult-card">
-                            {reply.author_name && (
-                                <div className="post-adult-author">{reply.author_name}</div>
-                            )}
-                            {reply.external_url && (
-                                <a href={reply.external_url} target="_blank" rel="noopener noreferrer" className="post-adult-source">
-                                    Tweet ↗
-                                </a>
-                            )}
-                            {reply.caption && (
-                                <p className="post-adult-caption">{reply.caption}</p>
-                            )}
-                            {reply.caption_translation && (
-                                <p className="post-adult-translation">{reply.caption_translation}</p>
-                            )}
-                            {reply.caption_translation_note && (
-                                <p className="post-adult-note">📝 {reply.caption_translation_note}</p>
-                            )}
-                            {reply.media_url && (
-                                isVideo(reply.media_url) ? (
-                                    <video
-                                        src={reply.media_url}
-                                        controls
-                                        playsInline
-                                        muted
-                                        className="post-adult-media"
-                                    />
-                                ) : (
-                                    <img src={reply.media_url} alt="" className="post-adult-media" />
-                                )
-                            )}
-                        </div>
+                        <AdultTweetCard tweet={reply} />
                     ) : (
                         <>
                             <TweetEmbed url={reply.external_url} />

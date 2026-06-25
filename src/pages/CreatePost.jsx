@@ -51,6 +51,9 @@ export default function CreatePost() {
     const [author, setAuthor] = useState("");
     const [newAuthorName, setNewAuthorName] = useState("");
     const [newAuthorPhoto, setNewAuthorPhoto] = useState("");
+    const [newAuthorInstagramPhoto, setNewAuthorInstagramPhoto] = useState("");
+    const [newAuthorTwitterPhoto, setNewAuthorTwitterPhoto] = useState("");
+    const [newAuthorTikTokPhoto, setNewAuthorTikTokPhoto] = useState("");
 
     // Load authors on page mount
     useEffect(() => {
@@ -169,6 +172,12 @@ export default function CreatePost() {
                 name: finalAuthor,
                 profile_photo_url:
                     author === "__new__" ? newAuthorPhoto || null : null,
+                ig_pfp_url:
+                    author === "__new__" ? newAuthorInstagramPhoto || null : null,
+                twitter_pfp_url:
+                    author === "__new__" ? newAuthorTwitterPhoto || null : null,
+                tiktok_pfp_url:
+                    author === "__new__" ? newAuthorTikTokPhoto || null : null,
             });
             const authorId = authorRes.data.id;
 
@@ -273,6 +282,36 @@ export default function CreatePost() {
                                 type="text"
                                 value={newAuthorPhoto}
                                 onChange={(e) => setNewAuthorPhoto(e.target.value)}
+                                placeholder="https://..."
+                            />
+                        </div>
+
+                        <div className="eventform-section">
+                            <label>Instagram PFP URL (optional):</label>
+                            <input
+                                type="text"
+                                value={newAuthorInstagramPhoto}
+                                onChange={(e) => setNewAuthorInstagramPhoto(e.target.value)}
+                                placeholder="https://..."
+                            />
+                        </div>
+
+                        <div className="eventform-section">
+                            <label>Twitter / X PFP URL (optional):</label>
+                            <input
+                                type="text"
+                                value={newAuthorTwitterPhoto}
+                                onChange={(e) => setNewAuthorTwitterPhoto(e.target.value)}
+                                placeholder="https://..."
+                            />
+                        </div>
+
+                        <div className="eventform-section">
+                            <label>TikTok PFP URL (optional):</label>
+                            <input
+                                type="text"
+                                value={newAuthorTikTokPhoto}
+                                onChange={(e) => setNewAuthorTikTokPhoto(e.target.value)}
                                 placeholder="https://..."
                             />
                         </div>

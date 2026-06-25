@@ -20,6 +20,7 @@ import CreateProject from "./pages/CreateProject";
 import EditProject from "./pages/EditProject";
 import Archive from "./pages/Archive";
 import ManageDisplay from "./pages/ManageDisplay";
+import ManageAuthors from "./pages/ManageAuthors";
 import Topics from "./pages/Topics";
 import TopicDetail from "./pages/TopicDetail";
 import TopicForm from "./pages/TopicForm";
@@ -51,6 +52,15 @@ function App() {
                     element={
                         <ProtectedRoute>
                             <ManageDisplay />
+                        </ProtectedRoute>
+                    }
+                />
+
+                <Route
+                    path="/manage-authors"
+                    element={
+                        <ProtectedRoute>
+                            <ManageAuthors />
                         </ProtectedRoute>
                     }
                 />

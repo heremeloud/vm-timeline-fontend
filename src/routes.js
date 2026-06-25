@@ -9,6 +9,7 @@ export const ROUTES = {
     editProject: (id) => `/edit-project/${id}`,
     admin: "/admin",
     manageDisplay: "/manage-display",
+    manageAuthors: "/manage-authors",
     topics: "/specials",
     topicDetail: (id) => `/specials/${id}`,
     createTopic: "/create-special",

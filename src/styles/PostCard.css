@@ -4,6 +4,82 @@
     gap: 8px;
 }
 
+.post-adult-card--tweet {
+    width: 100%;
+    max-width: 550px;
+    margin: 0 auto;
+    padding: 14px 16px;
+    border: 1px solid #d9d9d9;
+    border-radius: 12px;
+    font-family: Arial, sans-serif;
+    color: #0f1419;
+    background: #fff;
+    box-sizing: border-box;
+}
+
+.post-adult-tweet-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.post-adult-tweet-header .avatar-wrapper,
+.post-adult-tweet-header .avatar-img,
+.post-adult-tweet-header .avatar-emoji,
+.post-adult-tweet-initial {
+    width: 48px;
+    height: 48px;
+}
+
+.post-adult-tweet-header .avatar-emoji {
+    font-size: 32px;
+}
+
+.post-adult-tweet-initial {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+    border-radius: 50%;
+    background: #eff3f4;
+    color: #536471;
+    font-size: 1.2rem;
+    font-weight: 700;
+}
+
+.post-adult-tweet-meta {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    line-height: 1.2;
+}
+
+.post-adult-tweet-name {
+    font-size: 0.94rem;
+    font-weight: 700;
+    color: #0f1419;
+}
+
+.post-adult-tweet-source {
+    font-size: 0.82rem;
+    color: #536471;
+}
+
+.post-adult-tweet-handle,
+.post-adult-tweet-dot {
+    color: #536471;
+}
+
+.post-adult-tweet-link {
+    color: #2c73e5;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.post-adult-tweet-link:hover {
+    text-decoration: underline;
+}
+
 .post-adult-author {
     font-weight: 600;
     font-size: 0.9rem;
@@ -22,14 +98,15 @@
 }
 
 .post-adult-caption {
-    font-size: 0.9rem;
+    font-size: 0.96rem;
     white-space: pre-wrap;
     margin: 0;
     line-height: 1.5;
+    color: #0f1419;
 }
 
 .post-adult-translation {
-    font-size: 0.9rem;
+    font-size: 0.92rem;
     white-space: pre-wrap;
     opacity: 0.72;
     margin: 0;
@@ -44,10 +121,11 @@
 
 .post-adult-media {
     width: 100%;
-    max-width: 500px;
-    border-radius: 10px;
-    margin-top: 4px;
+    max-width: 100%;
+    border-radius: 12px;
+    margin-top: 2px;
     display: block;
+    border: 1px solid #e1e8ed;
 }
 
 .post-wrapper {

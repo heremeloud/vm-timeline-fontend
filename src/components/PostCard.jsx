@@ -9,6 +9,7 @@ import { isVideo } from "../utils/media";
 import InstagramEmbed from "./InstagramEmbed";
 import TweetEmbed from "./TweetEmbed";
 import TikTokEmbed from "./TikTokEmbed";
+import AdultTweetCard from "./AdultTweetCard";
 
 import IGReply from "./IGReply";
 import TweetReply from "./TweetReply";
@@ -18,6 +19,7 @@ export default function PostCard({ post, showReplies = true }) {
     const isInstagram = post.platform === "ig" || post.platform === "instagram";
     const isTwitter = post.platform === "x" || post.platform === "twitter";
     const isTikTok = post.platform === "tt" || post.platform === "tiktok";
+    const rendersAdultFallback = Boolean(post.is_adult);
 
     const [comments, setComments] = useState([]);
     const [childrenPosts, setChildrenPosts] = useState([]);
@@ -102,11 +104,14 @@ export default function PostCard({ post, showReplies = true }) {
                 </div>
             )}
             <div className="post-embed">
-                {post.is_adult ? (
-                    <div className="post-adult-card">
-                        {post.author_name && (
-                            <div className="post-adult-author">{post.author_name}</div>
-                        )}
+                {rendersAdultFallback ? (
+                    isTwitter ? (
+                        <AdultTweetCard tweet={post} />
+                    ) : (
+                        <div className="post-adult-card">
+                            {post.author_name && (
+                                <div className="post-adult-author">{post.author_name}</div>
+                            )}
                         {post.external_url && (
                             <a href={post.external_url} target="_blank" rel="noopener noreferrer" className="post-adult-source">
                                 {isInstagram ? "Instagram post" : isTwitter ? "Tweet" : "TikTok"} ↗
@@ -134,7 +139,8 @@ export default function PostCard({ post, showReplies = true }) {
                                 <img src={post.media_url} alt="" className="post-adult-media" />
                             )
                         )}
-                    </div>
+                        </div>
+                    )
                 ) : (
                     <>
                         {isInstagram && (
@@ -146,6 +152,8 @@ export default function PostCard({ post, showReplies = true }) {
                                 author_id={post.author_id}
                                 author_name={post.author_name}
                                 author_photo={post.author_photo}
+                                author_ig_pfp_url={post.author_ig_pfp_url}
+                                author_instagram_url={post.author_instagram_url}
                             />
                         )}
 
@@ -165,7 +173,7 @@ export default function PostCard({ post, showReplies = true }) {
                 )}
             </div>
 
-            {post.caption_translation && (
+            {post.caption_translation && !rendersAdultFallback && (
                 <div className="post-caption-translation">
                     <p>{post.caption_translation}</p>
                     {post.caption_translation_note && (
@@ -176,7 +184,7 @@ export default function PostCard({ post, showReplies = true }) {
 
             {/* Separate media block for X.
           If TweetEmbed already handles media, can remove this. */}
-            {isTwitter && post.media_url && (
+            {isTwitter && post.media_url && !rendersAdultFallback && (
                 <div className="post-media">
                     <img src={post.media_url} alt="" />
                 </div>

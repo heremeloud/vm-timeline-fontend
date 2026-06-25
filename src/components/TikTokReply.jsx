@@ -68,9 +68,9 @@ export default function TikTokReply({ reply }) {
         <div className="igreply-container">
             {!isEditing && (
                 <>
-                    <div className="igreply-row">
+                    <div className="igreply-row ttreply-row">
                         <Avatar
-                            url={main.author_photo}
+                            url={main.author_tiktok_pfp_url || main.author_photo}
                             authorId={main.author_id}
                             name={main.author_name}
                         />

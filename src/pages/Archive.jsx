@@ -44,6 +44,9 @@ function ProfileCard({ author: initialAuthor, defaultPhoto, fcLink, fcIcon = "ðŸ
             name: author.name || "",
             full_name: author.full_name || "",
             birthday: author.birthday || "",
+            ig_pfp_url: author.ig_pfp_url || "",
+            twitter_pfp_url: author.twitter_pfp_url || "",
+            tiktok_pfp_url: author.tiktok_pfp_url || "",
             twitter_url: author.twitter_url || "",
             instagram_url: author.instagram_url || "",
             tiktok_url: author.tiktok_url || "",
@@ -94,8 +97,9 @@ function ProfileCard({ author: initialAuthor, defaultPhoto, fcLink, fcIcon = "ðŸ
         }
     }
 
-    const displayPhoto = resolvePhotoUrl(author.profile_photo_url) || defaultPhoto;
-    const editPhoto = photoPreview || resolvePhotoUrl(author.profile_photo_url) || defaultPhoto;
+    const defaultProfilePhoto = author.profile_photo_url || author.ig_pfp_url || author.twitter_pfp_url;
+    const displayPhoto = resolvePhotoUrl(defaultProfilePhoto) || defaultPhoto;
+    const editPhoto = photoPreview || resolvePhotoUrl(defaultProfilePhoto) || defaultPhoto;
 
     if (editing) {
         return (
@@ -132,6 +136,18 @@ function ProfileCard({ author: initialAuthor, defaultPhoto, fcLink, fcIcon = "ðŸ
                     <div className="archive-edit-row">
                         <label>Birthday</label>
                         <input type="date" value={draft.birthday} onChange={(e) => setDraft({ ...draft, birthday: e.target.value })} />
+                    </div>
+                    <div className="archive-edit-row">
+                        <label>Instagram PFP URL</label>
+                        <input value={draft.ig_pfp_url} onChange={(e) => setDraft({ ...draft, ig_pfp_url: e.target.value })} placeholder="https://..." />
+                    </div>
+                    <div className="archive-edit-row">
+                        <label>Twitter / X PFP URL</label>
+                        <input value={draft.twitter_pfp_url} onChange={(e) => setDraft({ ...draft, twitter_pfp_url: e.target.value })} placeholder="https://..." />
+                    </div>
+                    <div className="archive-edit-row">
+                        <label>TikTok PFP URL</label>
+                        <input value={draft.tiktok_pfp_url} onChange={(e) => setDraft({ ...draft, tiktok_pfp_url: e.target.value })} placeholder="https://..." />
                     </div>
                     {SOCIAL_FIELDS.map(({ key, label, placeholder }) => (
                         <div key={key} className="archive-edit-row">

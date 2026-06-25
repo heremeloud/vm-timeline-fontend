@@ -151,6 +151,8 @@ export default function InstagramEmbed({
     caption = "",
     author_name,
     author_photo,
+    author_ig_pfp_url,
+    author_instagram_url,
     author_id,
 }) {
     const igUrl = (external_url || "").trim();
@@ -212,28 +214,53 @@ export default function InstagramEmbed({
 
     // 2) Story / manual media → show avatar + carousel
     if (hasMedia) {
+        const avatar = (
+            <Avatar
+                url={author_ig_pfp_url || author_photo}
+                authorId={author_id}
+                name={author_name}
+            />
+        );
+        const authorName = (
+            <>
+                {author_name}
+                {allItems.length > 1 && (
+                    <span style={{ fontWeight: 400, fontSize: "0.8rem", marginLeft: 8, opacity: 0.6 }}>
+                        {allItems.length} stories
+                    </span>
+                )}
+            </>
+        );
+
         return (
             <div className="igpost-container">
                 <div className="igpost-row" style={{ display: "flex", gap: 12 }}>
-                    <Avatar
-                        url={author_photo}
-                        authorId={author_id}
-                        name={author_name}
-                    />
+                    {author_instagram_url ? (
+                        <a href={author_instagram_url} target="_blank" rel="noopener noreferrer" className="ig-author-link" aria-label={`${author_name || "Author"} on Instagram`}>
+                            {avatar}
+                        </a>
+                    ) : avatar}
 
                     <div style={{ flex: 1 }}>
                         {author_name && (
-                            <div
+                            author_instagram_url ? (
+                                <a
+                                    href={author_instagram_url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="igpost-author ig-author-link"
+                                    style={{ fontWeight: 600, marginBottom: 6 }}
+                                >
+                                    {authorName}
+                                </a>
+                            ) : (
+                                <div
                                 className="igpost-author"
                                 style={{ fontWeight: 600, marginBottom: 6 }}
                             >
-                                {author_name}
-                                {allItems.length > 1 && (
-                                    <span style={{ fontWeight: 400, fontSize: "0.8rem", marginLeft: 8, opacity: 0.6 }}>
-                                        {allItems.length} stories
-                                    </span>
-                                )}
-                            </div>
+                                    {authorName}
+                                </div>
+                            )
                         )}
 
                         <MediaCarousel items={allItems} caption={caption} />

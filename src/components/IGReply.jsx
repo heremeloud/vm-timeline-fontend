@@ -70,17 +70,31 @@ export default function IGReply({ reply }) {
             {/* DISPLAY MODE */}
             {!isEditing && (
                 <>
-                    <div className="igreply-row">
-                        <Avatar
-                            url={main.author_photo}
+                    <div className="igreply-row igreply-row--instagram">
+                        {main.author_instagram_url ? (
+                            <a href={main.author_instagram_url} target="_blank" rel="noopener noreferrer" className="ig-author-link" aria-label={`${main.author_name || "Author"} on Instagram`}>
+                                <Avatar
+                                    url={main.author_ig_pfp_url || main.author_photo}
+                                    authorId={main.author_id}
+                                    name={main.author_name}
+                                />
+                            </a>
+                        ) : (
+                            <Avatar
+                            url={main.author_ig_pfp_url || main.author_photo}
                             authorId={main.author_id}
                             name={main.author_name}
-                        />
+                            />
+                        )}
 
                         <div className="igreply-content">
                             {/* Author */}
                             <div className="igreply-author">
-                                {main.author_name} :
+                                {main.author_instagram_url ? (
+                                    <a href={main.author_instagram_url} target="_blank" rel="noopener noreferrer" className="ig-author-link">
+                                        {main.author_name}
+                                    </a>
+                                ) : main.author_name} :
                             </div>
 
                             {/* Caption — only show if exists */}

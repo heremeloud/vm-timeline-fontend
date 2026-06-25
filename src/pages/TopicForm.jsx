@@ -12,6 +12,9 @@ const emptyNewPost = {
     author: "",
     newAuthorName: "",
     newAuthorPhoto: "",
+    newAuthorInstagramPhoto: "",
+    newAuthorTwitterPhoto: "",
+    newAuthorTikTokPhoto: "",
     external_url: "",
     caption: "",
     caption_translation: "",
@@ -248,6 +251,9 @@ export default function TopicForm() {
         const authorRes = await ensureAuthor({
             name: finalAuthor,
             profile_photo_url: draft.author === "__new__" ? draft.newAuthorPhoto || null : null,
+            ig_pfp_url: draft.author === "__new__" ? draft.newAuthorInstagramPhoto || null : null,
+            twitter_pfp_url: draft.author === "__new__" ? draft.newAuthorTwitterPhoto || null : null,
+            tiktok_pfp_url: draft.author === "__new__" ? draft.newAuthorTikTokPhoto || null : null,
         });
 
         const cleanUrl = normalizePostUrl(draft.external_url, draft.platform);
@@ -516,6 +522,30 @@ export default function TopicForm() {
                                                     <input
                                                         value={draft.newAuthorPhoto}
                                                         onChange={(e) => updateNewPost(index, "newAuthorPhoto", e.target.value)}
+                                                        placeholder="https://..."
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label>New author Instagram PFP URL</label>
+                                                    <input
+                                                        value={draft.newAuthorInstagramPhoto || ""}
+                                                        onChange={(e) => updateNewPost(index, "newAuthorInstagramPhoto", e.target.value)}
+                                                        placeholder="https://..."
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label>New author Twitter / X PFP URL</label>
+                                                    <input
+                                                        value={draft.newAuthorTwitterPhoto || ""}
+                                                        onChange={(e) => updateNewPost(index, "newAuthorTwitterPhoto", e.target.value)}
+                                                        placeholder="https://..."
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label>New author TikTok PFP URL</label>
+                                                    <input
+                                                        value={draft.newAuthorTikTokPhoto || ""}
+                                                        onChange={(e) => updateNewPost(index, "newAuthorTikTokPhoto", e.target.value)}
                                                         placeholder="https://..."
                                                     />
                                                 </div>

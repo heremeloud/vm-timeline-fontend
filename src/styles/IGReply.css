@@ -32,6 +32,42 @@
     justify-content: center;
 }
 
+.igpost-row .avatar-wrapper,
+.igpost-row .avatar-img,
+.igpost-row .avatar-emoji,
+.igreply-row--instagram .avatar-wrapper,
+.igreply-row--instagram .avatar-img,
+.igreply-row--instagram .avatar-emoji {
+    width: 44px;
+    height: 44px;
+}
+
+.igpost-row .avatar-emoji,
+.igreply-row--instagram .avatar-emoji {
+    font-size: 30px;
+}
+
+.ttreply-row .avatar-wrapper,
+.ttreply-row .avatar-img,
+.ttreply-row .avatar-emoji {
+    width: 44px;
+    height: 44px;
+}
+
+.ttreply-row .avatar-emoji {
+    font-size: 30px;
+}
+
+.ig-author-link {
+    color: inherit;
+    text-decoration: none;
+    display: inline-flex;
+}
+
+.ig-author-link:hover {
+    text-decoration: underline;
+}
+
 /* Right side content */
 .igreply-content {
     display: flex;
