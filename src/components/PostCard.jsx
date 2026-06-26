@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import "../styles/PostCard.css";
 import { getTextsByPost } from "../api/textsService";
 import { getThread, deletePost } from "../api/postsService";
@@ -16,6 +16,8 @@ import TweetReply from "./TweetReply";
 import TikTokReply from "./TikTokReply";
 
 export default function PostCard({ post, showReplies = true }) {
+    const location = useLocation();
+    const returnTo = `${location.pathname}${location.search}`;
     const isInstagram = post.platform === "ig" || post.platform === "instagram";
     const isTwitter = post.platform === "x" || post.platform === "twitter";
     const isTikTok = post.platform === "tt" || post.platform === "tiktok";
@@ -23,6 +25,10 @@ export default function PostCard({ post, showReplies = true }) {
 
     const [comments, setComments] = useState([]);
     const [childrenPosts, setChildrenPosts] = useState([]);
+
+    function saveReturnScroll() {
+        sessionStorage.setItem("homeTimelineReturnScrollY", String(window.scrollY));
+    }
 
     useEffect(() => {
         let cancelled = false;
@@ -219,7 +225,11 @@ export default function PostCard({ post, showReplies = true }) {
 
             {localStorage.getItem("jwt") && (
                 <div className="post-actions">
-                    <Link to={ROUTES.addReply(post.id)}>
+                    <Link
+                        to={ROUTES.addReply(post.id)}
+                        state={{ returnTo }}
+                        onClick={saveReturnScroll}
+                    >
                         <button>
                             {isInstagram
                                 ? "Add IG Reply"
@@ -229,7 +239,11 @@ export default function PostCard({ post, showReplies = true }) {
                         </button>
                     </Link>
 
-                    <Link to={ROUTES.editPost(post.id)}>
+                    <Link
+                        to={ROUTES.editPost(post.id)}
+                        state={{ returnTo }}
+                        onClick={saveReturnScroll}
+                    >
                         <button>Edit Post</button>
                     </Link>
 

@@ -44,6 +44,7 @@ export default function IGReply({ reply }) {
     const [editCaption, setEditCaption] = useState(main.content || "");
     const [editTranslation, setEditTranslation] = useState(main.translation || "");
     const [editNote, setEditNote] = useState(main.note || "");
+    const [editMediaURL, setEditMediaURL] = useState(main.media_url || "");
 
     async function handleDelete() {
         if (!confirm("Delete this IG reply (caption + translation)?")) return;
@@ -61,6 +62,7 @@ export default function IGReply({ reply }) {
             caption: editCaption,
             translation: editTranslation,
             note: editNote || null,
+            media_url: editMediaURL || null,
         });
         window.location.reload();
     }
@@ -212,6 +214,14 @@ export default function IGReply({ reply }) {
                         placeholder="e.g. slang, context, nuance…"
                     />
 
+                    <label>Media URL (optional):</label>
+                    <input
+                        type="url"
+                        value={editMediaURL}
+                        onChange={(e) => setEditMediaURL(e.target.value)}
+                        placeholder="https://..."
+                    />
+
                     <div className="igreply-edit-buttons">
                         <button onClick={saveEdit}>Save</button>
                         <button
@@ -220,6 +230,7 @@ export default function IGReply({ reply }) {
                                 setEditCaption(main.content || "");
                                 setEditTranslation(main.translation || "");
                                 setEditNote(main.note || "");
+                                setEditMediaURL(main.media_url || "");
                             }}
                         >
                             Cancel

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { getAuthors, updateAuthor } from "../api/authorsService";
 import { deletePost, getAdminPosts, searchAdminPosts, updatePost } from "../api/postsService";
 import { getAdminEvents, updateEvent } from "../api/eventsService";
@@ -16,6 +16,8 @@ function itemStatus(isVisible, extraVisible = true) {
 }
 
 export default function ManageDisplay() {
+    const location = useLocation();
+    const returnTo = `${location.pathname}${location.search}`;
     const [activeTab, setActiveTab] = useState("posts");
     const [authors, setAuthors] = useState([]);
     const [items, setItems] = useState([]);
@@ -242,6 +244,7 @@ export default function ManageDisplay() {
                                 author={authorById.get(item.author_id)}
                                 isSearchResult={!!isSearchingPosts}
                                 saving={savingKey === `${activeTab}-${item.id}`}
+                                returnTo={returnTo}
                                 onToggle={() => toggleVisibility(activeTab, item)}
                                 onDelete={activeTab === "posts" && !isSearchingPosts ? () => deletePostRow(item) : undefined}
                             />
@@ -275,7 +278,7 @@ export default function ManageDisplay() {
     );
 }
 
-function DisplayRow({ tab, item, author, isSearchResult = false, saving, onToggle, onDelete }) {
+function DisplayRow({ tab, item, author, isSearchResult = false, saving, returnTo, onToggle, onDelete }) {
     const isAuthor = tab === "authors";
     const isReplySearchResult = tab === "posts" && isSearchResult && item.result_type !== "post";
     const canManageDisplay = !isReplySearchResult;
@@ -353,7 +356,7 @@ function DisplayRow({ tab, item, author, isSearchResult = false, saving, onToggl
                     </label>
                 )}
 
-                {editUrl && <Link to={editUrl}>Edit</Link>}
+                {editUrl && <Link to={editUrl} state={{ returnTo }}>Edit</Link>}
 
                 {appUrl && <Link to={appUrl}>View in app</Link>}
 

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { getAdminPost, updatePost } from "../api/postsService";
 import { getAuthors } from "../api/authorsService";
 import { ROUTES } from "../routes";
@@ -24,6 +24,8 @@ const getSequentialStoryUrl = (url, offset) => {
 export default function EditPost() {
     const { postId } = useParams();
     const navigate = useNavigate();
+    const location = useLocation();
+    const returnTo = location.state?.returnTo;
 
     const [loading, setLoading] = useState(true);
     const [post, setPost] = useState(null);
@@ -206,7 +208,7 @@ export default function EditPost() {
             is_adult: isAdult,
         });
 
-        navigate(ROUTES.home);
+        navigate(returnTo || ROUTES.postDetail(postId), { replace: true });
     }
 
     // -----------------------------

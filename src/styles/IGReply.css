@@ -109,8 +109,13 @@
 }
 
 /* Edit mode */
-.igreply-edit textarea {
+.igreply-edit textarea,
+.igreply-edit input {
     width: 100%;
+    box-sizing: border-box;
+}
+
+.igreply-edit textarea {
     resize: none;
 }
 

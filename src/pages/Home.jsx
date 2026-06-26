@@ -3,21 +3,63 @@ import "../styles/Home.css";
 import { getPosts, getThread } from "../api/postsService";
 import { getTextsByPost } from "../api/textsService";
 import { ROUTES } from "../routes";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import PostCard from "../components/PostCard";
 
 export default function Home() {
+    const [searchParams, setSearchParams] = useSearchParams();
     const [posts, setPosts] = useState([]);
 
-    const [platformFilter, setPlatformFilter] = useState("all");
-    const [sortOrder, setSortOrder] = useState("newest");
+    const [platformFilter, setPlatformFilter] = useState(
+        searchParams.get("platform") || "all"
+    );
+    const [sortOrder, setSortOrder] = useState(
+        searchParams.get("sort") || "newest"
+    );
 
-    const [page, setPage] = useState(1);
+    const [page, setPage] = useState(() =>
+        Math.max(1, Number(searchParams.get("page")) || 1)
+    );
     const [jumpPage, setJumpPage] = useState("");
 
     const [lastPage, setLastPage] = useState(null); // discovered last page
     const [lastUpdated, setLastUpdated] = useState(null);
     const LIMIT = 10;
+
+    function updateTimelineURL(next = {}) {
+        const nextPlatform = next.platformFilter ?? platformFilter;
+        const nextSort = next.sortOrder ?? sortOrder;
+        const nextPage = next.page ?? page;
+        const params = new URLSearchParams();
+
+        if (nextPlatform !== "all") params.set("platform", nextPlatform);
+        if (nextSort !== "newest") params.set("sort", nextSort);
+        if (nextPage > 1) params.set("page", String(nextPage));
+
+        setSearchParams(params, { replace: true });
+    }
+
+    function setTimelinePage(nextPage) {
+        const normalizedPage = Math.max(1, Number(nextPage) || 1);
+        setPage(normalizedPage);
+        updateTimelineURL({ page: normalizedPage });
+    }
+
+    function changePlatformFilter(nextPlatform) {
+        setPlatformFilter(nextPlatform);
+        setLastPage(null);
+        setJumpPage("");
+        setPage(1);
+        updateTimelineURL({ platformFilter: nextPlatform, page: 1 });
+    }
+
+    function changeSortOrder(nextSort) {
+        setSortOrder(nextSort);
+        setLastPage(null);
+        setJumpPage("");
+        setPage(1);
+        updateTimelineURL({ sortOrder: nextSort, page: 1 });
+    }
 
     // Fetch ONLY the base posts for a page (no replies)
     async function fetchBasePosts(targetPage) {
@@ -47,7 +89,7 @@ export default function Home() {
 
         // If we already know lastPage, clamp immediately
         if (lastPage && num > lastPage) {
-            setPage(lastPage);
+            setTimelinePage(lastPage);
             setJumpPage("");
             return;
         }
@@ -57,7 +99,7 @@ export default function Home() {
             const base = await fetchBasePosts(num);
 
             if (base.length > 0) {
-                setPage(num);
+                setTimelinePage(num);
                 setJumpPage("");
                 return;
             }
@@ -71,7 +113,7 @@ export default function Home() {
             const hasAny = await pageHasData(1);
             if (!hasAny) {
                 setLastPage(1);
-                setPage(1);
+                setTimelinePage(1);
                 setJumpPage("");
                 return;
             }
@@ -90,7 +132,7 @@ export default function Home() {
             }
 
             setLastPage(ans);
-            setPage(ans);
+            setTimelinePage(ans);
             setJumpPage("");
         } catch (err) {
             console.error("Jump failed:", err);
@@ -150,13 +192,15 @@ export default function Home() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [platformFilter, sortOrder, page]);
 
-    // When filter/sort changes, reset pagination knowledge
     useEffect(() => {
-        setLastPage(null);
-        setPage(1);
-        setJumpPage("");
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [platformFilter, sortOrder]);
+        const savedScrollY = sessionStorage.getItem("homeTimelineReturnScrollY");
+        if (!savedScrollY || posts.length === 0) return;
+
+        sessionStorage.removeItem("homeTimelineReturnScrollY");
+        requestAnimationFrame(() => {
+            window.scrollTo(0, Number(savedScrollY) || 0);
+        });
+    }, [posts]);
 
     const nextDisabled = lastPage ? page >= lastPage : posts.length < LIMIT;
 
@@ -179,7 +223,7 @@ export default function Home() {
                     <label>Platform</label>
                     <select
                         value={platformFilter}
-                        onChange={(e) => setPlatformFilter(e.target.value)}
+                        onChange={(e) => changePlatformFilter(e.target.value)}
                     >
                         <option value="all">All</option>
                         <option value="ig">Instagram</option>
@@ -194,7 +238,7 @@ export default function Home() {
                     <label>Sort</label>
                     <select
                         value={sortOrder}
-                        onChange={(e) => setSortOrder(e.target.value)}
+                        onChange={(e) => changeSortOrder(e.target.value)}
                     >
                         <option value="newest">Newest First</option>
                         <option value="oldest">Oldest First</option>
@@ -229,7 +273,7 @@ export default function Home() {
                 <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
                     <button
                         className="pagination-btn"
-                        onClick={() => setPage((p) => Math.max(1, p - 1))}
+                        onClick={() => setTimelinePage(page - 1)}
                         disabled={page === 1}
                     >
                         ⬅️ Prev
@@ -242,7 +286,7 @@ export default function Home() {
 
                     <button
                         className="pagination-btn"
-                        onClick={() => setPage((p) => p + 1)}
+                        onClick={() => setTimelinePage(page + 1)}
                         disabled={nextDisabled}
                     >
                         Next ➡️
