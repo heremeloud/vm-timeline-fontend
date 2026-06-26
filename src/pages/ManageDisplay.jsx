@@ -6,6 +6,7 @@ import { getAdminEvents, updateEvent } from "../api/eventsService";
 import { getAdminProjects, updateProject } from "../api/projectsService";
 import { getAdminTopics, updateTopic } from "../api/topicsService";
 import { ROUTES } from "../routes";
+import { formatEventDateRange } from "../utils/eventDateRange";
 import "../styles/EventForm.css";
 
 const LIMIT = 25;
@@ -304,7 +305,7 @@ function DisplayRow({ tab, item, author, isSearchResult = false, saving, returnT
             appUrl = ROUTES.postDetail(item.target_post_id || item.id);
         }
     } else if (tab === "events") {
-        meta = `${item.event_date || "no date"}${item.category ? ` - ${item.category}` : ""}`;
+        meta = `${formatEventDateRange(item, "no date")}${item.category ? ` - ${item.category}` : ""}`;
         editUrl = ROUTES.editEvent(item.id);
     } else if (tab === "projects") {
         meta = `${item.start_date || item.year || "no date"}${item.category ? ` - ${item.category}` : ""}`;

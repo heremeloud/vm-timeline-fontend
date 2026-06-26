@@ -4,6 +4,7 @@ import { getProject, deleteProject } from "../api/projectsService";
 import { ROUTES } from "../routes";
 import Avatar from "../components/Avatar";
 import "../styles/Projects.css";
+import { formatEventDateRange } from "../utils/eventDateRange";
 
 function getYouTubeEmbedUrl(url) {
     const s = (url || "").trim();
@@ -291,7 +292,7 @@ export default function ProjectDetail() {
                                 <div key={ev.id}>
                                     <Link to={ROUTES.eventDetail(ev.id)} className="project-detail-event-item">
                                         <span className="project-detail-event-date">
-                                            {ev.event_date || "—"}
+                                            {formatEventDateRange(ev, "—")}
                                         </span>
                                         <span className="project-detail-event-name">{ev.name}</span>
                                         {ev.category && (
@@ -305,7 +306,7 @@ export default function ProjectDetail() {
                                             {children.map((child) => (
                                                 <Link key={child.id} to={ROUTES.eventDetail(child.id)} className="project-detail-event-item project-detail-event-child">
                                                     <span className="project-detail-event-date">
-                                                        {child.event_date || "—"}
+                                                        {formatEventDateRange(child, "—")}
                                                     </span>
                                                     <span className="project-detail-event-name">{child.name}</span>
                                                     {child.category && (

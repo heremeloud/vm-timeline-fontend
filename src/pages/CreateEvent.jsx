@@ -6,6 +6,18 @@ import { getProjects } from "../api/projectsService";
 import { ROUTES } from "../routes";
 import "../styles/EventForm.css";
 import { EVENT_CATEGORIES } from "../constants/eventCategories";
+import { formatEventDateRange } from "../utils/eventDateRange";
+
+const DEFAULT_TAG_OPTIONS = [
+    { key: "viewmim", label: "ViewMim", value: "ViewMim", defaultChecked: true, row: "couple" },
+    { key: "viewmim-th", label: "วิวมิ้ม", value: "วิวมิ้ม", defaultChecked: true, row: "couple" },
+    { key: "viewbenyapa", label: "viewbenyapa", value: "viewbenyapa", defaultChecked: false, row: "view" },
+    { key: "view-th", label: "วิวเบญญาภา", value: "วิวเบญญาภา", defaultChecked: false, row: "view" },
+    { key: "view-fandom", label: "สระอิของวว", value: "สระอิของวว", defaultChecked: false, row: "view" },
+    { key: "mimrattanawadee", label: "mimrattanawadee", value: "mimrattanawadee", defaultChecked: false, row: "mim" },
+    { key: "mim-th", label: "มิ้มรัตนวดี", value: "มิ้มรัตนวดี", defaultChecked: false, row: "mim" },
+    { key: "mim-fandom", label: "ด้อมเป็ดจิ๋ว", value: "ด้อมเป็ดจิ๋ว", defaultChecked: false, row: "mim" },
+];
 
 export default function CreateEvent() {
     const navigate = useNavigate();
@@ -19,10 +31,12 @@ export default function CreateEvent() {
     const [location, setLocation] = useState("");
     const [keyword, setKeyword] = useState("");
     const [tagsInput, setTagsInput] = useState("");
-    const [addViewMim, setAddViewMim] = useState(true);
-    const [addViewMimTh, setAddViewMimTh] = useState(true);
+    const [defaultTags, setDefaultTags] = useState(() =>
+        Object.fromEntries(DEFAULT_TAG_OPTIONS.map((tag) => [tag.key, tag.defaultChecked]))
+    );
     const [mediaURL, setMediaURL] = useState("");
-    const [eventDate, setEventDate] = useState("");
+    const [startDate, setStartDate] = useState("");
+    const [endDate, setEndDate] = useState("");
     const [announcementURL, setAnnouncementURL] = useState("");
     const [liveURLsInput, setLiveURLsInput] = useState("");
     const [projectId, setProjectId] = useState("");
@@ -59,21 +73,41 @@ export default function CreateEvent() {
 
     const tags = useMemo(() => {
         const base = tagsInput.split(",").map((t) => t.trim()).filter(Boolean);
-        const defaults = [
-            addViewMim ? "ViewMim" : null,
-            addViewMimTh ? "วิวมิ้ม" : null,
-        ].filter(Boolean);
+        const defaults = DEFAULT_TAG_OPTIONS
+            .filter((tag) => defaultTags[tag.key])
+            .map((tag) => tag.value);
         // merge, keeping order, no duplicates
         const seen = new Set(base.map((t) => t.toLowerCase()));
         for (const d of defaults) {
             if (!seen.has(d.toLowerCase())) base.push(d);
         }
         return base;
-    }, [tagsInput, addViewMim, addViewMimTh]);
+    }, [tagsInput, defaultTags]);
 
     function toggleAuthor(id) {
         setSelectedAuthorIds((prev) =>
             prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+        );
+    }
+
+    function toggleDefaultTag(key) {
+        setDefaultTags((prev) => ({ ...prev, [key]: !prev[key] }));
+    }
+
+    function renderDefaultTagRow(row) {
+        return (
+            <div style={{ display: "flex", gap: 20, marginTop: 8, flexWrap: "wrap" }}>
+                {DEFAULT_TAG_OPTIONS.filter((tag) => tag.row === row).map((tag) => (
+                    <label key={tag.key} style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer", fontWeight: 400 }}>
+                        <input
+                            type="checkbox"
+                            checked={!!defaultTags[tag.key]}
+                            onChange={() => toggleDefaultTag(tag.key)}
+                        />
+                        <span>Add <strong>{tag.label}</strong></span>
+                    </label>
+                ))}
+            </div>
         );
     }
 
@@ -93,7 +127,8 @@ export default function CreateEvent() {
                 keyword: keyword.trim() || null,
                 tags,
                 media_url: mediaURL.trim() || null,
-                event_date: eventDate || null,
+                start_date: startDate || null,
+                end_date: endDate || null,
                 announcement_url: announcementURL.trim() || null,
                 live_urls: liveURLsInput.split("\n").map(u => u.trim()).filter(Boolean),
                 author_ids: selectedAuthorIds,
@@ -125,12 +160,20 @@ export default function CreateEvent() {
 
                 <div className="eventform-section">
                     <label>Event Date (optional):</label>
-                    <input
-                        type="date"
-                        value={eventDate}
-                        onChange={(e) => setEventDate(e.target.value)}
-                        style={{ width: 180 }}
-                    />
+                    <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                        <input
+                            type="date"
+                            value={startDate}
+                            onChange={(e) => setStartDate(e.target.value)}
+                            style={{ width: 180 }}
+                        />
+                        <input
+                            type="date"
+                            value={endDate}
+                            onChange={(e) => setEndDate(e.target.value)}
+                            style={{ width: 180 }}
+                        />
+                    </div>
                 </div>
 
                 <div className="eventform-section">
@@ -170,24 +213,9 @@ export default function CreateEvent() {
                         placeholder="bkk, stage, live"
                     />
 
-                    <div style={{ display: "flex", gap: 20, marginTop: 8 }}>
-                        <label style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer", fontWeight: 400 }}>
-                            <input
-                                type="checkbox"
-                                checked={addViewMim}
-                                onChange={(e) => setAddViewMim(e.target.checked)}
-                            />
-                            <span>Add <strong>ViewMim</strong></span>
-                        </label>
-                        <label style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer", fontWeight: 400 }}>
-                            <input
-                                type="checkbox"
-                                checked={addViewMimTh}
-                                onChange={(e) => setAddViewMimTh(e.target.checked)}
-                            />
-                            <span>Add <strong>วิวมิ้ม</strong></span>
-                        </label>
-                    </div>
+                    {renderDefaultTagRow("couple")}
+                    {renderDefaultTagRow("view")}
+                    {renderDefaultTagRow("mim")}
                 </div>
 
                 <div className="eventform-section">
@@ -223,7 +251,7 @@ export default function CreateEvent() {
                     <select value={parentEventId} onChange={(e) => setParentEventId(e.target.value)}>
                         <option value="">— none —</option>
                         {pressTours.map((pt) => (
-                            <option key={pt.id} value={pt.id}>{pt.name}{pt.event_date ? ` (${pt.event_date})` : ""}</option>
+                            <option key={pt.id} value={pt.id}>{pt.name}{formatEventDateRange(pt) ? ` (${formatEventDateRange(pt)})` : ""}</option>
                         ))}
                     </select>
                 </div>

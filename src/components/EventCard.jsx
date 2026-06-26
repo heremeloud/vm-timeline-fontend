@@ -4,6 +4,7 @@ import Avatar from "./Avatar";
 import "../styles/EventCard.css";
 import { deleteEvent } from "../api/eventsService";
 import { ROUTES } from "../routes";
+import { formatEventDateRange, getEventStartDate } from "../utils/eventDateRange";
 
 function orderViewMimFirst(authors = []) {
     if (!Array.isArray(authors)) return [];
@@ -33,17 +34,18 @@ function addOneDay(yyyyMmDd) {
     return `${yy}-${mm}-${dd}`;
 }
 
-function buildTwitterQuery(term, eventDate) {
+function buildTwitterQuery(term, startDate, endDate) {
     const t = (term || "").trim();
-    const d = (eventDate || "").trim();
+    const start = (startDate || "").trim();
+    const end = (endDate || start || "").trim();
     if (!t) return "";
 
-    if (!d) return t;
+    if (!start && !end) return t;
 
-    const until = addOneDay(d);
+    const until = addOneDay(end);
     if (!until) return t;
 
-    return `${t} since:${d} until:${until}`;
+    return start ? `${t} since:${start} until:${until}` : `${t} until:${until}`;
 }
 
 const PROJECT_CATEGORY_EMOJI = {
@@ -128,9 +130,11 @@ export default function EventCard({ event }) {
 
     const [copied, setCopied] = useState(false);
     const [liveIdx, setLiveIdx] = useState(0);
+    const eventDateLabel = formatEventDateRange(event);
+    const eventStartDate = getEventStartDate(event);
 
     async function handleCopyTerm(term) {
-        const query = buildTwitterQuery(term, event.event_date);
+        const query = buildTwitterQuery(term, eventStartDate, event.end_date);
         const ok = await copyToClipboard(query);
         if (!ok) return;
 
@@ -207,10 +211,10 @@ export default function EventCard({ event }) {
                     </div>
                 ) : null}
 
-                {(event.event_date || event.location) && (
+                {(eventDateLabel || event.location) && (
                     <div className="eventcard-meta">
-                        {event.event_date ? `📅 ${event.event_date}` : null}
-                        {event.event_date && event.location ? "  •  " : null}
+                        {eventDateLabel ? `📅 ${eventDateLabel}` : null}
+                        {eventDateLabel && event.location ? "  •  " : null}
                         {event.location ? `📍 ${event.location}` : null}
                     </div>
                 )}
@@ -224,7 +228,8 @@ export default function EventCard({ event }) {
                                 onClick={() => handleCopyTerm(event.keyword)}
                                 title={buildTwitterQuery(
                                     event.keyword,
-                                    event.event_date
+                                    eventStartDate,
+                                    event.end_date
                                 )}
                             >
                                 {event.keyword}
@@ -241,7 +246,8 @@ export default function EventCard({ event }) {
                                     onClick={() => handleCopyTerm(term)}
                                     title={buildTwitterQuery(
                                         term,
-                                        event.event_date
+                                        eventStartDate,
+                                        event.end_date
                                     )}
                                 >
                                     {term}
@@ -363,8 +369,8 @@ export default function EventCard({ event }) {
                                 to={ROUTES.eventDetail(c.id)}
                                 className="eventcard-interview-item"
                             >
-                                {c.event_date && (
-                                    <span className="eventcard-interview-date">{c.event_date}</span>
+                                {formatEventDateRange(c) && (
+                                    <span className="eventcard-interview-date">{formatEventDateRange(c)}</span>
                                 )}
                                 <span>{c.name}</span>
                             </Link>
