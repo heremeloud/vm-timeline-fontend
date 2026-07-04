@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { getEvents } from "../api/eventsService";
 import { Link } from "react-router-dom";
 import { ROUTES } from "../routes";
@@ -45,12 +45,18 @@ function formatDayLabel(date) {
     return date.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
 }
 
-function buildCalendarDays(startDate, endDate) {
+function calendarGridBounds(startDate, endDate) {
     const first = new Date(startDate);
     first.setDate(first.getDate() - first.getDay());
 
     const last = new Date(endDate);
     last.setDate(last.getDate() + (6 - last.getDay()));
+
+    return { first, last };
+}
+
+function buildCalendarDays(startDate, endDate) {
+    const { first, last } = calendarGridBounds(startDate, endDate);
 
     const days = [];
     for (let cursor = new Date(first); cursor <= last; cursor.setDate(cursor.getDate() + 1)) {
@@ -79,6 +85,8 @@ export default function Events() {
     const [jumpPage, setJumpPage] = useState("");
     const [lastPage, setLastPage] = useState(null);
 
+    const requestIdRef = useRef(0);
+
     const fetchBaseEvents = useCallback(async (targetPage) => {
         const res = await getEvents({
             limit: LIMIT,
@@ -93,6 +101,10 @@ export default function Events() {
 
     const fetchCalendarEvents = useCallback(async () => {
         const rangeEnd = addMonths(calendarStart, 1);
+        // Fetch the full padded grid (including the leading/trailing days from
+        // adjacent months that fill out the first/last weeks), not just the
+        // exact month window, so events on those visible padding days show up.
+        const { first, last } = calendarGridBounds(calendarStart, rangeEnd);
         const res = await getEvents({
             limit: CALENDAR_LIMIT,
             offset: 0,
@@ -100,8 +112,8 @@ export default function Events() {
             name: nameFilter.trim() || undefined,
             category: categoryFilter || undefined,
             author: authorFilter || undefined,
-            visibleStart: formatDateKey(calendarStart),
-            visibleEnd: formatDateKey(rangeEnd),
+            visibleStart: formatDateKey(first),
+            visibleEnd: formatDateKey(last),
         });
         return res.data || [];
     }, [calendarStart, nameFilter, categoryFilter, authorFilter]);
@@ -168,13 +180,21 @@ export default function Events() {
     }
 
     const load = useCallback(async () => {
+        const requestId = ++requestIdRef.current;
+
+        // Clear stale events immediately so switching months/pages never
+        // briefly shows the previous window's events on the new dates.
+        setEvents([]);
+
         try {
             if (viewMode === "calendar") {
-                setEvents(await fetchCalendarEvents());
+                const calendarEvents = await fetchCalendarEvents();
+                if (requestIdRef.current === requestId) setEvents(calendarEvents);
                 return;
             }
 
             const baseEvents = await fetchBaseEvents(page);
+            if (requestIdRef.current !== requestId) return;
 
             // Discover last page when we naturally hit it
             if (baseEvents.length < LIMIT) setLastPage(page);
@@ -182,7 +202,7 @@ export default function Events() {
             setEvents(baseEvents);
         } catch (err) {
             console.error("Load events failed:", err);
-            setEvents([]);
+            if (requestIdRef.current === requestId) setEvents([]);
         }
     }, [viewMode, fetchCalendarEvents, fetchBaseEvents, page]);
 
