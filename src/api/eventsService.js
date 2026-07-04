@@ -1,10 +1,12 @@
 import api from "./api";
 
-export const getEvents = ({ limit, offset, sort, name, category, author } = {}) => {
+export const getEvents = ({ limit, offset, sort, name, category, author, visibleStart, visibleEnd } = {}) => {
     let url = `/events?limit=${limit}&offset=${offset}&sort=${sort}`;
     if (name) url += `&name=${encodeURIComponent(name)}`;
     if (category) url += `&category=${encodeURIComponent(category)}`;
     if (author) url += `&author=${encodeURIComponent(author)}`;
+    if (visibleStart) url += `&visible_start=${encodeURIComponent(visibleStart)}`;
+    if (visibleEnd) url += `&visible_end=${encodeURIComponent(visibleEnd)}`;
     return api.get(url);
 };
 

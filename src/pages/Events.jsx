@@ -1,26 +1,85 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { getEvents } from "../api/eventsService";
 import { Link } from "react-router-dom";
 import { ROUTES } from "../routes";
 import EventCard from "../components/EventCard";
 import "../styles/Home.css";
 import { EVENT_CATEGORIES } from "../constants/eventCategories";
+import { getEventStartDate } from "../utils/eventDateRange";
+
+const CALENDAR_LIMIT = 500;
+const LIMIT = 10;
+
+function padDatePart(value) {
+    return String(value).padStart(2, "0");
+}
+
+function formatDateKey(date) {
+    return `${date.getFullYear()}-${padDatePart(date.getMonth() + 1)}-${padDatePart(date.getDate())}`;
+}
+
+function startOfDay(date) {
+    return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+}
+
+function addMonths(date, amount) {
+    const next = new Date(date);
+    const originalDay = next.getDate();
+    next.setDate(1);
+    next.setMonth(next.getMonth() + amount);
+    const lastDay = new Date(next.getFullYear(), next.getMonth() + 1, 0).getDate();
+    next.setDate(Math.min(originalDay, lastDay));
+    next.setHours(0, 0, 0, 0);
+    return next;
+}
+
+function formatShortDate(date) {
+    return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+}
+
+function formatWindowLabel(startDate, endDate) {
+    return `${formatShortDate(startDate)} - ${formatShortDate(endDate)}`;
+}
+
+function formatDayLabel(date) {
+    return date.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
+}
+
+function buildCalendarDays(startDate, endDate) {
+    const first = new Date(startDate);
+    first.setDate(first.getDate() - first.getDay());
+
+    const last = new Date(endDate);
+    last.setDate(last.getDate() + (6 - last.getDay()));
+
+    const days = [];
+    for (let cursor = new Date(first); cursor <= last; cursor.setDate(cursor.getDate() + 1)) {
+        days.push(new Date(cursor));
+    }
+    return days;
+}
+
+function eventOverlapsDay(event, dayKey) {
+    const start = getEventStartDate(event);
+    const end = event?.end_date || start;
+    return start && start <= dayKey && end >= dayKey;
+}
 
 export default function Events() {
     const [events, setEvents] = useState([]);
 
+    const [viewMode, setViewMode] = useState("list");
     const [sortOrder, setSortOrder] = useState("newest");
     const [nameFilter, setNameFilter] = useState("");
     const [categoryFilter, setCategoryFilter] = useState("");
     const [authorFilter, setAuthorFilter] = useState("");
+    const [calendarStart, setCalendarStart] = useState(() => startOfDay(new Date()));
 
     const [page, setPage] = useState(1);
     const [jumpPage, setJumpPage] = useState("");
     const [lastPage, setLastPage] = useState(null);
 
-    const LIMIT = 10;
-
-    async function fetchBaseEvents(targetPage) {
+    const fetchBaseEvents = useCallback(async (targetPage) => {
         const res = await getEvents({
             limit: LIMIT,
             offset: (targetPage - 1) * LIMIT,
@@ -30,12 +89,27 @@ export default function Events() {
             author: authorFilter || undefined,
         });
         return res.data || [];
-    }
+    }, [sortOrder, nameFilter, categoryFilter, authorFilter]);
 
-    async function pageHasData(targetPage) {
+    const fetchCalendarEvents = useCallback(async () => {
+        const rangeEnd = addMonths(calendarStart, 1);
+        const res = await getEvents({
+            limit: CALENDAR_LIMIT,
+            offset: 0,
+            sort: "oldest",
+            name: nameFilter.trim() || undefined,
+            category: categoryFilter || undefined,
+            author: authorFilter || undefined,
+            visibleStart: formatDateKey(calendarStart),
+            visibleEnd: formatDateKey(rangeEnd),
+        });
+        return res.data || [];
+    }, [calendarStart, nameFilter, categoryFilter, authorFilter]);
+
+    const pageHasData = useCallback(async (targetPage) => {
         const base = await fetchBaseEvents(targetPage);
         return base.length > 0;
-    }
+    }, [fetchBaseEvents]);
 
     async function handleJump() {
         const num = Number(jumpPage);
@@ -74,7 +148,6 @@ export default function Events() {
 
             while (lo <= hi) {
                 const mid = Math.floor((lo + hi) / 2);
-                // eslint-disable-next-line no-await-in-loop
                 const ok = await pageHasData(mid);
 
                 if (ok) {
@@ -94,8 +167,13 @@ export default function Events() {
         }
     }
 
-    async function load() {
+    const load = useCallback(async () => {
         try {
+            if (viewMode === "calendar") {
+                setEvents(await fetchCalendarEvents());
+                return;
+            }
+
             const baseEvents = await fetchBaseEvents(page);
 
             // Discover last page when we naturally hit it
@@ -106,22 +184,32 @@ export default function Events() {
             console.error("Load events failed:", err);
             setEvents([]);
         }
-    }
+    }, [viewMode, fetchCalendarEvents, fetchBaseEvents, page]);
 
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         load();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [sortOrder, nameFilter, categoryFilter, authorFilter, page]);
+    }, [load]);
 
     // Reset pagination knowledge on filter change
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setLastPage(null);
         setPage(1);
         setJumpPage("");
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [sortOrder, nameFilter, categoryFilter, authorFilter]);
 
     const nextDisabled = lastPage ? page >= lastPage : events.length < LIMIT;
+    const calendarEnd = addMonths(calendarStart, 1);
+    const visibleDayKeys = new Set(buildCalendarDays(calendarStart, calendarEnd).map(formatDateKey));
+    const eventsByDay = events.reduce((acc, ev) => {
+        visibleDayKeys.forEach((dayKey) => {
+            if (!eventOverlapsDay(ev, dayKey)) return;
+            if (!acc[dayKey]) acc[dayKey] = [];
+            acc[dayKey].push(ev);
+        });
+        return acc;
+    }, {});
 
     return (
         <div className="home-container">
@@ -136,6 +224,23 @@ export default function Events() {
                     (⚠️ be aware of Twitter's search limit) 
                 </small>
                 <hr />
+            </div>
+
+            <div className="events-view-toggle" aria-label="Events view">
+                <button
+                    type="button"
+                    className={viewMode === "list" ? "active" : ""}
+                    onClick={() => setViewMode("list")}
+                >
+                    Timeline
+                </button>
+                <button
+                    type="button"
+                    className={viewMode === "calendar" ? "active" : ""}
+                    onClick={() => setViewMode("calendar")}
+                >
+                    Calendar
+                </button>
             </div>
 
             {/* Filters */}
@@ -187,65 +292,143 @@ export default function Events() {
                 </div>
             </div>
 
-            {/* Events list */}
-            <div className="timeline-container">
-                {events.map((ev) => (
-                    <EventCard key={ev.id} event={ev} />
-                ))}
-            </div>
+            {viewMode === "calendar" ? (
+                <div className="events-calendar">
+                    <div className="events-calendar-toolbar">
+                        <button
+                            type="button"
+                            className="pagination-btn"
+                            onClick={() => setCalendarStart((date) => addMonths(date, -1))}
+                        >
+                            Prev Month
+                        </button>
+                        <div className="events-calendar-title">
+                            {formatWindowLabel(calendarStart, calendarEnd)}
+                        </div>
+                        <button
+                            type="button"
+                            className="pagination-btn"
+                            onClick={() => setCalendarStart((date) => addMonths(date, 1))}
+                        >
+                            Next Month
+                        </button>
+                    </div>
 
-            {/* Pagination + Jump */}
-            <div
-                className="pagination-bar"
-                style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "center",
-                    gap: "10px",
-                    marginTop: "20px",
-                }}
-            >
-                <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                    <button
-                        className="pagination-btn"
-                        onClick={() => setPage((p) => Math.max(1, p - 1))}
-                        disabled={page === 1}
-                    >
-                        ⬅️ Prev
-                    </button>
+                    <div className="events-calendar-grid">
+                        {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((dayName) => (
+                            <div key={dayName} className="events-calendar-weekday">{dayName}</div>
+                        ))}
 
-                    <span>
-                        Page {page}
-                        {lastPage ? ` / ${lastPage}` : ""}
-                    </span>
+                        {buildCalendarDays(calendarStart, calendarEnd).map((day) => {
+                            const dayKey = formatDateKey(day);
+                            const dayEvents = eventsByDay[dayKey] || [];
+                            const isInWindow = day >= calendarStart && day <= calendarEnd;
 
-                    <button
-                        className="pagination-btn"
-                        onClick={() => setPage((p) => p + 1)}
-                        disabled={nextDisabled}
-                    >
-                        Next ➡️
-                    </button>
+                            return (
+                                <div
+                                    key={dayKey}
+                                    className={`events-calendar-day${isInWindow ? "" : " outside"}${dayEvents.length ? " has-events" : " no-events"}`}
+                                >
+                                    <div className="events-calendar-date">
+                                        <span className="events-calendar-date-day">{day.getDate()}</span>
+                                        <span className="events-calendar-date-full">{formatDayLabel(day)}</span>
+                                    </div>
+                                    <div className="events-calendar-items">
+                                        {dayEvents.slice(0, 3).map((ev) => (
+                                            <Link
+                                                key={`${dayKey}-${ev.id}`}
+                                                to={ROUTES.eventDetail(ev.id)}
+                                                className="events-calendar-event"
+                                            >
+                                                {ev.category && (
+                                                    <span className="events-calendar-event-category">
+                                                        {ev.category.toUpperCase()}
+                                                    </span>
+                                                )}
+                                                {(ev.media_url || ev.project_thumbnail_url) && (
+                                                    <img
+                                                        src={ev.media_url || ev.project_thumbnail_url}
+                                                        alt=""
+                                                        className="events-calendar-thumb"
+                                                    />
+                                                )}
+                                                <span className="events-calendar-event-title">{ev.name}</span>
+                                            </Link>
+                                        ))}
+                                        {dayEvents.length > 3 && (
+                                            <div className="events-calendar-more">
+                                                +{dayEvents.length - 3} more
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
                 </div>
+            ) : (
+                <>
+                    {/* Events list */}
+                    <div className="timeline-container">
+                        {events.map((ev) => (
+                            <EventCard key={ev.id} event={ev} />
+                        ))}
+                    </div>
 
-                <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                    <span style={{ fontSize: "0.85rem", opacity: 0.7 }}>Jump to:</span>
-                    <input
-                        type="number"
-                        min="1"
-                        max={lastPage || undefined}
-                        value={jumpPage}
-                        onChange={(e) => setJumpPage(e.target.value)}
-                        onKeyDown={(e) => {
-                            if (e.key === "Enter") handleJump();
+                    {/* Pagination + Jump */}
+                    <div
+                        className="pagination-bar"
+                        style={{
+                            display: "flex",
+                            flexDirection: "column",
+                            alignItems: "center",
+                            gap: "10px",
+                            marginTop: "20px",
                         }}
-                        onBlur={() => {
-                            if (jumpPage) handleJump();
-                        }}
-                        className="jump-to-input"
-                    />
-                </div>
-            </div>
+                    >
+                        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                            <button
+                                className="pagination-btn"
+                                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                                disabled={page === 1}
+                            >
+                                Prev
+                            </button>
+
+                            <span>
+                                Page {page}
+                                {lastPage ? ` / ${lastPage}` : ""}
+                            </span>
+
+                            <button
+                                className="pagination-btn"
+                                onClick={() => setPage((p) => p + 1)}
+                                disabled={nextDisabled}
+                            >
+                                Next
+                            </button>
+                        </div>
+
+                        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                            <span style={{ fontSize: "0.85rem", opacity: 0.7 }}>Jump to:</span>
+                            <input
+                                type="number"
+                                min="1"
+                                max={lastPage || undefined}
+                                value={jumpPage}
+                                onChange={(e) => setJumpPage(e.target.value)}
+                                onKeyDown={(e) => {
+                                    if (e.key === "Enter") handleJump();
+                                }}
+                                onBlur={() => {
+                                    if (jumpPage) handleJump();
+                                }}
+                                className="jump-to-input"
+                            />
+                        </div>
+                    </div>
+                </>
+            )}
 
             {/* Create Event button (admin only) */}
             {localStorage.getItem("jwt") && (
