@@ -461,7 +461,8 @@
     }
 
     .events-calendar-toolbar {
-        flex-wrap: wrap;
+        flex-direction: column;
+        flex-wrap: nowrap;
         gap: 8px;
     }
 
