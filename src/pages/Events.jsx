@@ -286,7 +286,7 @@ export default function Events() {
                     className={viewMode === "list" ? "active" : ""}
                     onClick={() => setViewMode("list")}
                 >
-                    Timeline
+                    List
                 </button>
                 <button
                     type="button"
