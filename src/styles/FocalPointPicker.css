@@ -1,0 +1,65 @@
+.focal-point-picker {
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+    margin-top: 10px;
+    flex-wrap: wrap;
+}
+
+.focal-point-preview {
+    flex: 0 0 200px;
+    width: 200px;
+    aspect-ratio: 4 / 3;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid rgba(0, 0, 0, 0.15);
+    background: #eadfce;
+}
+
+.focal-point-preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.focal-point-sliders {
+    flex: 1;
+    min-width: 200px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.focal-point-sliders label {
+    font-weight: 600;
+    font-size: 0.85rem;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.focal-point-sliders input[type="range"] {
+    width: 100%;
+}
+
+.focal-point-presets {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.focal-point-reset {
+    align-self: flex-start;
+    padding: 5px 10px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    border-radius: 6px;
+    border: 1px solid #a67c52;
+    background: #fff;
+    color: #a67c52;
+    cursor: pointer;
+}
+
+.focal-point-reset:hover {
+    background: #f5ece1;
+}

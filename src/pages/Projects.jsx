@@ -66,7 +66,15 @@ export default function Projects() {
                     <Link key={p.id} to={ROUTES.projectDetail(p.slug || p.id)} className="project-card">
                         <div className="project-card-thumb">
                             {p.thumbnail_url
-                                ? <img src={p.thumbnail_url} alt={p.title} />
+                                ? (
+                                    <img
+                                        src={p.thumbnail_url}
+                                        alt={p.title}
+                                        style={{
+                                            objectPosition: `${p.thumbnail_focal_x ?? 50}% ${p.thumbnail_focal_y ?? 50}%`,
+                                        }}
+                                    />
+                                )
                                 : <div className="project-card-thumb-placeholder">🎬</div>
                             }
                         </div>

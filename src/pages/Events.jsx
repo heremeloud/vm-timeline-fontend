@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { getEvents } from "../api/eventsService";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { ROUTES } from "../routes";
 import EventCard from "../components/EventCard";
 import "../styles/Home.css";
@@ -22,6 +22,14 @@ function startOfDay(date) {
     return new Date(date.getFullYear(), date.getMonth(), date.getDate());
 }
 
+function parseDateKey(key) {
+    const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(key || "");
+    if (!match) return null;
+    const [, y, m, d] = match;
+    const date = new Date(Number(y), Number(m) - 1, Number(d));
+    return Number.isNaN(date.getTime()) ? null : date;
+}
+
 function addMonths(date, amount) {
     const next = new Date(date);
     const originalDay = next.getDate();
@@ -34,7 +42,7 @@ function addMonths(date, amount) {
 }
 
 function formatShortDate(date) {
-    return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+    return date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 }
 
 function formatWindowLabel(startDate, endDate) {
@@ -72,14 +80,40 @@ function eventOverlapsDay(event, dayKey) {
 }
 
 export default function Events() {
+    const [searchParams, setSearchParams] = useSearchParams();
+
     const [events, setEvents] = useState([]);
 
-    const [viewMode, setViewMode] = useState("list");
+    const [viewMode, setViewMode] = useState(() =>
+        searchParams.get("view") === "calendar" ? "calendar" : "list"
+    );
     const [sortOrder, setSortOrder] = useState("newest");
     const [nameFilter, setNameFilter] = useState("");
     const [categoryFilter, setCategoryFilter] = useState("");
     const [authorFilter, setAuthorFilter] = useState("");
-    const [calendarStart, setCalendarStart] = useState(() => startOfDay(new Date()));
+    const [calendarStart, setCalendarStart] = useState(
+        () => parseDateKey(searchParams.get("month")) || startOfDay(new Date())
+    );
+
+    // Keep the URL in sync with the calendar view so navigating away (e.g. to
+    // an event/project detail page) and back restores the same month + view.
+    useEffect(() => {
+        setSearchParams(
+            (prev) => {
+                const next = new URLSearchParams(prev);
+                if (viewMode === "calendar") {
+                    next.set("view", "calendar");
+                    next.set("month", formatDateKey(calendarStart));
+                } else {
+                    next.delete("view");
+                    next.delete("month");
+                }
+                return next;
+            },
+            { replace: true }
+        );
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [viewMode, calendarStart]);
 
     const [page, setPage] = useState(1);
     const [jumpPage, setJumpPage] = useState("");
@@ -370,6 +404,11 @@ export default function Events() {
                                                         src={ev.media_url || ev.project_thumbnail_url}
                                                         alt=""
                                                         className="events-calendar-thumb"
+                                                        style={{
+                                                            objectPosition: ev.media_url
+                                                                ? `${ev.media_focal_x ?? 50}% ${ev.media_focal_y ?? 50}%`
+                                                                : `${ev.project_thumbnail_focal_x ?? 50}% ${ev.project_thumbnail_focal_y ?? 50}%`,
+                                                        }}
                                                     />
                                                 )}
                                                 <span className="events-calendar-event-title">{ev.name}</span>

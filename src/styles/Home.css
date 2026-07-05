@@ -524,6 +524,7 @@
         height: 200px;
         border-radius: 7px;
         object-fit: contain;
+        object-position: 50% 50% !important;
         background: #fff;
     }
 

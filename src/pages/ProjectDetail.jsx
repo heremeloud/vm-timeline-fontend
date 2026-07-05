@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, useNavigate, Link } from "react-router-dom";
 import { getProject, deleteProject } from "../api/projectsService";
 import { ROUTES } from "../routes";
 import Avatar from "../components/Avatar";
@@ -38,6 +38,7 @@ function orderViewMimFirst(authors = []) {
 
 export default function ProjectDetail() {
     const { projectId } = useParams();
+    const navigate = useNavigate();
     const [project, setProject] = useState(null);
     const [loading, setLoading] = useState(true);
     const isAdmin = !!localStorage.getItem("jwt");
@@ -75,10 +76,18 @@ export default function ProjectDetail() {
 
     const playlists = project.playlists || [];
 
+    function goBack() {
+        if (window.history.state?.idx > 0) {
+            navigate(-1);
+        } else {
+            navigate(ROUTES.projects);
+        }
+    }
+
     return (
         <div className="project-detail-container">
             {/* Back link */}
-            <Link to={ROUTES.projects} className="project-detail-back">← Back to Projects</Link>
+            <button type="button" onClick={goBack} className="project-detail-back">← Back to Projects</button>
 
             {/* Header */}
             <div className="project-detail-header">
@@ -245,7 +254,14 @@ export default function ProjectDetail() {
                     {project.child_projects.map((child) => (
                         <Link key={child.id} to={ROUTES.projectDetail(child.slug || child.id)} className="project-detail-child-project">
                             {child.thumbnail_url && (
-                                <img src={child.thumbnail_url} alt={child.title} className="project-detail-child-thumb" />
+                                <img
+                                    src={child.thumbnail_url}
+                                    alt={child.title}
+                                    className="project-detail-child-thumb"
+                                    style={{
+                                        objectPosition: `${child.thumbnail_focal_x ?? 50}% ${child.thumbnail_focal_y ?? 50}%`,
+                                    }}
+                                />
                             )}
                             <span className="project-detail-event-name">{child.title}</span>
                             {child.category && (

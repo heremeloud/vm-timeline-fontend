@@ -4,6 +4,7 @@ import { getEvent, updateEvent, getEvents } from "../api/eventsService";
 import { getAuthors } from "../api/authorsService";
 import { getProjects } from "../api/projectsService";
 import { ROUTES } from "../routes";
+import FocalPointPicker from "../components/FocalPointPicker";
 import "../styles/EventForm.css";
 import { EVENT_CATEGORIES } from "../constants/eventCategories";
 import { formatEventDateRange, getEventStartDate } from "../utils/eventDateRange";
@@ -36,6 +37,8 @@ export default function EditEvent() {
         Object.fromEntries(DEFAULT_TAG_OPTIONS.map((tag) => [tag.key, tag.defaultChecked]))
     );
     const [mediaURL, setMediaURL] = useState("");
+    const [mediaFocalX, setMediaFocalX] = useState(50);
+    const [mediaFocalY, setMediaFocalY] = useState(50);
     const [startDate, setStartDate] = useState("");
     const [endDate, setEndDate] = useState("");
     const [announcementURL, setAnnouncementURL] = useState("");
@@ -72,6 +75,8 @@ export default function EditEvent() {
                 setLocation(ev.location || "");
                 setKeyword(ev.keyword || "");
                 setMediaURL(ev.media_url || "");
+                setMediaFocalX(ev.media_focal_x ?? 50);
+                setMediaFocalY(ev.media_focal_y ?? 50);
                 setStartDate(getEventStartDate(ev));
                 setEndDate(ev.end_date || "");
                 setAnnouncementURL(ev.announcement_url || "");
@@ -167,6 +172,8 @@ export default function EditEvent() {
                 keyword: keyword.trim() || null,
                 tags,
                 media_url: mediaURL.trim() || null,
+                media_focal_x: mediaURL.trim() ? mediaFocalX : null,
+                media_focal_y: mediaURL.trim() ? mediaFocalY : null,
                 start_date: startDate || null,
                 end_date: endDate || null,
                 announcement_url: announcementURL.trim() || null,
@@ -264,6 +271,15 @@ export default function EditEvent() {
                         value={mediaURL}
                         onChange={(e) => setMediaURL(e.target.value)}
                         placeholder="https://..."
+                    />
+                    <FocalPointPicker
+                        imageUrl={mediaURL.trim()}
+                        x={mediaFocalX}
+                        y={mediaFocalY}
+                        onChange={(nx, ny) => {
+                            setMediaFocalX(nx);
+                            setMediaFocalY(ny);
+                        }}
                     />
                 </div>
 

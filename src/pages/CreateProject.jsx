@@ -4,6 +4,7 @@ import { createProject, getProjects } from "../api/projectsService";
 import { getAuthors } from "../api/authorsService";
 import { ROUTES } from "../routes";
 import { PROJECT_CATEGORIES } from "../constants/projectCategories";
+import FocalPointPicker from "../components/FocalPointPicker";
 import "../styles/EventForm.css";
 
 function slugify(value) {
@@ -23,6 +24,8 @@ export default function CreateProject() {
     const [slug, setSlug] = useState("");
     const [category, setCategory] = useState("");
     const [thumbnailUrl, setThumbnailUrl] = useState("");
+    const [thumbnailFocalX, setThumbnailFocalX] = useState(50);
+    const [thumbnailFocalY, setThumbnailFocalY] = useState(50);
     const [year, setYear] = useState("");
     const [startDate, setStartDate] = useState("");
     const [endDate, setEndDate] = useState("");
@@ -68,6 +71,8 @@ export default function CreateProject() {
                 slug: slug || null,
                 category: category || null,
                 thumbnail_url: thumbnailUrl || null,
+                thumbnail_focal_x: thumbnailUrl.trim() ? thumbnailFocalX : null,
+                thumbnail_focal_y: thumbnailUrl.trim() ? thumbnailFocalY : null,
                 year: year ? parseInt(year) : null,
                 start_date: startDate || null,
                 end_date: endDate || null,
@@ -142,6 +147,15 @@ export default function CreateProject() {
                 <div className="eventform-section">
                     <label>Thumbnail URL</label>
                     <input value={thumbnailUrl} onChange={(e) => setThumbnailUrl(e.target.value)} placeholder="https://..." />
+                    <FocalPointPicker
+                        imageUrl={thumbnailUrl.trim()}
+                        x={thumbnailFocalX}
+                        y={thumbnailFocalY}
+                        onChange={(nx, ny) => {
+                            setThumbnailFocalX(nx);
+                            setThumbnailFocalY(ny);
+                        }}
+                    />
                 </div>
 
                 <div className="eventform-section">
