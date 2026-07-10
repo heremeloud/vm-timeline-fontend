@@ -94,6 +94,7 @@
     margin-top: 4px;
     font-size: 0.82rem;
     color: #888;
+    white-space: pre-wrap;
 }
 
 /* Admin action buttons */

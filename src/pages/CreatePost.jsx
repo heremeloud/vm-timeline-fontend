@@ -375,11 +375,11 @@ export default function CreatePost() {
 
                 <div className="eventform-section">
                     <label>Translator's note (optional):</label>
-                    <input
-                        type="text"
+                    <textarea
                         value={captionTranslationNote}
                         onChange={(e) => setCaptionTranslationNote(e.target.value)}
                         placeholder="e.g. slang, context, nuance…"
+                        style={{ minHeight: 80 }}
                     />
                 </div>
 
@@ -433,7 +433,7 @@ export default function CreatePost() {
                                         rows={2}
                                         style={{ width: "100%", marginBottom: 4, boxSizing: "border-box" }}
                                     />
-                                    <input
+                                    <textarea
                                         value={item.note}
                                         onChange={(e) => {
                                             const next = [...mediaItems];
@@ -441,7 +441,8 @@ export default function CreatePost() {
                                             setMediaItems(next);
                                         }}
                                         placeholder="Translator's note (optional)"
-                                        style={{ width: "100%", boxSizing: "border-box" }}
+                                        rows={2}
+                                        style={{ width: "100%", marginBottom: 4, boxSizing: "border-box" }}
                                     />
                                 </div>
                             ))}
