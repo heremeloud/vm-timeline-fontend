@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { getEvent, updateEvent, getEvents } from "../api/eventsService";
+import { getAdminEvent, updateEvent, getEvents } from "../api/eventsService";
 import { getAuthors } from "../api/authorsService";
 import { getProjects } from "../api/projectsService";
 import { ROUTES } from "../routes";
@@ -12,6 +12,7 @@ import { formatEventDateRange, getEventStartDate } from "../utils/eventDateRange
 const DEFAULT_TAG_OPTIONS = [
     { key: "viewmim", label: "ViewMim", value: "ViewMim", defaultChecked: false, row: "couple" },
     { key: "viewmim-th", label: "วิวมิ้ม", value: "วิวมิ้ม", defaultChecked: false, row: "couple" },
+    { key: "vimmy", label: "VIMMY", value: "VIMMY", defaultChecked: false, row: "couple" },
     { key: "viewbenyapa", label: "viewbenyapa", value: "viewbenyapa", defaultChecked: false, row: "view" },
     { key: "view-th", label: "วิวเบญญาภา", value: "วิวเบญญาภา", defaultChecked: false, row: "view" },
     { key: "view-fandom", label: "สระอิของวว", value: "สระอิของวว", defaultChecked: false, row: "view" },
@@ -41,7 +42,8 @@ export default function EditEvent() {
     const [mediaFocalY, setMediaFocalY] = useState(50);
     const [startDate, setStartDate] = useState("");
     const [endDate, setEndDate] = useState("");
-    const [announcementURL, setAnnouncementURL] = useState("");
+    const [announcementURLsInput, setAnnouncementURLsInput] = useState("");
+    const [privateNotes, setPrivateNotes] = useState("");
     const [liveURLsInput, setLiveURLsInput] = useState("");
     const [selectedAuthorIds, setSelectedAuthorIds] = useState([]);
     const [projectId, setProjectId] = useState("");
@@ -56,7 +58,7 @@ export default function EditEvent() {
             try {
                 const [aRes, eRes, pRes, ptRes] = await Promise.all([
                     getAuthors(),
-                    getEvent(eventId),
+                    getAdminEvent(eventId),
                     getProjects(),
                     getEvents({ category: "press tour", limit: 200, offset: 0, sort: "newest" }),
                 ]);
@@ -79,7 +81,8 @@ export default function EditEvent() {
                 setMediaFocalY(ev.media_focal_y ?? 50);
                 setStartDate(getEventStartDate(ev));
                 setEndDate(ev.end_date || "");
-                setAnnouncementURL(ev.announcement_url || "");
+                setAnnouncementURLsInput((ev.announcement_urls || []).join("\n"));
+                setPrivateNotes(ev.private_notes || "");
                 setLiveURLsInput((ev.live_urls || []).join("\n"));
 
                 const tags = ev.tags || [];
@@ -176,7 +179,8 @@ export default function EditEvent() {
                 media_focal_y: mediaURL.trim() ? mediaFocalY : null,
                 start_date: startDate || null,
                 end_date: endDate || null,
-                announcement_url: announcementURL.trim() || null,
+                announcement_urls: announcementURLsInput.split("\n").map(u => u.trim()).filter(Boolean),
+                private_notes: privateNotes.trim() || null,
                 live_urls: liveURLsInput.split("\n").map(u => u.trim()).filter(Boolean),
                 author_ids: selectedAuthorIds,
                 project_id: projectId ? Number(projectId) : null,
@@ -284,11 +288,22 @@ export default function EditEvent() {
                 </div>
 
                 <div className="eventform-section">
-                    <label>Announcement URL (optional):</label>
-                    <input
-                        value={announcementURL}
-                        onChange={(e) => setAnnouncementURL(e.target.value)}
-                        placeholder="https://..."
+                    <label>Announcement URLs (private, one per line):</label>
+                    <textarea
+                        value={announcementURLsInput}
+                        onChange={(e) => setAnnouncementURLsInput(e.target.value)}
+                        placeholder={"https://...\nhttps://..."}
+                        style={{ minHeight: 80 }}
+                    />
+                </div>
+
+                <div className="eventform-section">
+                    <label>Private Notes (not shown publicly):</label>
+                    <textarea
+                        value={privateNotes}
+                        onChange={(e) => setPrivateNotes(e.target.value)}
+                        placeholder="Notes for your own reference..."
+                        style={{ minHeight: 120 }}
                     />
                 </div>
 

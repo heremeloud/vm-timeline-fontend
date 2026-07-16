@@ -12,6 +12,8 @@ export const getEvents = ({ limit, offset, sort, name, category, author, visible
 
 export const getEvent = (id) => api.get(`/events/${id}`);
 
+export const getAdminEvent = (id) => api.get(`/events/admin/${id}`);
+
 export const getAdminEvents = ({ limit = 50, offset = 0, sort = "newest", name, category } = {}) => {
     let url = `/events/admin?limit=${limit}&offset=${offset}&sort=${sort}`;
     if (name) url += `&name=${encodeURIComponent(name)}`;
