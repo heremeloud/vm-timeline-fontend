@@ -38,6 +38,7 @@ export default function EditProject() {
     const [youtubeUrl, setYoutubeUrl] = useState("");
     const [mydramalistUrl, setMydramalistUrl] = useState("");
     const [gmmtvUrl, setGmmtvUrl] = useState("");
+    const [officialTwitterUrl, setOfficialTwitterUrl] = useState("");
     const [spotifyUrl, setSpotifyUrl] = useState("");
     const [appleMusicUrl, setAppleMusicUrl] = useState("");
     const [parentProjectId, setParentProjectId] = useState("");
@@ -78,6 +79,7 @@ export default function EditProject() {
             setYoutubeUrl(p.youtube_url || "");
             setMydramalistUrl(p.mydramalist_url || "");
             setGmmtvUrl(p.gmmtv_url || "");
+            setOfficialTwitterUrl(p.official_twitter_url || "");
             setSpotifyUrl(p.spotify_url || "");
             setAppleMusicUrl(p.apple_music_url || "");
             setParentProjectId(p.parent_project_id ? String(p.parent_project_id) : "");
@@ -126,6 +128,7 @@ export default function EditProject() {
                 youtube_url: youtubeUrl || null,
                 mydramalist_url: mydramalistUrl || null,
                 gmmtv_url: gmmtvUrl || null,
+                official_twitter_url: category === "series" ? officialTwitterUrl || null : null,
                 spotify_url: spotifyUrl || null,
                 apple_music_url: appleMusicUrl || null,
                 parent_project_id: parentProjectId ? parseInt(parentProjectId) : null,
@@ -203,6 +206,13 @@ export default function EditProject() {
                     <label>GMMTV Official URL <span style={{ fontWeight: 400, opacity: 0.6 }}>(optional)</span></label>
                     <input value={gmmtvUrl} onChange={(e) => setGmmtvUrl(e.target.value)} placeholder="https://www.gmmtv.com/..." />
                 </div>
+
+                {category === "series" && (
+                    <div className="eventform-section">
+                        <label>Official Series Twitter / X Account <span style={{ fontWeight: 400, opacity: 0.6 }}>(optional)</span></label>
+                        <input value={officialTwitterUrl} onChange={(e) => setOfficialTwitterUrl(e.target.value)} placeholder="https://x.com/seriesaccount" />
+                    </div>
+                )}
 
                 <div className="eventform-section">
                     <label>MyDramaList URL <span style={{ fontWeight: 400, opacity: 0.6 }}>(optional)</span></label>

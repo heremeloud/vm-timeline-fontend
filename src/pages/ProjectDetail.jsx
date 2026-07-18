@@ -149,7 +149,7 @@ export default function ProjectDetail() {
                         <p className="project-detail-desc">{project.description}</p>
                     )}
 
-                    {(project.gmmtv_url || project.mydramalist_url || project.spotify_url || project.apple_music_url) && (
+                    {(project.gmmtv_url || project.official_twitter_url || project.mydramalist_url || project.spotify_url || project.apple_music_url) && (
                         <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginTop: 8 }}>
                             {project.gmmtv_url && (
                                 <a
@@ -164,6 +164,21 @@ export default function ProjectDetail() {
                                         style={{ width: 13, height: 13, verticalAlign: "middle", marginRight: 5 }}
                                     />
                                     GMMTV ↗
+                                </a>
+                            )}
+                            {project.category === "series" && project.official_twitter_url && (
+                                <a
+                                    href={project.official_twitter_url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="project-detail-ext-link"
+                                >
+                                    <img
+                                        src="https://cdn.simpleicons.org/x/000000"
+                                        alt="X"
+                                        style={{ width: 13, height: 13, verticalAlign: "middle", marginRight: 5 }}
+                                    />
+                                    Official X ↗
                                 </a>
                             )}
                             {project.mydramalist_url && (
