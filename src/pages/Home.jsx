@@ -1,14 +1,17 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import "../styles/Home.css";
 import { getPosts, getThread } from "../api/postsService";
 import { getTextsByPost } from "../api/textsService";
+import { getEvents } from "../api/eventsService";
 import { ROUTES } from "../routes";
 import { Link, useSearchParams } from "react-router-dom";
 import PostCard from "../components/PostCard";
+import { buildEventTagIndex } from "../utils/eventTagLinks";
 
 export default function Home() {
     const [searchParams, setSearchParams] = useSearchParams();
     const [posts, setPosts] = useState([]);
+    const [events, setEvents] = useState([]);
 
     const [platformFilter, setPlatformFilter] = useState(
         searchParams.get("platform") || "all"
@@ -25,6 +28,7 @@ export default function Home() {
     const [lastPage, setLastPage] = useState(null); // discovered last page
     const [lastUpdated, setLastUpdated] = useState(null);
     const LIMIT = 10;
+    const eventTagIndex = useMemo(() => buildEventTagIndex(events), [events]);
 
     function updateTimelineURL(next = {}) {
         const nextPlatform = next.platformFilter ?? platformFilter;
@@ -120,7 +124,6 @@ export default function Home() {
 
             while (lo <= hi) {
                 const mid = Math.floor((lo + hi) / 2);
-                // eslint-disable-next-line no-await-in-loop
                 const ok = await pageHasData(mid);
 
                 if (ok) {
@@ -184,6 +187,16 @@ export default function Home() {
                 setLastUpdated(date.toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" }));
             }
         }).catch(() => {});
+    }, []);
+
+    // Event tags are used to turn matching post hashtags into Event Detail links.
+    useEffect(() => {
+        getEvents({ limit: 1000, offset: 0, sort: "oldest" })
+            .then((res) => setEvents(res.data || []))
+            .catch((err) => {
+                console.error("Event tags load failed:", err);
+                setEvents([]);
+            });
     }, []);
 
     // Load whenever page/filter/sort changes
@@ -254,6 +267,7 @@ export default function Home() {
                         post={post}
                         childrenPosts={post.childrenPosts || []}
                         comments={post.comments || []}
+                        eventTagIndex={eventTagIndex}
                     />
                 ))}
             </div>

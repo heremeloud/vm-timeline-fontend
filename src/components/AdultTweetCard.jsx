@@ -1,5 +1,6 @@
 import { isVideo } from "../utils/media";
 import Avatar from "./Avatar";
+import EventLinkedText from "./EventLinkedText";
 
 function getTweetHandle(url = "") {
     try {
@@ -12,7 +13,7 @@ function getTweetHandle(url = "") {
     }
 }
 
-export default function AdultTweetCard({ tweet }) {
+export default function AdultTweetCard({ tweet, eventTagLinks = [] }) {
     const avatarUrl = tweet.author_twitter_pfp_url || tweet.author_photo;
     const authorName = tweet.author_name || "X user";
     const authorInitial = authorName.trim().charAt(0).toUpperCase();
@@ -53,13 +54,19 @@ export default function AdultTweetCard({ tweet }) {
             </div>
 
             {tweet.caption && (
-                <p className="post-adult-caption">{tweet.caption}</p>
+                <p className="post-adult-caption">
+                    <EventLinkedText text={tweet.caption} eventTagLinks={eventTagLinks} />
+                </p>
             )}
             {tweet.caption_translation && (
-                <p className="post-adult-translation">{tweet.caption_translation}</p>
+                <p className="post-adult-translation">
+                    <EventLinkedText text={tweet.caption_translation} eventTagLinks={eventTagLinks} />
+                </p>
             )}
             {tweet.caption_translation_note && (
-                <p className="post-adult-note">📝 {tweet.caption_translation_note}</p>
+                <p className="post-adult-note">
+                    📝 <EventLinkedText text={tweet.caption_translation_note} eventTagLinks={eventTagLinks} />
+                </p>
             )}
             {tweet.media_url && (
                 isVideo(tweet.media_url) ? (

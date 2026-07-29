@@ -4,24 +4,30 @@ import "../styles/PostCard.css";
 import { getTextsByPost } from "../api/textsService";
 import { getThread, deletePost } from "../api/postsService";
 import { ROUTES } from "../routes";
+import { getEventTagLinks } from "../utils/eventTagLinks";
 
 import { isVideo } from "../utils/media";
 import InstagramEmbed from "./InstagramEmbed";
 import TweetEmbed from "./TweetEmbed";
 import TikTokEmbed from "./TikTokEmbed";
 import AdultTweetCard from "./AdultTweetCard";
+import EventLinkedText from "./EventLinkedText";
 
 import IGReply from "./IGReply";
 import TweetReply from "./TweetReply";
 import TikTokReply from "./TikTokReply";
 
-export default function PostCard({ post, showReplies = true }) {
+export default function PostCard({ post, showReplies = true, eventTagIndex = null }) {
     const location = useLocation();
     const returnTo = `${location.pathname}${location.search}`;
     const isInstagram = post.platform === "ig" || post.platform === "instagram";
     const isTwitter = post.platform === "x" || post.platform === "twitter";
     const isTikTok = post.platform === "tt" || post.platform === "tiktok";
     const rendersAdultFallback = Boolean(post.is_adult);
+    const eventTagLinks = useMemo(
+        () => getEventTagLinks(post, eventTagIndex),
+        [post, eventTagIndex]
+    );
 
     const [comments, setComments] = useState([]);
     const [childrenPosts, setChildrenPosts] = useState([]);
@@ -112,7 +118,7 @@ export default function PostCard({ post, showReplies = true }) {
             <div className="post-embed">
                 {rendersAdultFallback ? (
                     isTwitter ? (
-                        <AdultTweetCard tweet={post} />
+                        <AdultTweetCard tweet={post} eventTagLinks={eventTagLinks} />
                     ) : (
                         <div className="post-adult-card">
                             {post.author_name && (
@@ -124,13 +130,19 @@ export default function PostCard({ post, showReplies = true }) {
                             </a>
                         )}
                         {post.caption && (
-                            <p className="post-adult-caption">{post.caption}</p>
+                            <p className="post-adult-caption">
+                                <EventLinkedText text={post.caption} eventTagLinks={eventTagLinks} />
+                            </p>
                         )}
                         {post.caption_translation && (
-                            <p className="post-adult-translation">{post.caption_translation}</p>
+                            <p className="post-adult-translation">
+                                <EventLinkedText text={post.caption_translation} eventTagLinks={eventTagLinks} />
+                            </p>
                         )}
                         {post.caption_translation_note && (
-                            <p className="post-adult-note">📝 {post.caption_translation_note}</p>
+                            <p className="post-adult-note">
+                                📝 <EventLinkedText text={post.caption_translation_note} eventTagLinks={eventTagLinks} />
+                            </p>
                         )}
                         {post.media_url && (
                             isVideo(post.media_url) ? (
@@ -181,9 +193,13 @@ export default function PostCard({ post, showReplies = true }) {
 
             {post.caption_translation && !rendersAdultFallback && (
                 <div className="post-caption-translation">
-                    <p>{post.caption_translation}</p>
+                    <p>
+                        <EventLinkedText text={post.caption_translation} eventTagLinks={eventTagLinks} />
+                    </p>
                     {post.caption_translation_note && (
-                        <p className="post-translation-note">📝 {post.caption_translation_note}</p>
+                        <p className="post-translation-note">
+                            📝 <EventLinkedText text={post.caption_translation_note} eventTagLinks={eventTagLinks} />
+                        </p>
                     )}
                 </div>
             )}
@@ -193,6 +209,21 @@ export default function PostCard({ post, showReplies = true }) {
             {isTwitter && post.media_url && !rendersAdultFallback && (
                 <div className="post-media">
                     <img src={post.media_url} alt="" />
+                </div>
+            )}
+
+            {!post.caption_translation && !rendersAdultFallback && eventTagLinks.length > 0 && (
+                <div className="post-event-tags" aria-label="Related events">
+                    {eventTagLinks.map(({ hashtag, event, projectId }) => (
+                        <Link
+                            key={`${hashtag}-${event.id}`}
+                            to={projectId ? ROUTES.projectDetail(projectId) : ROUTES.eventDetail(event.id)}
+                            className="post-event-tag-link"
+                            title={projectId ? "View related project" : `View event: ${event.name}`}
+                        >
+                            {hashtag}
+                        </Link>
+                    ))}
                 </div>
             )}
 

@@ -3,6 +3,7 @@ import { createPost } from "../api/postsService";
 import { getAuthors, ensureAuthor } from "../api/authorsService";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { ROUTES } from "../routes";
+import AutoResizeTextarea from "../components/AutoResizeTextarea";
 import "../styles/EventForm.css";
 
 const emptyStoryItem = () => ({ url: "", text: "", translation: "", note: "" });
@@ -30,7 +31,7 @@ export default function CreatePost() {
         : null;
 
     // platform: ig or x
-    const [platform, setPlatform] = useState("ig");
+    const [platform, setPlatform] = useState(parent_id ? "x" : "ig");
 
     // form fields
     const [external_url, setExternalURL] = useState("");
@@ -124,11 +125,6 @@ export default function CreatePost() {
 
         return "";
     };
-
-    // If this is a reply → force platform = x
-    useEffect(() => {
-        if (parent_id) setPlatform("x");
-    }, [parent_id]);
 
     /** ---------------- SUBMIT ---------------- **/
 
@@ -355,7 +351,7 @@ export default function CreatePost() {
 
                 <div className="eventform-section">
                     <label>Caption / Tweet Text:</label>
-                    <textarea
+                    <AutoResizeTextarea
                         value={caption}
                         onChange={(e) => setCaption(e.target.value)}
                         placeholder="Optional original caption"
@@ -365,7 +361,7 @@ export default function CreatePost() {
 
                 <div className="eventform-section">
                     <label>Translation:</label>
-                    <textarea
+                    <AutoResizeTextarea
                         value={captionTranslation}
                         onChange={(e) => setCaptionTranslation(e.target.value)}
                         placeholder="Optional translation"
@@ -375,7 +371,7 @@ export default function CreatePost() {
 
                 <div className="eventform-section">
                     <label>Translator's note (optional):</label>
-                    <textarea
+                    <AutoResizeTextarea
                         value={captionTranslationNote}
                         onChange={(e) => setCaptionTranslationNote(e.target.value)}
                         placeholder="e.g. slang, context, nuance…"

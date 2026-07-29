@@ -4,6 +4,7 @@ import { getAdminPost, updatePost } from "../api/postsService";
 import { getAuthors } from "../api/authorsService";
 import { ROUTES } from "../routes";
 import { isImage, isVideo } from "../utils/media";
+import AutoResizeTextarea from "../components/AutoResizeTextarea";
 import "../styles/EventForm.css";
 
 const emptyStoryItem = () => ({ url: "", text: "", translation: "", note: "" });
@@ -270,7 +271,7 @@ export default function EditPost() {
 
                 <div className="eventform-section">
                     <label>Caption:</label>
-                    <textarea
+                    <AutoResizeTextarea
                         rows={3}
                         value={caption}
                         onChange={(e) => setCaption(e.target.value)}
@@ -279,7 +280,7 @@ export default function EditPost() {
 
                 <div className="eventform-section">
                     <label>Caption Translation:</label>
-                    <textarea
+                    <AutoResizeTextarea
                         rows={3}
                         value={captionTranslation}
                         onChange={(e) => setCaptionTranslation(e.target.value)}
@@ -288,7 +289,7 @@ export default function EditPost() {
 
                 <div className="eventform-section">
                     <label>Translator's note (optional):</label>
-                    <textarea
+                    <AutoResizeTextarea
                         value={captionTranslationNote}
                         onChange={(e) => setCaptionTranslationNote(e.target.value)}
                         placeholder="e.g. slang, context, nuance…"

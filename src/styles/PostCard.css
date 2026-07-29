@@ -217,6 +217,25 @@
     margin-top: 15px;
 }
 
+.post-event-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 10px;
+    margin-top: 12px;
+    font-size: 0.9rem;
+}
+
+.post-event-tag-link {
+    color: #955803;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.post-event-tag-link:hover,
+.post-event-tag-link:focus-visible {
+    text-decoration: underline;
+}
+
 .reply-section {
     margin-top: 20px;
     border-top: 1px solid #f0f0f0;
