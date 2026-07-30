@@ -1,5 +1,7 @@
 import api from "./api";
 
+export const getEventTagIndex = () => api.get("/events/tag-index");
+
 export const getEvents = ({ limit, offset, sort, name, category, author, visibleStart, visibleEnd } = {}) => {
     let url = `/events?limit=${limit}&offset=${offset}&sort=${sort}`;
     if (name) url += `&name=${encodeURIComponent(name)}`;

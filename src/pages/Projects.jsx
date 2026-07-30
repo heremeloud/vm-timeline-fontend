@@ -42,7 +42,7 @@ export default function Projects() {
             <div className="home-header">
                 <h1 style={{ marginBottom: "0.2rem" }}>ViewMim</h1>
                 <h1 style={{ marginTop: "0.2rem" }}>🤎Projects🤍</h1>
-                <p>Series, music, concert and more</p>
+                <p>Series, songs, concerts and more</p>
                 {/* <p><strong>- work in progress - </strong></p> */}
                 <hr />
             </div>

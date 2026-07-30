@@ -1,8 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import "../styles/Home.css";
-import { getPosts, getThread } from "../api/postsService";
-import { getTextsByPost } from "../api/textsService";
-import { getEvents } from "../api/eventsService";
+import { getPosts, getTimeline } from "../api/postsService";
+import { getEventTagIndex } from "../api/eventsService";
 import { ROUTES } from "../routes";
 import { Link, useSearchParams } from "react-router-dom";
 import PostCard from "../components/PostCard";
@@ -145,53 +144,36 @@ export default function Home() {
 
     async function load() {
         try {
-            const basePosts = await fetchBasePosts(page);
+            const res = await getTimeline({
+                limit: LIMIT,
+                offset: (page - 1) * LIMIT,
+                sort: sortOrder,
+                platform: platformFilter,
+            });
+            const timeline = res.data || {};
+            const timelinePosts = timeline.items || [];
 
             // Discover last page when we hit it naturally
-            if (basePosts.length < LIMIT) {
+            if (!timeline.has_more) {
                 setLastPage(page);
             }
 
-            // Load comments + replies for posts on this page
-            const withReplies = await Promise.all(
-                basePosts.map(async (p) => {
-                    const isTwitter = p.platform === "x" || p.platform === "twitter";
-                    const [commentsRes, threadRes] = await Promise.all([
-                        getTextsByPost(p.id),
-                        isTwitter ? getThread(p.id) : Promise.resolve({ data: [] }),
-                    ]);
-
-                    return {
-                        ...p,
-                        comments: commentsRes.data,
-                        childrenPosts: threadRes.data,
-                    };
-                })
-            );
-
-            setPosts(withReplies);
+            setPosts(timelinePosts);
+            if (timeline.last_updated) {
+                const raw = timeline.last_updated;
+                const normalized = raw.includes("T") ? raw : `${raw}T00:00`;
+                const date = new Date(normalized);
+                setLastUpdated(date.toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" }));
+            }
         } catch (err) {
             console.error("Load failed:", err);
             setPosts([]);
         }
     }
 
-    // Fetch the most recent post once to show last updated date
-    useEffect(() => {
-        getPosts({ limit: 1, offset: 0, sort: "newest" }).then((res) => {
-            const newest = res.data?.[0];
-            if (newest?.posted_at) {
-                const raw = newest.posted_at;
-                const normalized = raw.includes("T") ? raw : `${raw}T00:00`;
-                const date = new Date(normalized);
-                setLastUpdated(date.toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" }));
-            }
-        }).catch(() => {});
-    }, []);
-
     // Event tags are used to turn matching post hashtags into Event Detail links.
     useEffect(() => {
-        getEvents({ limit: 1000, offset: 0, sort: "oldest" })
+        getEventTagIndex()
             .then((res) => setEvents(res.data || []))
             .catch((err) => {
                 console.error("Event tags load failed:", err);
