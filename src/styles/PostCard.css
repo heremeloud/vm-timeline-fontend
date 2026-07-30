@@ -130,8 +130,10 @@
 }
 
 .post-wrapper {
-    /* width: 100%; */
-    /* max-width:750px; */
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
     background: white;
     padding: 20px;
     border-radius: 12px;
@@ -170,6 +172,9 @@
 
 .post-embed {
     margin-top: 20px;
+    max-width: 100%;
+    min-width: 0;
+    overflow: hidden;
 }
 
 .tweet-embed-wrapper {

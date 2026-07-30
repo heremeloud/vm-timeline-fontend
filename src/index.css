@@ -12,6 +12,19 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+html {
+  /* Keep centered content from shifting when a different result set changes
+     whether the page needs a vertical scrollbar. */
+  scrollbar-gutter: stable;
+  overflow-x: hidden;
+}
+
+html,
+body,
+#root {
+  max-width: 100%;
+}
+
 a {
   font-weight: 500;
   color: #646cff;

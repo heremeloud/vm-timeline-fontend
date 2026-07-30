@@ -159,8 +159,8 @@
     background-position: right 8px center;
     padding-right: 26px;
     cursor: pointer;
-    width: max-content;
-    min-width: 110px;
+    width: 120px;
+    min-width: 120px;
 }
 
 .filter-group input[type="text"],
