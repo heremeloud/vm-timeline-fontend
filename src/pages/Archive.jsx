@@ -27,7 +27,7 @@ function formatBirthday(raw) {
     return date.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
 }
 
-function ProfileCard({ author: initialAuthor, defaultPhoto, fcLink, fcIcon = "🤎" }) {
+function ProfileCard({ author: initialAuthor, defaultPhoto, fcIcon = "🤎", className = "" }) {
     const isAdmin = !!localStorage.getItem("jwt");
     const [editing, setEditing] = useState(false);
     const [author, setAuthor] = useState(initialAuthor);
@@ -103,7 +103,7 @@ function ProfileCard({ author: initialAuthor, defaultPhoto, fcLink, fcIcon = "�
 
     if (editing) {
         return (
-            <div className="archive-card">
+            <div className={`archive-card ${className}`.trim()}>
                 {/* Photo upload */}
                 <div
                     className="archive-photo-wrap archive-photo-upload"
@@ -170,7 +170,7 @@ function ProfileCard({ author: initialAuthor, defaultPhoto, fcLink, fcIcon = "�
     }
 
     return (
-        <div className="archive-card">
+        <div className={`archive-card ${className}`.trim()}>
             <div className="archive-photo-wrap">
                 {displayPhoto
                     ? <img src={displayPhoto} alt={author.name} className="archive-photo" />
@@ -216,6 +216,7 @@ function ProfileCard({ author: initialAuthor, defaultPhoto, fcLink, fcIcon = "�
 export default function Archive() {
     const [view, setView] = useState(null);
     const [mim, setMim] = useState(null);
+    const [vimmy, setVimmy] = useState(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -223,6 +224,7 @@ export default function Archive() {
             const authors = res.data || [];
             setView(authors.find((a) => a.name?.toLowerCase().trim() === "view") || null);
             setMim(authors.find((a) => a.name?.toLowerCase().trim() === "mim") || null);
+            setVimmy(authors.find((a) => a.name?.toLowerCase().trim() === "vimmy") || null);
             setLoading(false);
         }).catch(() => setLoading(false));
     }, []);
@@ -241,8 +243,9 @@ export default function Archive() {
             </div>
 
             <div className="archive-grid">
-                <ProfileCard author={view} defaultPhoto="/profiles/view_pfp.jpg" fcLink={VIEWMIM_FC} fcIcon="🤎" />
-                <ProfileCard author={mim}  defaultPhoto="/profiles/mim_pfp.jpg"  fcLink={VIEWMIM_FC} fcIcon="🤍" />
+                <ProfileCard author={view} defaultPhoto="/profiles/view_pfp.jpg" fcIcon="🤎" />
+                <ProfileCard author={mim} defaultPhoto="/profiles/mim_pfp.jpg" fcIcon="🤍" />
+                <ProfileCard author={vimmy} fcIcon="💜" className="archive-card--third" />
             </div>
         </div>
     );
