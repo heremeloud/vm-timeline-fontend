@@ -7,6 +7,7 @@ import { ROUTES } from "../routes";
 import FocalPointPicker from "../components/FocalPointPicker";
 import "../styles/EventForm.css";
 import { EVENT_CATEGORIES } from "../constants/eventCategories";
+import { cleanPastedSocialUrls, normalizeSocialPostUrl } from "../utils/postUrls";
 import { formatEventDateRange, getEventStartDate } from "../utils/eventDateRange";
 
 const DEFAULT_TAG_OPTIONS = [
@@ -30,6 +31,7 @@ export default function EditEvent() {
 
     // Form fields
     const [name, setName] = useState("");
+    const [englishName, setEnglishName] = useState("");
     const [category, setCategory] = useState("");
     const [location, setLocation] = useState("");
     const [keyword, setKeyword] = useState("");
@@ -73,6 +75,7 @@ export default function EditEvent() {
                 if (!ev) throw new Error("Event not found");
 
                 setName(ev.name || "");
+                setEnglishName(ev.english_name || "");
                 setCategory(ev.category || "");
                 setLocation(ev.location || "");
                 setKeyword(ev.keyword || "");
@@ -170,6 +173,7 @@ export default function EditEvent() {
         try {
             await updateEvent(eventId, {
                 name: name.trim(),
+                english_name: englishName.trim() || null,
                 category: category || null,
                 location: location.trim() || null,
                 keyword: keyword.trim() || null,
@@ -179,7 +183,7 @@ export default function EditEvent() {
                 media_focal_y: mediaURL.trim() ? mediaFocalY : null,
                 start_date: startDate || null,
                 end_date: endDate || null,
-                announcement_urls: announcementURLsInput.split("\n").map(u => u.trim()).filter(Boolean),
+                announcement_urls: announcementURLsInput.split("\n").map(normalizeSocialPostUrl).filter(Boolean),
                 private_notes: privateNotes.trim() || null,
                 live_urls: liveURLsInput.split("\n").map(u => u.trim()).filter(Boolean),
                 author_ids: selectedAuthorIds,
@@ -202,10 +206,19 @@ export default function EditEvent() {
             <form className="eventform-form" onSubmit={save}>
 
                 <div className="eventform-section">
-                    <label>Event Name: *</label>
+                    <label>Event Name / Thai Name: *</label>
                     <input
                         value={name}
                         onChange={(e) => setName(e.target.value)}
+                    />
+                </div>
+
+                <div className="eventform-section">
+                    <label>English Event Name (optional):</label>
+                    <input
+                        value={englishName}
+                        onChange={(e) => setEnglishName(e.target.value)}
+                        placeholder="Shown on the public events list"
                     />
                 </div>
 
@@ -292,6 +305,7 @@ export default function EditEvent() {
                     <textarea
                         value={announcementURLsInput}
                         onChange={(e) => setAnnouncementURLsInput(e.target.value)}
+                        onPaste={(e) => cleanPastedSocialUrls(e, setAnnouncementURLsInput)}
                         placeholder={"https://...\nhttps://..."}
                         style={{ minHeight: 80 }}
                     />

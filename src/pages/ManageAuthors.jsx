@@ -25,6 +25,7 @@ function buildDraft(author) {
         return draft;
     }, {
         show_on_timeline: !!author.show_on_timeline,
+        sort_order: author.sort_order ?? author.id ?? 0,
     });
 }
 
@@ -35,6 +36,7 @@ function buildPayload(draft) {
         return payload;
     }, {
         show_on_timeline: !!draft.show_on_timeline,
+        sort_order: Math.max(0, Math.floor(Number(draft.sort_order) || 0)),
     });
 }
 
@@ -95,7 +97,9 @@ export default function ManageAuthors() {
             const res = await updateAuthor(author.id, buildPayload(draft));
             const updated = res.data;
             setAuthors((current) =>
-                current.map((row) => row.id === updated.id ? updated : row)
+                current
+                    .map((row) => row.id === updated.id ? updated : row)
+                    .sort((a, b) => (a.sort_order ?? a.id) - (b.sort_order ?? b.id))
             );
             setDrafts((current) => ({
                 ...current,
@@ -164,6 +168,16 @@ export default function ManageAuthors() {
                                     gap: 12,
                                 }}
                             >
+                                <div className="eventform-section" style={{ marginBottom: 0 }}>
+                                    <label>Display Order <span style={{ fontWeight: 400, opacity: 0.65 }}>(lower first)</span></label>
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        step="1"
+                                        value={draft.sort_order}
+                                        onChange={(e) => updateDraft(author.id, "sort_order", e.target.value)}
+                                    />
+                                </div>
                                 {TEXT_FIELDS.map((field) => (
                                     <div className="eventform-section" key={field.key} style={{ marginBottom: 0 }}>
                                         <label>{field.label}</label>
@@ -178,7 +192,7 @@ export default function ManageAuthors() {
                             </div>
 
                             <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
-                                <label style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 0 }}>
+                                <label style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 0, whiteSpace: "nowrap" }}>
                                     <input
                                         type="checkbox"
                                         checked={!!draft.show_on_timeline}

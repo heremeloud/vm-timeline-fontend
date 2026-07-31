@@ -5,4 +5,4 @@
 // EditProject, and the Projects filter bar automatically.
 // -------------------------------------------------------
 
-export const PROJECT_CATEGORIES = ["series", "concert", "movie", "variety", "music", "music video", "other"];
+export const PROJECT_CATEGORIES = ["series", "concert", "movie", "variety", "song", "music video", "other"];

@@ -7,6 +7,7 @@ import { ROUTES } from "../routes";
 import FocalPointPicker from "../components/FocalPointPicker";
 import "../styles/EventForm.css";
 import { EVENT_CATEGORIES } from "../constants/eventCategories";
+import { cleanPastedSocialUrls, normalizeSocialPostUrl } from "../utils/postUrls";
 import { formatEventDateRange } from "../utils/eventDateRange";
 
 const DEFAULT_TAG_OPTIONS = [
@@ -29,6 +30,7 @@ export default function CreateEvent() {
 
     // Form fields
     const [name, setName] = useState("");
+    const [englishName, setEnglishName] = useState("");
     const [category, setCategory] = useState("");
     const [location, setLocation] = useState("");
     const [keyword, setKeyword] = useState("");
@@ -127,6 +129,7 @@ export default function CreateEvent() {
         try {
             await createEvent({
                 name: name.trim(),
+                english_name: englishName.trim() || null,
                 category: category || null,
                 location: location.trim() || null,
                 keyword: keyword.trim() || null,
@@ -136,7 +139,7 @@ export default function CreateEvent() {
                 media_focal_y: mediaURL.trim() ? mediaFocalY : null,
                 start_date: startDate || null,
                 end_date: endDate || null,
-                announcement_urls: announcementURLsInput.split("\n").map(u => u.trim()).filter(Boolean),
+                announcement_urls: announcementURLsInput.split("\n").map(normalizeSocialPostUrl).filter(Boolean),
                 private_notes: privateNotes.trim() || null,
                 live_urls: liveURLsInput.split("\n").map(u => u.trim()).filter(Boolean),
                 author_ids: selectedAuthorIds,
@@ -158,11 +161,20 @@ export default function CreateEvent() {
             <form className="eventform-form" onSubmit={submit}>
 
                 <div className="eventform-section">
-                    <label>Event Name: *</label>
+                    <label>Event Name / Thai Name: *</label>
                     <input
                         value={name}
                         onChange={(e) => setName(e.target.value)}
                         placeholder="fan meeting, concert, etc."
+                    />
+                </div>
+
+                <div className="eventform-section">
+                    <label>English Event Name (optional):</label>
+                    <input
+                        value={englishName}
+                        onChange={(e) => setEnglishName(e.target.value)}
+                        placeholder="Shown on the public events list"
                     />
                 </div>
 
@@ -249,6 +261,7 @@ export default function CreateEvent() {
                     <textarea
                         value={announcementURLsInput}
                         onChange={(e) => setAnnouncementURLsInput(e.target.value)}
+                        onPaste={(e) => cleanPastedSocialUrls(e, setAnnouncementURLsInput)}
                         placeholder={"https://...\nhttps://..."}
                         style={{ minHeight: 80 }}
                     />

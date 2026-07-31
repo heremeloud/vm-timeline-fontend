@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import Avatar from "./Avatar";
 import "../styles/EventCard.css";
-import { deleteEvent } from "../api/eventsService";
+import { deleteEvent, updateEvent } from "../api/eventsService";
 import { ROUTES } from "../routes";
 import { formatEventDateRange, getEventStartDate } from "../utils/eventDateRange";
 
@@ -123,15 +123,18 @@ function getYouTubeEmbedUrl(url) {
     }
 }
 
-export default function EventCard({ event }) {
+export default function EventCard({ event, showOriginalName = false }) {
     const tags = event.tags || [];
     const authors = orderViewMimFirst(event.authors || []);
     const isAdmin = !!localStorage.getItem("jwt");
 
     const [copied, setCopied] = useState(false);
     const [liveIdx, setLiveIdx] = useState(0);
+    const [isPublic, setIsPublic] = useState(event.is_visible !== false);
+    const [savingVisibility, setSavingVisibility] = useState(false);
     const eventDateLabel = formatEventDateRange(event);
     const eventStartDate = getEventStartDate(event);
+    const displayName = event.english_name || event.name;
 
     async function handleCopyTerm(term) {
         const query = buildTwitterQuery(term, eventStartDate, event.end_date);
@@ -143,19 +146,59 @@ export default function EventCard({ event }) {
         handleCopyTerm._t = window.setTimeout(() => setCopied(false), 1200);
     }
 
+    async function togglePublicVisibility() {
+        const nextValue = !isPublic;
+        setIsPublic(nextValue);
+        setSavingVisibility(true);
+
+        try {
+            await updateEvent(event.id, { is_visible: nextValue });
+        } catch (err) {
+            setIsPublic(!nextValue);
+            console.error("Event visibility update failed:", err);
+            alert("Could not update this event's public visibility.");
+        } finally {
+            setSavingVisibility(false);
+        }
+    }
+
     const liveUrls = (event.live_urls || []).map(safeUrl).filter(Boolean);
 
     return (
         <div className="eventcard-wrapper">
             <div className="eventcard-inner">
-                {event.category && (
-                    <div className="eventcard-category">
-                        {event.category.toUpperCase()}
+                {(event.category || isAdmin) && (
+                    <div className="eventcard-topline">
+                        {event.category && (
+                            <div className="eventcard-category">
+                                {event.category.toUpperCase()}
+                            </div>
+                        )}
+                        {isAdmin && (
+                            <label
+                                className="eventcard-visibility-toggle"
+                                title={isPublic ? "Visible to the public" : "Hidden from the public"}
+                            >
+                                <input
+                                    type="checkbox"
+                                    checked={isPublic}
+                                    disabled={savingVisibility}
+                                    onChange={togglePublicVisibility}
+                                    aria-label="Show this event to the public"
+                                />
+                                <span>{savingVisibility ? "Saving…" : "Public"}</span>
+                            </label>
+                        )}
                     </div>
                 )}
 
                 <div className="eventcard-header">
-                    <div className="eventcard-title">{event.name}</div>
+                    <div>
+                        <div className="eventcard-title">{displayName}</div>
+                        {showOriginalName && event.english_name && event.name !== event.english_name && (
+                            <div className="eventcard-original-title" lang="th">{event.name}</div>
+                        )}
+                    </div>
 
                     {isAdmin && (
                         <div className="eventcard-actions">
@@ -266,7 +309,7 @@ export default function EventCard({ event }) {
                     <div className="eventcard-media">
                         <img
                             src={event.media_url}
-                            alt={event.name}
+                            alt={displayName}
                             className="eventcard-img"
                         />
                     </div>
@@ -291,7 +334,7 @@ export default function EventCard({ event }) {
                                 <div className="eventcard-live-embed">
                                     <iframe
                                         src={ytEmbed}
-                                        title={`${event.name} media ${liveIdx + 1}`}
+                                        title={`${displayName} media ${liveIdx + 1}`}
                                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                                         allowFullScreen
                                     />
@@ -375,7 +418,7 @@ export default function EventCard({ event }) {
                                 {formatEventDateRange(c) && (
                                     <span className="eventcard-interview-date">{formatEventDateRange(c)}</span>
                                 )}
-                                <span>{c.name}</span>
+                                <span>{c.english_name || c.name}</span>
                             </Link>
                         ))}
                     </div>

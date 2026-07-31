@@ -11,6 +11,44 @@
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
 }
 
+.eventcard-topline {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 6px;
+}
+
+.eventcard-visibility-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 6px;
+    border: 1px solid #d8d2cc;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.94);
+    color: #4b4039;
+    font-size: 0.68rem;
+    font-weight: 600;
+    line-height: 1;
+    cursor: pointer;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+    margin-left: auto;
+}
+
+.eventcard-visibility-toggle input {
+    width: 12px;
+    height: 12px;
+    margin: 0;
+    accent-color: #8b623d;
+    cursor: pointer;
+}
+
+.eventcard-visibility-toggle:has(input:disabled) {
+    opacity: 0.65;
+    cursor: wait;
+}
+
 .eventcard-inner {
     padding: 16px;
 }
@@ -31,6 +69,13 @@
     font-weight: 700;
 }
 
+.eventcard-original-title {
+    margin-top: 3px;
+    color: #5f554f;
+    font-size: 0.86rem;
+    line-height: 1.35;
+}
+
 
 /* ============================= */
 /* CATEGORY */
@@ -38,7 +83,7 @@
 
 .eventcard-category {
     display: inline-block;
-    margin-bottom: 6px;
+    margin-bottom: 0;
     padding: 2px 10px;
     border-radius: 999px;
     font-size: 0.72rem;

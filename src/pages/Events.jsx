@@ -411,7 +411,7 @@ export default function Events() {
                                                         }}
                                                     />
                                                 )}
-                                                <span className="events-calendar-event-title">{ev.name}</span>
+                                                <span className="events-calendar-event-title">{ev.english_name || ev.name}</span>
                                             </Link>
                                         ))}
                                         {dayEvents.length > 3 && (

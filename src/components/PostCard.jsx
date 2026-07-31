@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import "../styles/PostCard.css";
 import { getTextsByPost } from "../api/textsService";
-import { getThread, deletePost } from "../api/postsService";
+import { getThread, deletePost, updatePost } from "../api/postsService";
 import { ROUTES } from "../routes";
 import { getEventTagLinks } from "../utils/eventTagLinks";
 
@@ -19,6 +19,7 @@ import TikTokReply from "./TikTokReply";
 
 export default function PostCard({ post, showReplies = true, eventTagIndex = null }) {
     const location = useLocation();
+    const isAdmin = !!localStorage.getItem("jwt");
     const returnTo = `${location.pathname}${location.search}`;
     const isInstagram = post.platform === "ig" || post.platform === "instagram";
     const isTwitter = post.platform === "x" || post.platform === "twitter";
@@ -31,6 +32,24 @@ export default function PostCard({ post, showReplies = true, eventTagIndex = nul
 
     const [comments, setComments] = useState([]);
     const [childrenPosts, setChildrenPosts] = useState([]);
+    const [isPublic, setIsPublic] = useState(post.is_visible !== false);
+    const [savingVisibility, setSavingVisibility] = useState(false);
+
+    async function togglePublicVisibility() {
+        const nextValue = !isPublic;
+        setIsPublic(nextValue);
+        setSavingVisibility(true);
+
+        try {
+            await updatePost(post.id, { is_visible: nextValue });
+        } catch (err) {
+            setIsPublic(!nextValue);
+            console.error("Visibility update failed:", err);
+            alert("Could not update this post's public visibility.");
+        } finally {
+            setSavingVisibility(false);
+        }
+    }
 
     function saveReturnScroll() {
         sessionStorage.setItem("homeTimelineReturnScrollY", String(window.scrollY));
@@ -92,6 +111,21 @@ export default function PostCard({ post, showReplies = true, eventTagIndex = nul
 
     return (
         <div className="post-wrapper">
+            {isAdmin && (
+                <label
+                    className="post-visibility-toggle"
+                    title={isPublic ? "Visible to the public" : "Hidden from the public"}
+                >
+                    <input
+                        type="checkbox"
+                        checked={isPublic}
+                        disabled={savingVisibility}
+                        onChange={togglePublicVisibility}
+                        aria-label="Show this post to the public"
+                    />
+                    <span>{savingVisibility ? "Saving…" : "Public"}</span>
+                </label>
+            )}
             {post.posted_at && (
                 <div className="post-date">
                     <span
@@ -254,7 +288,7 @@ export default function PostCard({ post, showReplies = true, eventTagIndex = nul
                 </div>
             )}
 
-            {localStorage.getItem("jwt") && (
+            {isAdmin && (
                 <div className="post-actions">
                     <Link
                         to={ROUTES.addReply(post.id)}

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { getProjects } from "../api/projectsService";
+import { getAdminProjects, getProjects, updateProject } from "../api/projectsService";
 import { ROUTES } from "../routes";
 import Avatar from "../components/Avatar";
 import { PROJECT_CATEGORIES } from "../constants/projectCategories";
@@ -21,21 +21,40 @@ function orderViewMimFirst(authors = []) {
 export default function Projects() {
     const [projects, setProjects] = useState([]);
     const [categoryFilter, setCategoryFilter] = useState("");
+    const [savingVisibilityId, setSavingVisibilityId] = useState(null);
     const isAdmin = !!localStorage.getItem("jwt");
 
-    async function load() {
+    async function toggleVisibility(project) {
+        const nextValue = !project.is_visible;
+        setSavingVisibilityId(project.id);
         try {
-            const res = await getProjects({ category: categoryFilter || undefined });
-            setProjects(res.data || []);
+            await updateProject(project.id, { is_visible: nextValue });
+            setProjects((current) => current.map((item) =>
+                item.id === project.id ? { ...item, is_visible: nextValue } : item
+            ));
         } catch (err) {
-            console.error("Load projects failed:", err);
-            setProjects([]);
+            console.error("Project visibility update failed:", err);
+            alert("Could not update this project's public visibility.");
+        } finally {
+            setSavingVisibilityId(null);
         }
     }
 
     useEffect(() => {
+        async function load() {
+            try {
+                const res = isAdmin
+                    ? await getAdminProjects({ limit: 500, category: categoryFilter || undefined })
+                    : await getProjects({ category: categoryFilter || undefined });
+                setProjects(res.data || []);
+            } catch (err) {
+                console.error("Load projects failed:", err);
+                setProjects([]);
+            }
+        }
+
         load();
-    }, [categoryFilter]);
+    }, [categoryFilter, isAdmin]);
 
     return (
         <div className="home-container">
@@ -63,7 +82,13 @@ export default function Projects() {
             {/* Project Cards Grid */}
             <div className="projects-grid">
                 {projects.map((p) => (
-                    <Link key={p.id} to={ROUTES.projectDetail(p.slug || p.id)} className="project-card">
+                    <div key={p.id} className={`project-card-shell ${isAdmin ? "project-card-shell--admin" : ""}`.trim()}>
+                    <div className="project-card">
+                        <Link
+                            to={ROUTES.projectDetail(p.slug || p.id)}
+                            className="project-card-link-overlay"
+                            aria-label={`View ${p.title}`}
+                        />
                         <div className="project-card-thumb">
                             {p.thumbnail_url
                                 ? (
@@ -80,9 +105,23 @@ export default function Projects() {
                         </div>
 
                         <div className="project-card-body">
-                            <span className={`project-card-category ${p.category ? "" : "project-card-category--empty"}`}>
-                                {p.category ? p.category.toUpperCase() : "\u00a0"}
-                            </span>
+                            <div className="project-card-topline">
+                                <span className={`project-card-category ${p.category ? "" : "project-card-category--empty"}`}>
+                                    {p.category ? p.category.toUpperCase() : "\u00a0"}
+                                </span>
+                                {isAdmin && (
+                                    <label className="project-visibility-toggle" title={p.is_visible ? "Visible to the public" : "Hidden from the public"}>
+                                        <input
+                                            type="checkbox"
+                                            checked={p.is_visible !== false}
+                                            disabled={savingVisibilityId === p.id}
+                                            onChange={() => toggleVisibility(p)}
+                                            aria-label={`Show ${p.title} to the public`}
+                                        />
+                                        <span>{savingVisibilityId === p.id ? "Saving…" : "Public"}</span>
+                                    </label>
+                                )}
+                            </div>
 
                             <div className="project-card-title">{p.title}</div>
 
@@ -108,7 +147,8 @@ export default function Projects() {
                                 </div>
                             )}
                         </div>
-                    </Link>
+                    </div>
+                    </div>
                 ))}
             </div>
 

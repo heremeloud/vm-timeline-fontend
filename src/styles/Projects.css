@@ -40,6 +40,59 @@
     text-decoration: none;
     color: inherit;
     transition: box-shadow 0.15s, transform 0.15s;
+    position: relative;
+}
+
+.project-card-shell {
+    position: relative;
+    min-width: 0;
+}
+
+.project-card-shell .project-card {
+    height: 100%;
+    box-sizing: border-box;
+}
+
+.project-card-link-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    border-radius: inherit;
+}
+
+.project-card-topline {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+    min-width: 0;
+}
+
+.project-visibility-toggle {
+    position: relative;
+    z-index: 2;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 6px;
+    border: 1px solid #d8d2cc;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.95);
+    color: #4b4039;
+    font-size: 0.68rem;
+    font-weight: 600;
+    line-height: 1;
+    cursor: pointer;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+    margin-left: auto;
+    flex-shrink: 0;
+}
+
+.project-visibility-toggle input {
+    width: 12px;
+    height: 12px;
+    margin: 0;
+    accent-color: #8b623d;
 }
 
 .project-card:hover {

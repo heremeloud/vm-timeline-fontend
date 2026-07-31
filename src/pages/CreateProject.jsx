@@ -4,6 +4,7 @@ import { createProject, getProjects } from "../api/projectsService";
 import { getAuthors } from "../api/authorsService";
 import { ROUTES } from "../routes";
 import { PROJECT_CATEGORIES } from "../constants/projectCategories";
+import { cleanPastedSocialUrls, normalizeSocialPostUrl } from "../utils/postUrls";
 import FocalPointPicker from "../components/FocalPointPicker";
 import "../styles/EventForm.css";
 
@@ -82,7 +83,7 @@ export default function CreateProject() {
                     id: p.id.trim(),
                     ...(p.name.trim() ? { name: p.name.trim() } : {}),
                 })),
-                announcement_url: announcementUrl || null,
+                announcement_url: normalizeSocialPostUrl(announcementUrl) || null,
                 tweet_url: tweetUrl || null,
                 youtube_url: youtubeUrl || null,
                 mydramalist_url: mydramalistUrl || null,
@@ -259,7 +260,12 @@ export default function CreateProject() {
 
                 <div className="eventform-section">
                     <label>Announcement URL <span style={{ fontWeight: 400, opacity: 0.6 }}>(optional)</span></label>
-                    <input value={announcementUrl} onChange={(e) => setAnnouncementUrl(e.target.value)} placeholder="https://..." />
+                    <input
+                        value={announcementUrl}
+                        onChange={(e) => setAnnouncementUrl(e.target.value)}
+                        onPaste={(e) => cleanPastedSocialUrls(e, setAnnouncementUrl)}
+                        placeholder="https://..."
+                    />
                 </div>
 
                 <div className="eventform-section">

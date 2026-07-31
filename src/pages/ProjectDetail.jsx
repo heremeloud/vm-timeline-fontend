@@ -325,7 +325,7 @@ export default function ProjectDetail() {
                                         <span className="project-detail-event-date">
                                             {formatEventDateRange(ev, "—")}
                                         </span>
-                                        <span className="project-detail-event-name">{ev.name}</span>
+                                        <span className="project-detail-event-name">{ev.english_name || ev.name}</span>
                                         {ev.category && (
                                             <span className="project-detail-event-category">
                                                 {ev.category}
@@ -339,7 +339,7 @@ export default function ProjectDetail() {
                                                     <span className="project-detail-event-date">
                                                         {formatEventDateRange(child, "—")}
                                                     </span>
-                                                    <span className="project-detail-event-name">{child.name}</span>
+                                                    <span className="project-detail-event-name">{child.english_name || child.name}</span>
                                                     {child.category && (
                                                         <span className="project-detail-event-category">
                                                             {child.category}

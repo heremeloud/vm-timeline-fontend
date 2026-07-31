@@ -4,6 +4,7 @@ import { getAuthors, ensureAuthor } from "../api/authorsService";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { ROUTES } from "../routes";
 import AutoResizeTextarea from "../components/AutoResizeTextarea";
+import { cleanPastedPostUrl, detectMediaAuthor, detectMediaDate, normalizePostUrl } from "../utils/postUrls";
 import "../styles/EventForm.css";
 
 const emptyStoryItem = () => ({ url: "", text: "", translation: "", note: "" });
@@ -69,23 +70,8 @@ export default function CreatePost() {
 
     /** Normalize URLs **/
 
-    const normalizeTweetURL = (url) => {
-        if (!url) return "";
-        return url
-            .replace("https://x.com", "https://twitter.com")
-            .replace("http://x.com", "https://twitter.com")
-            .replace("https://www.x.com", "https://twitter.com");
-    };
-
     const normalizeInstagramURL = (url) => {
-        if (!url) return "";
-        let clean = url.split("?")[0];
-        if (!clean.endsWith("/")) clean += "/";
-        clean = clean.replace(
-            "https://instagram.com",
-            "https://www.instagram.com",
-        );
-        return clean;
+        return normalizePostUrl(url, "ig");
     };
 
     const normalizeTikTokURL = (url) => {
@@ -184,7 +170,7 @@ export default function CreatePost() {
             const authorId = authorRes.data.id;
 
             let cleanURL = external_url;
-            if (platform === "x") cleanURL = normalizeTweetURL(cleanURL);
+            if (platform === "x") cleanURL = normalizePostUrl(cleanURL, platform);
             if (platform === "ig") cleanURL = normalizeInstagramURL(cleanURL);
             if (platform === "tt") cleanURL = normalizeTikTokURL(cleanURL);
 
@@ -345,6 +331,14 @@ export default function CreatePost() {
                     <input
                         value={external_url}
                         onChange={(e) => setExternalURL(e.target.value)}
+                        onPaste={(e) => cleanPastedPostUrl(
+                            e,
+                            platform,
+                            setExternalURL,
+                            setPlatform,
+                            authors,
+                            (detectedAuthor) => setAuthor(detectedAuthor.name),
+                        )}
                         placeholder="Paste tweet or IG URL"
                     />
                 </div>
@@ -393,6 +387,13 @@ export default function CreatePost() {
                                                 const next = [...mediaItems];
                                                 next[i] = { ...next[i], url: e.target.value };
                                                 setMediaItems(next);
+                                            }}
+                                            onPaste={(e) => {
+                                                const pastedUrl = e.clipboardData.getData("text");
+                                                const detectedAuthor = detectMediaAuthor(pastedUrl, authors);
+                                                if (detectedAuthor) setAuthor(detectedAuthor.name);
+                                                const detectedDate = detectMediaDate(pastedUrl);
+                                                if (detectedDate) setPostedAt(detectedDate);
                                             }}
                                             placeholder={`Media URL #${i + 1}`}
                                             style={{ flex: 1 }}
@@ -481,6 +482,13 @@ export default function CreatePost() {
                             <input
                                 value={mediaURL}
                                 onChange={(e) => setMediaURL(e.target.value)}
+                                onPaste={(e) => {
+                                    const pastedUrl = e.clipboardData.getData("text");
+                                    const detectedAuthor = detectMediaAuthor(pastedUrl, authors);
+                                    if (detectedAuthor) setAuthor(detectedAuthor.name);
+                                    const detectedDate = detectMediaDate(pastedUrl);
+                                    if (detectedDate) setPostedAt(detectedDate);
+                                }}
                                 placeholder="Image / video URL"
                             />
                         </>

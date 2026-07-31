@@ -27,7 +27,11 @@ function formatBirthday(raw) {
     return date.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
 }
 
-function ProfileCard({ author: initialAuthor, defaultPhoto, fcIcon = "🤎", className = "" }) {
+function splitBeforeSurname(fullName) {
+    return fullName?.trim().replace(/\s+(\S+)$/, "\n$1");
+}
+
+function ProfileCard({ author: initialAuthor, defaultPhoto, thaiFullName, fcIcon = "🤎", className = "" }) {
     const isAdmin = !!localStorage.getItem("jwt");
     const [editing, setEditing] = useState(false);
     const [author, setAuthor] = useState(initialAuthor);
@@ -178,15 +182,30 @@ function ProfileCard({ author: initialAuthor, defaultPhoto, fcIcon = "🤎", cla
                 }
             </div>
 
-            <h2 className="archive-name">{author.name}</h2>
+            <div className="archive-identity">
+                <h2 className="archive-name">{author.name}</h2>
 
-            {author.full_name && (
-                <div className="archive-full-name">{author.full_name}</div>
-            )}
+                {(thaiFullName || author.full_name) && (
+                    <div className={`archive-full-names ${thaiFullName ? "archive-full-names--bilingual" : ""}`.trim()}>
+                        {thaiFullName && (
+                            <div className="archive-full-name archive-full-name--words" lang="th">
+                                {thaiFullName.split(/\s+/).map((word) => (
+                                    <span key={word}>{word}</span>
+                                ))}
+                            </div>
+                        )}
+                        {author.full_name && (
+                            <div className="archive-full-name">
+                                {thaiFullName ? splitBeforeSurname(author.full_name) : author.full_name}
+                            </div>
+                        )}
+                    </div>
+                )}
 
-            {author.birthday && (
-                <div className="archive-birthday">🎂 {formatBirthday(author.birthday)}</div>
-            )}
+                {author.birthday && (
+                    <div className="archive-birthday">🎂 {formatBirthday(author.birthday)}</div>
+                )}
+            </div>
 
             <div className="archive-links">
                 {SOCIAL_FIELDS.map(({ key, label, imgSrc }) => {
@@ -243,8 +262,18 @@ export default function Archive() {
             </div>
 
             <div className="archive-grid">
-                <ProfileCard author={view} defaultPhoto="/profiles/view_pfp.jpg" fcIcon="🤎" />
-                <ProfileCard author={mim} defaultPhoto="/profiles/mim_pfp.jpg" fcIcon="🤍" />
+                <ProfileCard
+                    author={view}
+                    defaultPhoto="/profiles/view_pfp.jpg"
+                    thaiFullName="วิว เบญญาภา จีนประสม"
+                    fcIcon="🤎"
+                />
+                <ProfileCard
+                    author={mim}
+                    defaultPhoto="/profiles/mim_pfp.jpg"
+                    thaiFullName="มิ้ม รัตนวดี วงศ์ทอง"
+                    fcIcon="🤍"
+                />
                 <ProfileCard author={vimmy} fcIcon="💜" className="archive-card--third" />
             </div>
         </div>

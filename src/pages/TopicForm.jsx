@@ -4,6 +4,7 @@ import { createPost, getAdminPosts } from "../api/postsService";
 import { ensureAuthor, getAuthors } from "../api/authorsService";
 import { createTopic, getAdminTopic, updateTopic } from "../api/topicsService";
 import { ROUTES } from "../routes";
+import { cleanPastedPostUrl, detectMediaAuthor, detectMediaDate, normalizePostUrl } from "../utils/postUrls";
 import "../styles/EventForm.css";
 import "../styles/Topics.css";
 
@@ -46,28 +47,6 @@ function postLabel(post) {
     const date = post.posted_at || "no date";
     const text = post.caption || post.external_url || "no caption";
     return `#${post.id} ${platform} - ${post.author_name || "Unknown"} - ${date} - ${text.slice(0, 80)}`;
-}
-
-function normalizePostUrl(url, platform) {
-    if (!url) return "";
-    if (platform === "x") {
-        return url
-            .replace("https://x.com", "https://twitter.com")
-            .replace("http://x.com", "https://twitter.com")
-            .replace("https://www.x.com", "https://twitter.com");
-    }
-    if (platform === "ig") {
-        let clean = url.split("?")[0];
-        if (!clean.endsWith("/")) clean += "/";
-        return clean.replace("https://instagram.com", "https://www.instagram.com");
-    }
-    if (platform === "tt") {
-        let clean = url.trim().split("?")[0];
-        clean = clean.replace("https://m.tiktok.com", "https://www.tiktok.com");
-        if (!clean.startsWith("http")) clean = "https://" + clean;
-        return clean;
-    }
-    return url;
 }
 
 function extractExternalId(url, platform) {
@@ -577,6 +556,14 @@ export default function TopicForm() {
                                             <input
                                                 value={draft.external_url}
                                                 onChange={(e) => updateNewPost(index, "external_url", e.target.value)}
+                                                onPaste={(e) => cleanPastedPostUrl(
+                                                    e,
+                                                    draft.platform,
+                                                    (value) => updateNewPost(index, "external_url", value),
+                                                    (value) => updateNewPost(index, "platform", value),
+                                                    authors,
+                                                    (detectedAuthor) => updateNewPost(index, "author", detectedAuthor.name),
+                                                )}
                                                 placeholder={draft.platform === "ig" ? "Leave blank for IG story/manual media" : "https://..."}
                                             />
                                         </div>
@@ -586,6 +573,13 @@ export default function TopicForm() {
                                             <input
                                                 value={draft.media_url}
                                                 onChange={(e) => updateNewPost(index, "media_url", e.target.value)}
+                                                onPaste={(e) => {
+                                                    const pastedUrl = e.clipboardData.getData("text");
+                                                    const detectedAuthor = detectMediaAuthor(pastedUrl, authors);
+                                                    if (detectedAuthor) updateNewPost(index, "author", detectedAuthor.name);
+                                                    const detectedDate = detectMediaDate(pastedUrl);
+                                                    if (detectedDate) updateNewPost(index, "posted_at", detectedDate);
+                                                }}
                                                 placeholder="Useful for IG story/manual media"
                                             />
                                         </div>

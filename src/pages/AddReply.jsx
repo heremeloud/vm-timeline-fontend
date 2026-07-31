@@ -4,23 +4,8 @@ import { getPost, createPost } from "../api/postsService";
 import { createText } from "../api/textsService";
 import { getAuthors, ensureAuthor } from "../api/authorsService";
 import { ROUTES } from "../routes";
+import { cleanPastedPostUrl, normalizeXStatusUrl } from "../utils/postUrls";
 import "../styles/EventForm.css";
-
-// Normalize X → Twitter canonical URL
-function normalizeTweetURL(url) {
-    if (!url) return "";
-
-    if (!url.startsWith("http")) {
-        url = "https://" + url;
-    }
-
-    url = url.replace("x.com", "twitter.com");
-
-    const match = url.match(/twitter\.com\/([^/]+)\/status\/(\d+)/);
-    if (!match) return url;
-
-    return `https://twitter.com/${match[1]}/status/${match[2]}`;
-}
 
 export default function AddReply() {
     const { postId } = useParams();
@@ -154,7 +139,7 @@ export default function AddReply() {
             if (!caption.trim()) return alert("Tweet reply needs text.");
             if (!tweetURL.trim()) return alert("Tweet URL is required.");
 
-            const normalizedURL = normalizeTweetURL(tweetURL);
+            const normalizedURL = normalizeXStatusUrl(tweetURL);
             const external_id =
                 tweetURL.split("/status/")[1]?.split("?")[0] || "";
 
@@ -377,6 +362,14 @@ export default function AddReply() {
                                 type="text"
                                 value={tweetURL}
                                 onChange={(e) => setTweetURL(e.target.value)}
+                                onPaste={(e) => cleanPastedPostUrl(
+                                    e,
+                                    "x",
+                                    setTweetURL,
+                                    null,
+                                    authors,
+                                    (detectedAuthor) => setAuthor(detectedAuthor.name),
+                                )}
                                 placeholder="https://x.com/.../status/12345"
                             />
                         </div>

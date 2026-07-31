@@ -5,6 +5,7 @@ import { getAuthors } from "../api/authorsService";
 import { ROUTES } from "../routes";
 import { isImage, isVideo } from "../utils/media";
 import AutoResizeTextarea from "../components/AutoResizeTextarea";
+import { cleanPastedPostUrl, detectMediaAuthor, detectMediaDate, normalizePostUrl } from "../utils/postUrls";
 import "../styles/EventForm.css";
 
 const emptyStoryItem = () => ({ url: "", text: "", translation: "", note: "" });
@@ -53,21 +54,7 @@ export default function EditPost() {
     // URL NORMALIZATION HELPERS
     // -----------------------------
     const normalizeInstagramURL = (url) => {
-        if (!url) return "";
-        let clean = url.split("?")[0];
-        if (!clean.endsWith("/")) clean += "/";
-        return clean.replace(
-            "https://instagram.com",
-            "https://www.instagram.com",
-        );
-    };
-
-    const normalizeTwitterURL = (url) => {
-        if (!url) return "";
-        return url
-            .replace("https://x.com", "https://twitter.com")
-            .replace("http://x.com", "https://twitter.com")
-            .replace("https://www.x.com", "https://twitter.com");
+        return normalizePostUrl(url, "ig");
     };
 
     const normalizeTikTokURL = (url) => {
@@ -177,7 +164,7 @@ export default function EditPost() {
         let newURL = externalURL;
 
         if (platform === "ig") newURL = normalizeInstagramURL(newURL);
-        else if (platform === "x") newURL = normalizeTwitterURL(newURL);
+        else if (platform === "x") newURL = normalizePostUrl(newURL, platform);
         else if (platform === "tt") newURL = normalizeTikTokURL(newURL);
 
         const newId = extractExternalId(newURL, platform);
@@ -258,6 +245,14 @@ export default function EditPost() {
                     <input
                         value={externalURL}
                         onChange={(e) => setExternalURL(e.target.value)}
+                        onPaste={(e) => cleanPastedPostUrl(
+                            e,
+                            platform,
+                            setExternalURL,
+                            setPlatform,
+                            authors,
+                            (detectedAuthor) => setAuthorId(detectedAuthor.id),
+                        )}
                     />
                 </div>
 
@@ -310,6 +305,13 @@ export default function EditPost() {
                                                 const next = [...mediaItems];
                                                 next[i] = { ...next[i], url: e.target.value };
                                                 setMediaItems(next);
+                                            }}
+                                            onPaste={(e) => {
+                                                const pastedUrl = e.clipboardData.getData("text");
+                                                const detectedAuthor = detectMediaAuthor(pastedUrl, authors);
+                                                if (detectedAuthor) setAuthorId(detectedAuthor.id);
+                                                const detectedDate = detectMediaDate(pastedUrl);
+                                                if (detectedDate) setPostedAt(detectedDate);
                                             }}
                                             placeholder={`Media URL #${i + 1}`}
                                             style={{ flex: 1 }}
@@ -398,6 +400,13 @@ export default function EditPost() {
                             <input
                                 value={mediaURL}
                                 onChange={(e) => setMediaURL(e.target.value)}
+                                onPaste={(e) => {
+                                    const pastedUrl = e.clipboardData.getData("text");
+                                    const detectedAuthor = detectMediaAuthor(pastedUrl, authors);
+                                    if (detectedAuthor) setAuthorId(detectedAuthor.id);
+                                    const detectedDate = detectMediaDate(pastedUrl);
+                                    if (detectedDate) setPostedAt(detectedDate);
+                                }}
                                 placeholder="https://..."
                             />
                         </>

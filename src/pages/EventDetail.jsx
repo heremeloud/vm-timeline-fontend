@@ -44,7 +44,7 @@ export default function EventDetail() {
             >
                 ← Back
             </button>
-            <EventCard event={event} />
+            <EventCard event={event} showOriginalName />
         </div>
     );
 }
