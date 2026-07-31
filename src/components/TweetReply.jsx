@@ -65,7 +65,10 @@ export default function TweetReply({ reply }) {
                         <>
                             <TweetEmbed url={reply.external_url} />
                             {reply.caption_translation && (
-                                <div style={{ opacity: 0.7, whiteSpace: "pre-wrap", wordBreak: "break-word", marginTop: "6px" }}>
+                                <div
+                                    className="post-caption-translation"
+                                    style={{ wordBreak: "break-word", marginTop: "6px" }}
+                                >
                                     {reply.caption_translation}
                                 </div>
                             )}
