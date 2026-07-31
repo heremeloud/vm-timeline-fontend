@@ -8,6 +8,7 @@ import { getEventTagLinks } from "../utils/eventTagLinks";
 
 import { isVideo } from "../utils/media";
 import InstagramEmbed from "./InstagramEmbed";
+import InstagramBroadcast from "./InstagramBroadcast";
 import TweetEmbed from "./TweetEmbed";
 import TikTokEmbed from "./TikTokEmbed";
 import AdultTweetCard from "./AdultTweetCard";
@@ -22,6 +23,7 @@ export default function PostCard({ post, showReplies = true, eventTagIndex = nul
     const isAdmin = !!localStorage.getItem("jwt");
     const returnTo = `${location.pathname}${location.search}`;
     const isInstagram = post.platform === "ig" || post.platform === "instagram";
+    const isBroadcast = isInstagram && post.content_type === "broadcast";
     const isTwitter = post.platform === "x" || post.platform === "twitter";
     const isTikTok = post.platform === "tt" || post.platform === "tiktok";
     const rendersAdultFallback = Boolean(post.is_adult);
@@ -139,7 +141,7 @@ export default function PostCard({ post, showReplies = true, eventTagIndex = nul
                         }}
                     />
                     <span className="post-platform-name">
-                        {isInstagram ? "Instagram" : isTwitter ? "X (Twitter)" : "TikTok"}
+                        {isBroadcast ? "Instagram Broadcast Channel" : isInstagram ? "Instagram" : isTwitter ? "X (Twitter)" : "TikTok"}
                     </span>
                     <span className="post-date-sep">·</span>
                     {new Date(post.posted_at + "T00:00:00").toLocaleDateString("en-US", {
@@ -195,7 +197,7 @@ export default function PostCard({ post, showReplies = true, eventTagIndex = nul
                     )
                 ) : (
                     <>
-                        {isInstagram && (
+                        {isInstagram && !isBroadcast && (
                             <InstagramEmbed
                                 external_url={post.external_url}
                                 media_url={post.media_url}
@@ -206,6 +208,16 @@ export default function PostCard({ post, showReplies = true, eventTagIndex = nul
                                 author_photo={post.author_photo}
                                 author_ig_pfp_url={post.author_ig_pfp_url}
                                 author_instagram_url={post.author_instagram_url}
+                            />
+                        )}
+
+                        {isBroadcast && (
+                            <InstagramBroadcast
+                                messages={post.media_urls || []}
+                                authorName={post.author_name}
+                                authorPhoto={post.author_ig_pfp_url || post.author_photo}
+                                authorId={post.author_id}
+                                instagramUrl={post.author_instagram_url}
                             />
                         )}
 

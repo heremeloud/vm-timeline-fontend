@@ -8,7 +8,7 @@ import AutoResizeTextarea from "../components/AutoResizeTextarea";
 import { cleanPastedPostUrl, detectMediaAuthor, detectMediaDate, normalizePostUrl } from "../utils/postUrls";
 import "../styles/EventForm.css";
 
-const emptyStoryItem = () => ({ url: "", text: "", translation: "", note: "" });
+const emptyStoryItem = () => ({ url: "", text: "", translation: "", note: "", attachment_type: "screenshot" });
 
 const getStoryItemCount = (quantity) =>
     Math.min(100, Math.max(1, Math.floor(Number(quantity) || 1)));
@@ -37,6 +37,7 @@ export default function EditPost() {
 
     // Form fields
     const [platform, setPlatform] = useState("ig");
+    const [contentType, setContentType] = useState("post");
     const [authorId, setAuthorId] = useState("");
     const [externalURL, setExternalURL] = useState("");
     const [externalId, setExternalId] = useState("");
@@ -95,6 +96,7 @@ export default function EditPost() {
 
             setPost(p);
             setPlatform(p.platform);
+            setContentType(p.content_type || (p.platform === "ig" && !p.external_url ? "story" : "post"));
             setAuthorId(p.author_id || "");
             setExternalURL(p.external_url || "");
             setExternalId(p.external_id || "");
@@ -107,7 +109,7 @@ export default function EditPost() {
                 ? p.media_urls.map((item) =>
                     typeof item === "string"
                         ? { url: item, text: "", translation: "", note: "" }
-                        : { url: item.url || "", text: item.text || "", translation: item.translation || "", note: item.note || "" }
+                        : { url: item.url || "", text: item.text || "", translation: item.translation || "", note: item.note || "", attachment_type: item.attachment_type || "screenshot" }
                 )
                 : p.media_url
                     ? [{ url: p.media_url, text: "", translation: "", note: "" }]
@@ -125,7 +127,7 @@ export default function EditPost() {
     if (loading) return <div>Loading...</div>;
     if (!post) return <div>Post not found</div>;
 
-    const previewItems = platform === "ig" && !externalURL.trim()
+    const previewItems = platform === "ig" && contentType !== "post"
         ? mediaItems.filter((item) => item.url.trim())
         : mediaURL.trim()
             ? [{ url: mediaURL.trim(), text: "", translation: "", note: "" }]
@@ -168,28 +170,30 @@ export default function EditPost() {
         else if (platform === "tt") newURL = normalizeTikTokURL(newURL);
 
         const newId = extractExternalId(newURL, platform);
-        const isIGStory = platform === "ig" && !newURL.trim();
-        const filteredMediaItems = isIGStory
+        const isIGCollection = platform === "ig" && contentType !== "post";
+        const filteredMediaItems = isIGCollection
             ? mediaItems
                 .map((item) => ({ ...item, url: item.url.trim() }))
-                .filter((item) => item.url)
+                .filter((item) => item.url || (contentType === "broadcast" && (item.text.trim() || item.translation.trim() || item.note.trim())))
                 .map((item) => ({
                     url: item.url,
                     text: item.text.trim() || null,
                     translation: item.translation.trim() || null,
                     note: item.note.trim() || null,
+                    attachment_type: contentType === "broadcast" ? item.attachment_type || "screenshot" : null,
                 }))
             : [];
 
         await updatePost(postId, {
             platform,
+            content_type: platform === "ig" ? contentType : "post",
             author_id: authorId,
             external_url: newURL,
             external_id: newId,
             caption,
             caption_translation: captionTranslation,
             caption_translation_note: captionTranslationNote.trim() || null,
-            media_url: isIGStory ? null : (mediaURL || null),
+            media_url: isIGCollection ? null : (mediaURL || null),
             media_urls_json: JSON.stringify(filteredMediaItems),
             posted_at: postedAt,
             is_visible: isVisible,
@@ -226,6 +230,21 @@ export default function EditPost() {
                         <option value="tt">TikTok</option>
                     </select>
                 </div>
+
+                {platform === "ig" && (
+                    <div className="eventform-section">
+                        <label>Instagram content type:</label>
+                        <select value={contentType} onChange={(e) => {
+                            const next = e.target.value;
+                            setContentType(next);
+                            if (next !== "post") setExternalURL("");
+                        }}>
+                            <option value="post">Post / Reel</option>
+                            <option value="story">Story</option>
+                            <option value="broadcast">Broadcast channel</option>
+                        </select>
+                    </div>
+                )}
 
                 <div className="eventform-section">
                     <label>Author:</label>
@@ -293,9 +312,9 @@ export default function EditPost() {
                 </div>
 
                 <div className="eventform-section">
-                    {platform === "ig" && !externalURL.trim() ? (
+                    {platform === "ig" && contentType !== "post" ? (
                         <>
-                            <label>Story Items:</label>
+                            <label>{contentType === "broadcast" ? "Channel Messages:" : "Story Items:"}</label>
                             {mediaItems.map((item, i) => (
                                 <div key={i} style={{ border: "1px solid #ddd", borderRadius: 8, padding: 10, marginBottom: 10 }}>
                                     <div style={{ display: "flex", gap: 6, marginBottom: 6 }}>
@@ -313,7 +332,7 @@ export default function EditPost() {
                                                 const detectedDate = detectMediaDate(pastedUrl);
                                                 if (detectedDate) setPostedAt(detectedDate);
                                             }}
-                                            placeholder={`Media URL #${i + 1}`}
+                                            placeholder={contentType === "broadcast" ? "Photo or screenshot URL (optional)" : `Media URL #${i + 1}`}
                                             style={{ flex: 1 }}
                                         />
                                         {mediaItems.length > 1 && (
@@ -326,18 +345,32 @@ export default function EditPost() {
                                             </button>
                                         )}
                                     </div>
-                                    <textarea
+                                    {contentType === "broadcast" && item.url.trim() && (
+                                        <select
+                                            value={item.attachment_type || "screenshot"}
+                                            onChange={(e) => {
+                                                const next = [...mediaItems];
+                                                next[i] = { ...next[i], attachment_type: e.target.value };
+                                                setMediaItems(next);
+                                            }}
+                                            aria-label={`Attachment type for message ${i + 1}`}
+                                            style={{ marginBottom: 6 }}
+                                        >
+                                            <option value="screenshot">Screenshot of message</option>
+                                            <option value="photo">Photo included in message</option>
+                                        </select>
+                                    )}
+                                    <AutoResizeTextarea
                                         value={item.text}
                                         onChange={(e) => {
                                             const next = [...mediaItems];
                                             next[i] = { ...next[i], text: e.target.value };
                                             setMediaItems(next);
                                         }}
-                                        placeholder="Text (optional)"
-                                        rows={2}
-                                        style={{ width: "100%", marginBottom: 4, boxSizing: "border-box" }}
+                                        placeholder={contentType === "broadcast" ? "Message text" : "Text (optional)"}
+                                        style={{ width: "100%", minHeight: 56, marginBottom: 4, boxSizing: "border-box" }}
                                     />
-                                    <textarea
+                                    <AutoResizeTextarea
                                         value={item.translation}
                                         onChange={(e) => {
                                             const next = [...mediaItems];
@@ -345,10 +378,9 @@ export default function EditPost() {
                                             setMediaItems(next);
                                         }}
                                         placeholder="Translation (optional)"
-                                        rows={2}
-                                        style={{ width: "100%", marginBottom: 4, boxSizing: "border-box" }}
+                                        style={{ width: "100%", minHeight: 56, marginBottom: 4, boxSizing: "border-box" }}
                                     />
-                                    <textarea
+                                    <AutoResizeTextarea
                                         value={item.note}
                                         onChange={(e) => {
                                             const next = [...mediaItems];
@@ -356,8 +388,7 @@ export default function EditPost() {
                                             setMediaItems(next);
                                         }}
                                         placeholder="Translator's note (optional)"
-                                        rows={2}
-                                        style={{ width: "100%", marginBottom: 4, boxSizing: "border-box" }}
+                                        style={{ width: "100%", minHeight: 56, marginBottom: 4, boxSizing: "border-box" }}
                                     />
                                 </div>
                             ))}
@@ -366,9 +397,9 @@ export default function EditPost() {
                                 onClick={() => addStoryItems(1)}
                                 style={{ fontSize: "0.85rem", marginTop: 2, cursor: "pointer" }}
                             >
-                                + Add another story item
+                                + Add another {contentType === "broadcast" ? "message" : "story item"}
                             </button>
-                            <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8, flexWrap: "wrap" }}>
+                            {contentType === "story" && <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8, flexWrap: "wrap" }}>
                                 <input
                                     type="number"
                                     min="1"
@@ -392,7 +423,7 @@ export default function EditPost() {
                                 >
                                     Generate story URLs
                                 </button>
-                            </div>
+                            </div>}
                         </>
                     ) : (
                         <>

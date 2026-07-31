@@ -88,6 +88,7 @@ export default function Events() {
         searchParams.get("view") === "calendar" ? "calendar" : "list"
     );
     const [sortOrder, setSortOrder] = useState("newest");
+    const [nameInput, setNameInput] = useState("");
     const [nameFilter, setNameFilter] = useState("");
     const [categoryFilter, setCategoryFilter] = useState("");
     const [subcategoryFilter, setSubcategoryFilter] = useState("");
@@ -332,12 +333,18 @@ export default function Events() {
             <div className="filter-bar filter-bar--two-row filter-bar--events">
                 <div className="filter-row">
                     <div className="filter-group">
-                        <label>Event Name</label>
+                        <label>Search</label>
                         <input
                             type="text"
-                            value={nameFilter}
-                            onChange={(e) => setNameFilter(e.target.value)}
-                            placeholder="Search…"
+                            value={nameInput}
+                            onChange={(e) => setNameInput(e.target.value)}
+                            onKeyDown={(e) => {
+                                if (e.key !== "Enter") return;
+                                e.preventDefault();
+                                setNameFilter(nameInput.trim());
+                                setPage(1);
+                            }}
+                            placeholder="Name, #, KW"
                         />
                     </div>
 

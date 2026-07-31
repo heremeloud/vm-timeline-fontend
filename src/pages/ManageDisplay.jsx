@@ -16,6 +16,20 @@ function itemStatus(isVisible, extraVisible = true) {
     return isVisible && extraVisible ? "public" : "hidden";
 }
 
+function postPlatformLabel(item) {
+    const platform = item.platform || item.post_platform;
+    const contentType = item.content_type || item.post_content_type;
+
+    if (platform === "ig" || platform === "instagram") {
+        if (contentType === "story") return "IGS";
+        if (contentType === "broadcast") return "BC";
+        return "IG";
+    }
+    if (platform === "x" || platform === "twitter") return "X";
+    if (platform === "tt" || platform === "tiktok") return "TikTok";
+    return platform || "Unknown";
+}
+
 export default function ManageDisplay() {
     const location = useLocation();
     const returnTo = `${location.pathname}${location.search}`;
@@ -295,12 +309,12 @@ function DisplayRow({ tab, item, author, isSearchResult = false, saving, returnT
     if (tab === "posts") {
         if (isSearchResult && item.result_type !== "post") {
             title = item.author_name || item.post_author_name || "Reply match";
-            meta = `${item.result_type} - ${item.posted_at || "no date"} - ${item.match_text || "No text"}`;
+            meta = `${postPlatformLabel(item)} · ${item.result_type} - ${item.posted_at || "no date"} - ${item.match_text || "No text"}`;
             editUrl = ROUTES.editPost(item.target_post_id);
             appUrl = ROUTES.postDetail(item.target_post_id);
         } else {
             title = item.author_name || "Unknown author";
-            meta = `${item.platform} - ${item.posted_at || "no date"} - ${item.caption || item.external_url || "No caption"}`;
+            meta = `${postPlatformLabel(item)} - ${item.posted_at || "no date"} - ${item.caption || item.match_text || item.external_url || "No caption"}`;
             editUrl = ROUTES.editPost(item.target_post_id || item.id);
             appUrl = ROUTES.postDetail(item.target_post_id || item.id);
         }

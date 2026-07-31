@@ -7,7 +7,7 @@ import AutoResizeTextarea from "../components/AutoResizeTextarea";
 import { cleanPastedPostUrl, detectMediaAuthor, detectMediaDate, normalizePostUrl } from "../utils/postUrls";
 import "../styles/EventForm.css";
 
-const emptyStoryItem = () => ({ url: "", text: "", translation: "", note: "" });
+const emptyStoryItem = () => ({ url: "", text: "", translation: "", note: "", attachment_type: "screenshot" });
 
 const getStoryItemCount = (quantity) =>
     Math.min(100, Math.max(1, Math.floor(Number(quantity) || 1)));
@@ -33,6 +33,7 @@ export default function CreatePost() {
 
     // platform: ig or x
     const [platform, setPlatform] = useState(parent_id ? "x" : "ig");
+    const [contentType, setContentType] = useState("post");
 
     // form fields
     const [external_url, setExternalURL] = useState("");
@@ -176,22 +177,24 @@ export default function CreatePost() {
 
             const external_id = extractExternalId(cleanURL, platform);
 
-            const isIGStory = platform === "ig" && !cleanURL;
-            const finalMediaUrl = isIGStory ? null : (mediaURL || null);
-            const filteredMediaItems = isIGStory
+            const isIGCollection = platform === "ig" && contentType !== "post";
+            const finalMediaUrl = isIGCollection ? null : (mediaURL || null);
+            const filteredMediaItems = isIGCollection
                 ? mediaItems
                     .map((item) => ({ ...item, url: item.url.trim() }))
-                    .filter((item) => item.url)
+                    .filter((item) => item.url || (contentType === "broadcast" && (item.text.trim() || item.translation.trim() || item.note.trim())))
                     .map((item) => ({
                         url: item.url,
                         text: item.text.trim() || null,
                         translation: item.translation.trim() || null,
                         note: item.note.trim() || null,
+                        attachment_type: contentType === "broadcast" ? item.attachment_type || "screenshot" : null,
                     }))
                 : [];
 
             await createPost({
                 platform,
+                content_type: platform === "ig" ? contentType : "post",
                 external_url: cleanURL,
                 external_id,
                 author_id: authorId,
@@ -237,6 +240,21 @@ export default function CreatePost() {
                         <option value="tt">TikTok</option>
                     </select>
                 </div>
+
+                {platform === "ig" && !parent_id && (
+                    <div className="eventform-section">
+                        <label>Instagram content type:</label>
+                        <select value={contentType} onChange={(e) => {
+                            const next = e.target.value;
+                            setContentType(next);
+                            if (next !== "post") setExternalURL("");
+                        }}>
+                            <option value="post">Post / Reel</option>
+                            <option value="story">Story</option>
+                            <option value="broadcast">Broadcast channel</option>
+                        </select>
+                    </div>
+                )}
 
                 <div className="eventform-section">
                     <label>Author:</label>
@@ -375,9 +393,9 @@ export default function CreatePost() {
 
                 <div className="eventform-section">
                     {/* IG story: multi-item list with optional text/translation/note per item */}
-                    {platform === "ig" && !external_url.trim() ? (
+                    {platform === "ig" && contentType !== "post" ? (
                         <>
-                            <label>Story Items:</label>
+                            <label>{contentType === "broadcast" ? "Channel Messages:" : "Story Items:"}</label>
                             {mediaItems.map((item, i) => (
                                 <div key={i} style={{ border: "1px solid #ddd", borderRadius: 8, padding: 10, marginBottom: 10 }}>
                                     <div style={{ display: "flex", gap: 6, marginBottom: 6 }}>
@@ -395,7 +413,7 @@ export default function CreatePost() {
                                                 const detectedDate = detectMediaDate(pastedUrl);
                                                 if (detectedDate) setPostedAt(detectedDate);
                                             }}
-                                            placeholder={`Media URL #${i + 1}`}
+                                            placeholder={contentType === "broadcast" ? "Photo or screenshot URL (optional)" : `Media URL #${i + 1}`}
                                             style={{ flex: 1 }}
                                         />
                                         {mediaItems.length > 1 && (
@@ -408,18 +426,32 @@ export default function CreatePost() {
                                             </button>
                                         )}
                                     </div>
-                                    <textarea
+                                    {contentType === "broadcast" && item.url.trim() && (
+                                        <select
+                                            value={item.attachment_type || "screenshot"}
+                                            onChange={(e) => {
+                                                const next = [...mediaItems];
+                                                next[i] = { ...next[i], attachment_type: e.target.value };
+                                                setMediaItems(next);
+                                            }}
+                                            aria-label={`Attachment type for message ${i + 1}`}
+                                            style={{ marginBottom: 6 }}
+                                        >
+                                            <option value="screenshot">Screenshot of message</option>
+                                            <option value="photo">Photo included in message</option>
+                                        </select>
+                                    )}
+                                    <AutoResizeTextarea
                                         value={item.text}
                                         onChange={(e) => {
                                             const next = [...mediaItems];
                                             next[i] = { ...next[i], text: e.target.value };
                                             setMediaItems(next);
                                         }}
-                                        placeholder="Text (optional)"
-                                        rows={2}
-                                        style={{ width: "100%", marginBottom: 4, boxSizing: "border-box" }}
+                                        placeholder={contentType === "broadcast" ? "Message text" : "Text (optional)"}
+                                        style={{ width: "100%", minHeight: 56, marginBottom: 4, boxSizing: "border-box" }}
                                     />
-                                    <textarea
+                                    <AutoResizeTextarea
                                         value={item.translation}
                                         onChange={(e) => {
                                             const next = [...mediaItems];
@@ -427,10 +459,9 @@ export default function CreatePost() {
                                             setMediaItems(next);
                                         }}
                                         placeholder="Translation (optional)"
-                                        rows={2}
-                                        style={{ width: "100%", marginBottom: 4, boxSizing: "border-box" }}
+                                        style={{ width: "100%", minHeight: 56, marginBottom: 4, boxSizing: "border-box" }}
                                     />
-                                    <textarea
+                                    <AutoResizeTextarea
                                         value={item.note}
                                         onChange={(e) => {
                                             const next = [...mediaItems];
@@ -438,8 +469,7 @@ export default function CreatePost() {
                                             setMediaItems(next);
                                         }}
                                         placeholder="Translator's note (optional)"
-                                        rows={2}
-                                        style={{ width: "100%", marginBottom: 4, boxSizing: "border-box" }}
+                                        style={{ width: "100%", minHeight: 56, marginBottom: 4, boxSizing: "border-box" }}
                                     />
                                 </div>
                             ))}
@@ -448,9 +478,9 @@ export default function CreatePost() {
                                 onClick={() => addStoryItems(1)}
                                 style={{ fontSize: "0.85rem", marginTop: 2, cursor: "pointer" }}
                             >
-                                + Add another story item
+                                + Add another {contentType === "broadcast" ? "message" : "story item"}
                             </button>
-                            <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8, flexWrap: "wrap" }}>
+                            {contentType === "story" && <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8, flexWrap: "wrap" }}>
                                 <input
                                     type="number"
                                     min="1"
@@ -474,7 +504,7 @@ export default function CreatePost() {
                                 >
                                     Generate story URLs
                                 </button>
-                            </div>
+                            </div>}
                         </>
                     ) : (
                         <>

@@ -142,6 +142,115 @@
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
     text-align: left;
     position: relative;
+    overflow: hidden;
+}
+
+.ig-broadcast {
+    width: 100%;
+    max-width: 550px;
+    margin: 0 auto;
+    box-sizing: border-box;
+    overflow: hidden;
+    border: 1px solid #e4e4e7;
+    border-radius: 18px;
+    background: #fff;
+}
+
+.ig-broadcast-header {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    padding: 15px 16px;
+    border-bottom: 1px solid #e5e5e5;
+}
+
+.ig-broadcast-author {
+    color: #222;
+    font-size: 0.95rem;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.ig-broadcast-label {
+    margin-top: 2px;
+    color: #777;
+    font-size: 0.76rem;
+}
+
+.ig-broadcast-messages {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 16px;
+}
+
+.ig-broadcast-message {
+    align-self: center;
+    width: 100%;
+    max-width: 460px;
+    box-sizing: border-box;
+    padding: 0;
+}
+
+.ig-broadcast-message p {
+    margin: 0;
+    white-space: pre-wrap;
+}
+
+.ig-broadcast-original {
+    color: #222;
+    line-height: 1.45;
+}
+
+.ig-broadcast-transcript {
+    margin: 8px 3px 0;
+    color: #707070;
+    font-size: 0.8rem;
+}
+
+.ig-broadcast-transcript summary {
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.ig-broadcast-transcript .ig-broadcast-original {
+    margin-top: 8px;
+    padding: 9px 10px;
+    border-radius: 10px;
+    background: #f6f6f6;
+    font-size: 0.88rem;
+}
+
+.ig-broadcast-media {
+    display: block;
+    width: 100%;
+    max-height: 520px;
+    margin-top: 0;
+    border-radius: 11px;
+    object-fit: contain;
+    background: #f4f4f4;
+}
+
+.ig-broadcast-attachment {
+    display: inline-block;
+    margin-top: 8px;
+    color: #555;
+}
+
+.ig-broadcast-translation {
+    margin-top: 9px !important;
+    padding: 9px 4px 2px;
+    border-top: 1px solid #e8e8e8;
+    color: #555;
+    font-size: 0.92rem;
+    line-height: 1.45;
+}
+
+.ig-broadcast-note {
+    margin-top: 7px !important;
+    color: #888;
+    font-size: 0.8rem;
+    line-height: 1.35;
 }
 
 .post-visibility-toggle {
@@ -212,6 +321,28 @@
     max-width: 100%;
     min-width: 0;
     overflow: hidden;
+}
+
+/* Keep Instagram's official embed border inside the timeline card. */
+.post-embed .instagram-media {
+    width: calc(100% - 2px) !important;
+    max-width: calc(100% - 2px) !important;
+    min-width: 0 !important;
+    margin-right: 2px !important;
+    box-sizing: border-box !important;
+}
+
+/* Manual Instagram stories use the same bounded width behavior. */
+.igpost-container,
+.igpost-row {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+}
+
+.igpost-row > div {
+    min-width: 0;
 }
 
 .tweet-embed-wrapper {
