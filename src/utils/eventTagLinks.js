@@ -12,9 +12,7 @@ const EXCLUDED_IDENTITY_TAGS = new Set([
 
 const PHYSICAL_EVENT_CATEGORIES = new Set([
     "event",
-    "fan meet",
-    "fan fest",
-    "fan sign",
+    "fan event",
 ]);
 
 const NEARBY_EVENT_WINDOW_MS = 14 * 24 * 60 * 60 * 1000;

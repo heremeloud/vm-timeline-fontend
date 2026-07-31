@@ -6,12 +6,20 @@
 // -------------------------------------------------------
 
 export const EVENT_CATEGORIES = [
-    { value: "program",   label: "Program" },
+    { value: "show",      label: "Show" },
     { value: "live",      label: "Live" },
-    { value: "interview",  label: "Interview" },
     { value: "press tour", label: "Press Tour" },
     { value: "event",      label: "Event" },
-    { value: "fan meet",  label: "Fan Meet" },
-    { value: "fan fest",  label: "Fan Fest" },
-    { value: "fan sign",  label: "Fan Sign" },
+    { value: "fan event",  label: "Fan Event" },
 ];
+
+export const EVENT_SUBCATEGORIES = {
+    show: ["interview", "variety", "talk"],
+    event: ["brand event", "promotional event", "award show", "gmmtv"],
+    "fan event": ["fan sign", "fan meet", "fan fest"],
+};
+
+export function formatEventSubcategory(value) {
+    if (value === "gmmtv") return "GMMTV";
+    return value.replace(/\b\w/g, (letter) => letter.toUpperCase());
+}

@@ -6,7 +6,7 @@ import { getProjects } from "../api/projectsService";
 import { ROUTES } from "../routes";
 import FocalPointPicker from "../components/FocalPointPicker";
 import "../styles/EventForm.css";
-import { EVENT_CATEGORIES } from "../constants/eventCategories";
+import { EVENT_CATEGORIES, EVENT_SUBCATEGORIES, formatEventSubcategory } from "../constants/eventCategories";
 import { cleanPastedSocialUrls, normalizeSocialPostUrl } from "../utils/postUrls";
 import { formatEventDateRange } from "../utils/eventDateRange";
 
@@ -32,6 +32,7 @@ export default function CreateEvent() {
     const [name, setName] = useState("");
     const [englishName, setEnglishName] = useState("");
     const [category, setCategory] = useState("");
+    const [subcategory, setSubcategory] = useState("");
     const [location, setLocation] = useState("");
     const [keyword, setKeyword] = useState("");
     const [tagsInput, setTagsInput] = useState("");
@@ -131,6 +132,7 @@ export default function CreateEvent() {
                 name: name.trim(),
                 english_name: englishName.trim() || null,
                 category: category || null,
+                subcategory: subcategory || null,
                 location: location.trim() || null,
                 keyword: keyword.trim() || null,
                 tags,
@@ -200,7 +202,10 @@ export default function CreateEvent() {
                     <label>Category (optional):</label>
                     <select
                         value={category}
-                        onChange={(e) => setCategory(e.target.value)}
+                        onChange={(e) => {
+                            setCategory(e.target.value);
+                            setSubcategory("");
+                        }}
                     >
                         <option value="">— None —</option>
                         {EVENT_CATEGORIES.map((c) => (
@@ -208,6 +213,20 @@ export default function CreateEvent() {
                         ))}
                     </select>
                 </div>
+
+                {EVENT_SUBCATEGORIES[category]?.length > 0 && (
+                    <div className="eventform-section">
+                        <label>Subcategory (optional):</label>
+                        <select value={subcategory} onChange={(e) => setSubcategory(e.target.value)}>
+                            <option value="">— None —</option>
+                            {EVENT_SUBCATEGORIES[category].map((value) => (
+                                <option key={value} value={value}>
+                                    {formatEventSubcategory(value)}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+                )}
 
                 <div className="eventform-section">
                     <label>Location (optional):</label>

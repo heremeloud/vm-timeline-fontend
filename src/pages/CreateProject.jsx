@@ -6,6 +6,7 @@ import { ROUTES } from "../routes";
 import { PROJECT_CATEGORIES } from "../constants/projectCategories";
 import { cleanPastedSocialUrls, normalizeSocialPostUrl } from "../utils/postUrls";
 import FocalPointPicker from "../components/FocalPointPicker";
+import SeriesMetadataFields from "../components/SeriesMetadataFields";
 import "../styles/EventForm.css";
 
 function slugify(value) {
@@ -22,19 +23,25 @@ export default function CreateProject() {
 
     const [title, setTitle] = useState("");
     const [originalTitle, setOriginalTitle] = useState("");
+    const [hashtag, setHashtag] = useState("");
     const [slug, setSlug] = useState("");
     const [category, setCategory] = useState("");
     const [thumbnailUrl, setThumbnailUrl] = useState("");
     const [thumbnailFocalX, setThumbnailFocalX] = useState(50);
     const [thumbnailFocalY, setThumbnailFocalY] = useState(50);
     const [year, setYear] = useState("");
+    const [episodeCount, setEpisodeCount] = useState("");
+    const [filmingDays, setFilmingDays] = useState([]);
+    const [episodes, setEpisodes] = useState([]);
     const [startDate, setStartDate] = useState("");
     const [endDate, setEndDate] = useState("");
     const [description, setDescription] = useState("");
     const [playlists, setPlaylists] = useState([{ name: "", id: "" }]);
     const [announcementUrl, setAnnouncementUrl] = useState("");
     const [tweetUrl, setTweetUrl] = useState("");
+    const [tweetLabel, setTweetLabel] = useState("");
     const [youtubeUrl, setYoutubeUrl] = useState("");
+    const [youtubeLabel, setYoutubeLabel] = useState("");
     const [mydramalistUrl, setMydramalistUrl] = useState("");
     const [gmmtvUrl, setGmmtvUrl] = useState("");
     const [officialTwitterUrl, setOfficialTwitterUrl] = useState("");
@@ -70,12 +77,16 @@ export default function CreateProject() {
             await createProject({
                 title,
                 original_title: originalTitle || null,
+                hashtag,
                 slug: slug || null,
                 category: category || null,
                 thumbnail_url: thumbnailUrl || null,
                 thumbnail_focal_x: thumbnailUrl.trim() ? thumbnailFocalX : null,
                 thumbnail_focal_y: thumbnailUrl.trim() ? thumbnailFocalY : null,
                 year: year ? parseInt(year) : null,
+                episode_count: category === "series" && episodeCount ? parseInt(episodeCount) : null,
+                filming_days: category === "series" ? filmingDays.map((row) => ({ ...row, q_number: parseInt(row.q_number) })) : [],
+                episode_metadata: category === "series" ? episodes.map((row) => ({ ...row, episode_number: parseInt(row.episode_number) })) : [],
                 start_date: startDate || null,
                 end_date: endDate || null,
                 description: description || null,
@@ -85,12 +96,14 @@ export default function CreateProject() {
                 })),
                 announcement_url: normalizeSocialPostUrl(announcementUrl) || null,
                 tweet_url: tweetUrl || null,
+                tweet_label: tweetLabel || null,
                 youtube_url: youtubeUrl || null,
+                youtube_label: youtubeLabel || null,
                 mydramalist_url: mydramalistUrl || null,
                 gmmtv_url: gmmtvUrl || null,
                 official_twitter_url: category === "series" ? officialTwitterUrl || null : null,
-                spotify_url: spotifyUrl || null,
-                apple_music_url: appleMusicUrl || null,
+                spotify_url: category === "song" ? spotifyUrl || null : null,
+                apple_music_url: category === "song" ? appleMusicUrl || null : null,
                 parent_project_id: parentProjectId ? parseInt(parentProjectId) : null,
                 author_ids: selectedAuthorIds,
             });
@@ -126,6 +139,12 @@ export default function CreateProject() {
                 </div>
 
                 <div className="eventform-section">
+                    <label>Primary Hashtag <span style={{ fontWeight: 400, opacity: 0.6 }}>(optional)</span></label>
+                    <input value={hashtag} onChange={(e) => setHashtag(e.target.value)} placeholder="BakeLoveFeeling" />
+                    <div className="eventform-field-note">Enter without # - it is added when displayed and copied.</div>
+                </div>
+
+                <div className="eventform-section">
                     <label>URL slug</label>
                     <input
                         value={slug}
@@ -140,12 +159,39 @@ export default function CreateProject() {
                 <div className="eventform-section">
                     <label>Category</label>
                     <select value={category} onChange={(e) => setCategory(e.target.value)}>
-                        <option value="">— none —</option>
+                        <option value="">- none -</option>
                         {PROJECT_CATEGORIES.map((c) => (
                             <option key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</option>
                         ))}
                     </select>
                 </div>
+
+                {category === "series" && (
+                    <div className="eventform-section">
+                        <label>Number of Episodes <span style={{ fontWeight: 400, opacity: 0.6 }}>(optional)</span></label>
+                        <input
+                            type="number"
+                            min="1"
+                            step="1"
+                            value={episodeCount}
+                            onChange={(e) => setEpisodeCount(e.target.value)}
+                            placeholder="12"
+                            style={{ width: 120 }}
+                        />
+                    </div>
+                )}
+
+                {category === "series" && (
+                    <SeriesMetadataFields
+                        filmingDays={filmingDays}
+                        setFilmingDays={setFilmingDays}
+                        episodes={episodes}
+                        setEpisodes={setEpisodes}
+                        episodeCount={episodeCount}
+                        primaryHashtag={hashtag}
+                        startDate={startDate}
+                    />
+                )}
 
                 <div className="eventform-section">
                     <label>Thumbnail URL</label>
@@ -178,20 +224,24 @@ export default function CreateProject() {
                     <input value={mydramalistUrl} onChange={(e) => setMydramalistUrl(e.target.value)} placeholder="https://mydramalist.com/..." />
                 </div>
 
-                <div className="eventform-section">
-                    <label>Spotify URL <span style={{ fontWeight: 400, opacity: 0.6 }}>(optional — album or track)</span></label>
-                    <input value={spotifyUrl} onChange={(e) => setSpotifyUrl(e.target.value)} placeholder="https://open.spotify.com/..." />
-                </div>
+                {category === "song" && (
+                    <>
+                        <div className="eventform-section">
+                            <label>Spotify URL <span style={{ fontWeight: 400, opacity: 0.6 }}>(optional - track)</span></label>
+                            <input value={spotifyUrl} onChange={(e) => setSpotifyUrl(e.target.value)} placeholder="https://open.spotify.com/..." />
+                        </div>
+
+                        <div className="eventform-section">
+                            <label>Apple Music URL <span style={{ fontWeight: 400, opacity: 0.6 }}>(optional - track)</span></label>
+                            <input value={appleMusicUrl} onChange={(e) => setAppleMusicUrl(e.target.value)} placeholder="https://music.apple.com/..." />
+                        </div>
+                    </>
+                )}
 
                 <div className="eventform-section">
-                    <label>Apple Music URL <span style={{ fontWeight: 400, opacity: 0.6 }}>(optional — album or track)</span></label>
-                    <input value={appleMusicUrl} onChange={(e) => setAppleMusicUrl(e.target.value)} placeholder="https://music.apple.com/..." />
-                </div>
-
-                <div className="eventform-section">
-                    <label>Part of Project <span style={{ fontWeight: 400, opacity: 0.6 }}>(optional — e.g. OST of a series)</span></label>
+                    <label>Part of Project <span style={{ fontWeight: 400, opacity: 0.6 }}>(optional - e.g. OST of a series)</span></label>
                     <select value={parentProjectId} onChange={(e) => setParentProjectId(e.target.value)}>
-                        <option value="">— none —</option>
+                        <option value="">- none -</option>
                         {allProjects.map((p) => (
                             <option key={p.id} value={p.id}>{p.title}</option>
                         ))}
@@ -204,13 +254,17 @@ export default function CreateProject() {
                 </div>
 
                 <div className="eventform-section">
-                    <label>Start Date</label>
-                    <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} style={{ width: 180 }} />
-                </div>
-
-                <div className="eventform-section">
-                    <label>End Date <span style={{ fontWeight: 400, opacity: 0.6 }}>(optional — for date ranges)</span></label>
-                    <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} style={{ width: 180 }} />
+                    <label>Project Dates</label>
+                    <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                        <div>
+                            <label style={{ fontWeight: 400 }}>Start Date</label>
+                            <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} style={{ width: 180 }} />
+                        </div>
+                        <div>
+                            <label style={{ fontWeight: 400 }}>End Date <span style={{ opacity: 0.6 }}>(optional)</span></label>
+                            <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} style={{ width: 180 }} />
+                        </div>
+                    </div>
                 </div>
 
                 <div className="eventform-section">
@@ -269,13 +323,15 @@ export default function CreateProject() {
                 </div>
 
                 <div className="eventform-section">
-                    <label>Tweet URL <span style={{ fontWeight: 400, opacity: 0.6 }}>(optional — media/teaser tweet)</span></label>
+                    <label>X Media URL <span style={{ fontWeight: 400, opacity: 0.6 }}>(optional - media/teaser post)</span></label>
                     <input value={tweetUrl} onChange={(e) => setTweetUrl(e.target.value)} placeholder="https://x.com/..." />
+                    <input value={tweetLabel} onChange={(e) => setTweetLabel(e.target.value)} placeholder="Media name (defaults to Tweet)" style={{ marginTop: 6 }} />
                 </div>
 
                 <div className="eventform-section">
-                    <label>YouTube Video URL <span style={{ fontWeight: 400, opacity: 0.6 }}>(optional — single video, no playlist)</span></label>
+                    <label>YouTube Video URL <span style={{ fontWeight: 400, opacity: 0.6 }}>(optional - single video, no playlist)</span></label>
                     <input value={youtubeUrl} onChange={(e) => setYoutubeUrl(e.target.value)} placeholder="https://www.youtube.com/watch?v=..." />
+                    <input value={youtubeLabel} onChange={(e) => setYoutubeLabel(e.target.value)} placeholder="Media name (defaults to Video)" style={{ marginTop: 6 }} />
                 </div>
 
                 <div className="eventform-section">

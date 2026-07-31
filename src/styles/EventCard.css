@@ -69,10 +69,11 @@
     font-weight: 700;
 }
 
-.eventcard-original-title {
+.eventcard-english-title {
     margin-top: 3px;
     color: #5f554f;
-    font-size: 0.86rem;
+    font-size: 0.78rem;
+    font-weight: 500;
     line-height: 1.35;
 }
 
@@ -92,6 +93,22 @@
     background: #955803;
     color: #fff;
     text-transform: uppercase;
+}
+
+.eventcard-category-group {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    flex-wrap: wrap;
+}
+
+.eventcard-category-area {
+    position: relative;
+}
+
+.eventcard-subcategory {
+    background: #f3ebe3;
+    color: #6f4c2d;
 }
 
 
@@ -309,8 +326,25 @@ button.eventcard-badge:focus-visible {
 
 .eventcard-actions {
     display: flex;
-    gap: 8px;
+    gap: 4px;
     align-items: center;
+}
+
+.eventcard-actions a {
+    display: flex;
+    text-decoration: none;
+}
+
+.eventcard-actions .eventcard-btn,
+.eventcard-actions .btn-delete {
+    height: 32px;
+    padding: 6px 12px;
+    box-sizing: border-box;
+    border-radius: 6px;
+    font-family: inherit;
+    font-size: 0.8rem;
+    font-weight: 500;
+    line-height: 1;
 }
 
 .eventcard-btn {
@@ -333,9 +367,15 @@ button.eventcard-badge:focus-visible {
 /* ============================= */
 
 .eventcard-copied {
-    margin-top: 8px;
-    font-size: 0.85rem;
+    position: absolute;
+    top: auto;
+    right: auto;
+    bottom: calc(100% + 2px);
+    left: 0;
+    z-index: 1;
+    font-size: 0.7rem;
     opacity: 0.7;
+    pointer-events: none;
 }
 
 /* ============================= */

@@ -4,7 +4,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import { ROUTES } from "../routes";
 import EventCard from "../components/EventCard";
 import "../styles/Home.css";
-import { EVENT_CATEGORIES } from "../constants/eventCategories";
+import { EVENT_CATEGORIES, EVENT_SUBCATEGORIES, formatEventSubcategory } from "../constants/eventCategories";
 import { getEventStartDate } from "../utils/eventDateRange";
 
 const CALENDAR_LIMIT = 500;
@@ -90,13 +90,18 @@ export default function Events() {
     const [sortOrder, setSortOrder] = useState("newest");
     const [nameFilter, setNameFilter] = useState("");
     const [categoryFilter, setCategoryFilter] = useState("");
+    const [subcategoryFilter, setSubcategoryFilter] = useState("");
     const [authorFilter, setAuthorFilter] = useState("");
     const [calendarStart, setCalendarStart] = useState(
         () => parseDateKey(searchParams.get("month")) || startOfDay(new Date())
     );
 
-    // Keep the URL in sync with the calendar view so navigating away (e.g. to
-    // an event/project detail page) and back restores the same month + view.
+    const [page, setPage] = useState(() =>
+        Math.max(1, Number(searchParams.get("page")) || 1)
+    );
+
+    // Keep pagination and calendar state in the URL so refreshes, shared links,
+    // and back-navigation restore the same events view.
     useEffect(() => {
         setSearchParams(
             (prev) => {
@@ -104,22 +109,31 @@ export default function Events() {
                 if (viewMode === "calendar") {
                     next.set("view", "calendar");
                     next.set("month", formatDateKey(calendarStart));
+                    next.delete("page");
                 } else {
                     next.delete("view");
                     next.delete("month");
+                    if (page > 1) next.set("page", String(page));
+                    else next.delete("page");
                 }
                 return next;
             },
             { replace: true }
         );
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [viewMode, calendarStart]);
+    }, [viewMode, calendarStart, page]);
 
-    const [page, setPage] = useState(1);
     const [jumpPage, setJumpPage] = useState("");
     const [lastPage, setLastPage] = useState(null);
 
     const requestIdRef = useRef(0);
+    const previousFiltersRef = useRef({
+        sortOrder,
+        nameFilter,
+        categoryFilter,
+        subcategoryFilter,
+        authorFilter,
+    });
 
     const fetchBaseEvents = useCallback(async (targetPage) => {
         const res = await getEvents({
@@ -128,10 +142,11 @@ export default function Events() {
             sort: sortOrder,
             name: nameFilter.trim() || undefined,
             category: categoryFilter || undefined,
+            subcategory: subcategoryFilter || undefined,
             author: authorFilter || undefined,
         });
         return res.data || [];
-    }, [sortOrder, nameFilter, categoryFilter, authorFilter]);
+    }, [sortOrder, nameFilter, categoryFilter, subcategoryFilter, authorFilter]);
 
     const fetchCalendarEvents = useCallback(async () => {
         const rangeEnd = addMonths(calendarStart, 1);
@@ -145,12 +160,13 @@ export default function Events() {
             sort: "oldest",
             name: nameFilter.trim() || undefined,
             category: categoryFilter || undefined,
+            subcategory: subcategoryFilter || undefined,
             author: authorFilter || undefined,
             visibleStart: formatDateKey(first),
             visibleEnd: formatDateKey(last),
         });
         return res.data || [];
-    }, [calendarStart, nameFilter, categoryFilter, authorFilter]);
+    }, [calendarStart, nameFilter, categoryFilter, subcategoryFilter, authorFilter]);
 
     const pageHasData = useCallback(async (targetPage) => {
         const base = await fetchBaseEvents(targetPage);
@@ -247,11 +263,26 @@ export default function Events() {
 
     // Reset pagination knowledge on filter change
     useEffect(() => {
+        const previous = previousFiltersRef.current;
+        const filtersChanged = previous.sortOrder !== sortOrder
+            || previous.nameFilter !== nameFilter
+            || previous.categoryFilter !== categoryFilter
+            || previous.subcategoryFilter !== subcategoryFilter
+            || previous.authorFilter !== authorFilter;
+        previousFiltersRef.current = {
+            sortOrder,
+            nameFilter,
+            categoryFilter,
+            subcategoryFilter,
+            authorFilter,
+        };
+        if (!filtersChanged) return;
+
         // eslint-disable-next-line react-hooks/set-state-in-effect
         setLastPage(null);
         setPage(1);
         setJumpPage("");
-    }, [sortOrder, nameFilter, categoryFilter, authorFilter]);
+    }, [sortOrder, nameFilter, categoryFilter, subcategoryFilter, authorFilter]);
 
     const nextDisabled = lastPage ? page >= lastPage : events.length < LIMIT;
     const calendarEnd = addMonths(calendarStart, 1);
@@ -326,11 +357,28 @@ export default function Events() {
                 <div className="filter-row">
                     <div className="filter-group">
                         <label>Category</label>
-                        <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)}>
+                        <select
+                            value={subcategoryFilter ? `${categoryFilter}:${subcategoryFilter}` : categoryFilter}
+                            onChange={(e) => {
+                                const [nextCategory, nextSubcategory = ""] = e.target.value.split(":");
+                                setCategoryFilter(nextCategory);
+                                setSubcategoryFilter(nextSubcategory);
+                            }}
+                        >
                             <option value="">All</option>
-                            {EVENT_CATEGORIES.map((c) => (
-                                <option key={c.value} value={c.value}>{c.label}</option>
-                            ))}
+                            {EVENT_CATEGORIES.flatMap((category) => {
+                                const subcategories = EVENT_SUBCATEGORIES[category.value] || [];
+                                return [
+                                    <option key={category.value} value={category.value}>
+                                        {category.label}
+                                    </option>,
+                                    ...subcategories.map((subcategory) => (
+                                        <option key={`${category.value}:${subcategory}`} value={`${category.value}:${subcategory}`}>
+                                            {category.label} - {formatEventSubcategory(subcategory)}
+                                        </option>
+                                    )),
+                                ];
+                            })}
                         </select>
                     </div>
 
@@ -396,7 +444,7 @@ export default function Events() {
                                             >
                                                 {ev.category && (
                                                     <span className="events-calendar-event-category">
-                                                        {ev.category.toUpperCase()}
+                                                        {[ev.category, ev.subcategory].filter(Boolean).join(" · ").toUpperCase()}
                                                     </span>
                                                 )}
                                                 {(ev.media_url || ev.project_thumbnail_url) && (

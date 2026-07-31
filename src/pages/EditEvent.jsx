@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { getAdminEvent, updateEvent, getEvents } from "../api/eventsService";
 import { getAuthors } from "../api/authorsService";
 import { getProjects } from "../api/projectsService";
 import { ROUTES } from "../routes";
 import FocalPointPicker from "../components/FocalPointPicker";
 import "../styles/EventForm.css";
-import { EVENT_CATEGORIES } from "../constants/eventCategories";
+import { EVENT_CATEGORIES, EVENT_SUBCATEGORIES, formatEventSubcategory } from "../constants/eventCategories";
 import { cleanPastedSocialUrls, normalizeSocialPostUrl } from "../utils/postUrls";
 import { formatEventDateRange, getEventStartDate } from "../utils/eventDateRange";
 
@@ -25,6 +25,12 @@ const DEFAULT_TAG_OPTIONS = [
 export default function EditEvent() {
     const { eventId } = useParams();
     const navigate = useNavigate();
+    const routerLocation = useLocation();
+    const [searchParams] = useSearchParams();
+    const returnTo = routerLocation.state?.returnTo || searchParams.get("returnTo");
+    const safeReturnTo = returnTo?.startsWith("/") && !returnTo.startsWith("//")
+        ? returnTo
+        : ROUTES.events;
 
     const [loading, setLoading] = useState(true);
     const [authors, setAuthors] = useState([]);
@@ -33,6 +39,7 @@ export default function EditEvent() {
     const [name, setName] = useState("");
     const [englishName, setEnglishName] = useState("");
     const [category, setCategory] = useState("");
+    const [subcategory, setSubcategory] = useState("");
     const [location, setLocation] = useState("");
     const [keyword, setKeyword] = useState("");
     const [tagsInput, setTagsInput] = useState("");
@@ -77,6 +84,7 @@ export default function EditEvent() {
                 setName(ev.name || "");
                 setEnglishName(ev.english_name || "");
                 setCategory(ev.category || "");
+                setSubcategory(ev.subcategory || "");
                 setLocation(ev.location || "");
                 setKeyword(ev.keyword || "");
                 setMediaURL(ev.media_url || "");
@@ -175,6 +183,7 @@ export default function EditEvent() {
                 name: name.trim(),
                 english_name: englishName.trim() || null,
                 category: category || null,
+                subcategory: subcategory || null,
                 location: location.trim() || null,
                 keyword: keyword.trim() || null,
                 tags,
@@ -190,7 +199,7 @@ export default function EditEvent() {
                 project_id: projectId ? Number(projectId) : null,
                 parent_event_id: parentEventId ? Number(parentEventId) : null,
             });
-            navigate(ROUTES.events);
+            navigate(safeReturnTo, { replace: true });
         } catch (err) {
             console.error("EditEvent save error:", err);
             alert("Failed to save event: " + (err.response?.data?.detail || err.message));
@@ -244,7 +253,10 @@ export default function EditEvent() {
                     <label>Category (optional):</label>
                     <select
                         value={category}
-                        onChange={(e) => setCategory(e.target.value)}
+                        onChange={(e) => {
+                            setCategory(e.target.value);
+                            setSubcategory("");
+                        }}
                     >
                         <option value="">— None —</option>
                         {EVENT_CATEGORIES.map((c) => (
@@ -252,6 +264,20 @@ export default function EditEvent() {
                         ))}
                     </select>
                 </div>
+
+                {EVENT_SUBCATEGORIES[category]?.length > 0 && (
+                    <div className="eventform-section">
+                        <label>Subcategory (optional):</label>
+                        <select value={subcategory} onChange={(e) => setSubcategory(e.target.value)}>
+                            <option value="">— None —</option>
+                            {EVENT_SUBCATEGORIES[category].map((value) => (
+                                <option key={value} value={value}>
+                                    {formatEventSubcategory(value)}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+                )}
 
                 <div className="eventform-section">
                     <label>Location (optional):</label>

@@ -36,12 +36,32 @@ function orderViewMimFirst(authors = []) {
     return [...(view ? [view] : []), ...(mim ? [mim] : []), ...rest];
 }
 
+function displayHashtag(value) {
+    const clean = (value || "").trim().replace(/^#/, "");
+    return clean ? `#${clean}` : "";
+}
+
 export default function ProjectDetail() {
     const { projectId } = useParams();
     const navigate = useNavigate();
     const [project, setProject] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [copiedKey, setCopiedKey] = useState("");
+    const [showFilmingDays, setShowFilmingDays] = useState(false);
+    const [showEpisodes, setShowEpisodes] = useState(false);
     const isAdmin = !!localStorage.getItem("jwt");
+
+    async function copyText(value, key) {
+        if (!value) return;
+        try {
+            await navigator.clipboard.writeText(value);
+            setCopiedKey(key);
+            window.setTimeout(() => setCopiedKey(""), 1200);
+        } catch (err) {
+            console.error("Copy failed:", err);
+            alert("Could not copy the text.");
+        }
+    }
 
     useEffect(() => {
         async function load() {
@@ -75,6 +95,8 @@ export default function ProjectDetail() {
     if (!project) return <div style={{ padding: 20 }}>Project not found.</div>;
 
     const playlists = project.playlists || [];
+    const episodeHasTitles = (project.episode_metadata || []).some((row) => row.title);
+    const episodeHasKeywords = (project.episode_metadata || []).some((row) => row.keyword);
 
     function goBack() {
         if (window.history.state?.idx > 0) {
@@ -121,11 +143,31 @@ export default function ProjectDetail() {
                         <div className="project-detail-original-title">{project.original_title}</div>
                     )}
 
+                    {project.hashtag && (
+                        <div className="project-detail-hashtag-row">
+                            <button
+                                type="button"
+                                className="project-detail-hashtag"
+                                onClick={() => copyText(displayHashtag(project.hashtag), "project-hashtag")}
+                                title="Copy hashtag"
+                            >
+                                {displayHashtag(project.hashtag)}
+                            </button>
+                            {copiedKey === "project-hashtag" && <span className="project-hashtag-copied">Copied!</span>}
+                        </div>
+                    )}
+
                     {(project.start_date || project.year) && (
                         <div className="project-card-year">
                             {project.start_date
                                 ? project.start_date + (project.end_date ? ` – ${project.end_date}` : "")
                                 : project.year}
+                        </div>
+                    )}
+
+                    {project.category === "series" && project.episode_count && (
+                        <div className="project-detail-episode-count">
+                            {project.episode_count} {project.episode_count === 1 ? "episode" : "episodes"}
                         </div>
                     )}
 
@@ -250,10 +292,75 @@ export default function ProjectDetail() {
                 </div>
             </div>
 
+            {project.filming_days?.length > 0 && (
+                <div className="project-detail-series-metadata">
+                    <button type="button" className="project-series-section-toggle" onClick={() => setShowFilmingDays((visible) => !visible)}>
+                        <span>Filming Q Days</span>
+                        <svg className={showFilmingDays ? "is-open" : ""} viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6" /></svg>
+                    </button>
+                    {showFilmingDays && <div className="project-series-metadata-list">
+                        <div className="project-series-column-header project-series-q-row" aria-hidden="true">
+                            <span>Q</span><span>Date</span><span>Hashtag</span><span>Keyword</span>
+                        </div>
+                        {project.filming_days.map((row) => (
+                            <div className="project-series-metadata-row project-series-q-row" key={row.id || `q-${row.q_number}`}>
+                                <strong>Q{row.q_number}</strong>
+                                <span className="project-series-date">{row.filming_date || ""}</span>
+                                {row.hashtag && (
+                                    <span className="project-series-copy-item project-series-hashtag">
+                                        <button type="button" title="Copy hashtag" onClick={() => copyText(displayHashtag(row.hashtag), `q-${row.q_number}-hashtag`)}><span>{displayHashtag(row.hashtag)}</span></button>
+                                        {copiedKey === `q-${row.q_number}-hashtag` && <span className="project-hashtag-copied">Copied!</span>}
+                                    </span>
+                                )}
+                                {row.keyword && (
+                                    <span className="project-series-copy-item project-series-keyword">
+                                        <button type="button" title="Copy keyword" onClick={() => copyText(row.keyword, `q-${row.q_number}-keyword`)}><span>{row.keyword}</span></button>
+                                        {copiedKey === `q-${row.q_number}-keyword` && <span className="project-hashtag-copied">Copied!</span>}
+                                    </span>
+                                )}
+                            </div>
+                        ))}
+                    </div>}
+                </div>
+            )}
+
+            {project.episode_metadata?.length > 0 && (
+                <div className="project-detail-series-metadata">
+                    <button type="button" className="project-series-section-toggle" onClick={() => setShowEpisodes((visible) => !visible)}>
+                        <span>Episodes</span>
+                        <svg className={showEpisodes ? "is-open" : ""} viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6" /></svg>
+                    </button>
+                    {showEpisodes && <div className="project-series-metadata-list">
+                        <div className={`project-series-column-header project-series-episode-row${episodeHasTitles ? "" : " project-no-episode-title"}${episodeHasKeywords ? "" : " project-no-episode-keyword"}`} aria-hidden="true">
+                            <span>EP</span><span>Air date</span>{episodeHasTitles && <span>Title</span>}<span>Hashtag</span>{episodeHasKeywords && <span>Keyword</span>}
+                        </div>
+                        {project.episode_metadata.map((row) => (
+                            <div className={`project-series-metadata-row project-series-episode-row${episodeHasTitles ? "" : " project-no-episode-title"}${episodeHasKeywords ? "" : " project-no-episode-keyword"}`} key={row.id || `episode-${row.episode_number}`}>
+                                <strong>EP{row.episode_number}</strong>
+                                {episodeHasTitles && <span className="project-series-title">{row.title || ""}</span>}
+                                <span className="project-series-date">{row.air_date || ""}</span>
+                                {row.hashtag && (
+                                    <span className="project-series-copy-item project-series-hashtag">
+                                        <button type="button" title="Copy hashtag" onClick={() => copyText(displayHashtag(row.hashtag), `episode-${row.episode_number}-hashtag`)}><span>{displayHashtag(row.hashtag)}</span></button>
+                                        {copiedKey === `episode-${row.episode_number}-hashtag` && <span className="project-hashtag-copied">Copied!</span>}
+                                    </span>
+                                )}
+                                {row.keyword && (
+                                    <span className="project-series-copy-item project-series-keyword">
+                                        <button type="button" title="Copy keyword" onClick={() => copyText(row.keyword, `episode-${row.episode_number}-keyword`)}><span>{row.keyword}</span></button>
+                                        {copiedKey === `episode-${row.episode_number}-keyword` && <span className="project-hashtag-copied">Copied!</span>}
+                                    </span>
+                                )}
+                            </div>
+                        ))}
+                    </div>}
+                </div>
+            )}
+
             {/* Embedded Tweet */}
             {project.tweet_url && (
                 <div className="project-detail-tweet-section">
-                    <div className="project-detail-playlist-label">Tweet</div>
+                    <div className="project-detail-playlist-label">{project.tweet_label || "Tweet"}</div>
                     <div className="project-detail-tweet">
                         <blockquote className="twitter-tweet" data-theme="light">
                             <a href={project.tweet_url}></a>
@@ -290,7 +397,7 @@ export default function ProjectDetail() {
             {/* Linked Events */}
             {project.events?.length > 0 && (
                 <div className="project-detail-events">
-                    <div className="project-detail-playlist-label">Events</div>
+                    <div className="project-detail-playlist-label">Events & Content</div>
                     {(() => {
                         const allEvents = project.events;
 
@@ -362,11 +469,11 @@ export default function ProjectDetail() {
                 if (!embedUrl) return null;
                 return (
                     <div className="project-detail-playlist" style={{ marginTop: 28 }}>
-                        <div className="project-detail-playlist-label">Video</div>
+                        <div className="project-detail-playlist-label">{project.youtube_label || "Video"}</div>
                         <div className="project-detail-embed">
                             <iframe
                                 src={embedUrl}
-                                title="YouTube video"
+                                title={project.youtube_label || "YouTube video"}
                                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                                 allowFullScreen
                             />
@@ -384,7 +491,7 @@ export default function ProjectDetail() {
             })()}
 
             {/* YouTube Playlists */}
-            {playlists.length > 0 ? (
+            {playlists.length > 0 && (
                 <div className="project-detail-playlists">
                     {playlists.map((entry, idx) => {
                         const pid = typeof entry === "string" ? entry : entry.id;
@@ -413,8 +520,6 @@ export default function ProjectDetail() {
                         );
                     })}
                 </div>
-            ) : (
-                <div style={{ marginTop: 24, opacity: 0.5 }}>No playlist linked yet.</div>
             )}
         </div>
     );

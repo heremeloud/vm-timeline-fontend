@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import Avatar from "./Avatar";
 import "../styles/EventCard.css";
 import { deleteEvent, updateEvent } from "../api/eventsService";
@@ -123,7 +123,10 @@ function getYouTubeEmbedUrl(url) {
     }
 }
 
-export default function EventCard({ event, showOriginalName = false }) {
+export default function EventCard({ event }) {
+    const location = useLocation();
+    const returnTo = `${location.pathname}${location.search}`;
+    const editEventUrl = `${ROUTES.editEvent(event.id)}?returnTo=${encodeURIComponent(returnTo)}`;
     const tags = event.tags || [];
     const authors = orderViewMimFirst(event.authors || []);
     const isAdmin = !!localStorage.getItem("jwt");
@@ -134,7 +137,7 @@ export default function EventCard({ event, showOriginalName = false }) {
     const [savingVisibility, setSavingVisibility] = useState(false);
     const eventDateLabel = formatEventDateRange(event);
     const eventStartDate = getEventStartDate(event);
-    const displayName = event.english_name || event.name;
+    const displayName = event.name;
 
     async function handleCopyTerm(term) {
         const query = buildTwitterQuery(term, eventStartDate, event.end_date);
@@ -170,8 +173,18 @@ export default function EventCard({ event, showOriginalName = false }) {
                 {(event.category || isAdmin) && (
                     <div className="eventcard-topline">
                         {event.category && (
-                            <div className="eventcard-category">
-                                {event.category.toUpperCase()}
+                            <div className="eventcard-category-area">
+                                {copied && <div className="eventcard-copied">Copied!</div>}
+                                <div className="eventcard-category-group">
+                                    <div className="eventcard-category">
+                                        {event.category.toUpperCase()}
+                                    </div>
+                                    {event.subcategory && (
+                                        <div className="eventcard-category eventcard-subcategory">
+                                            {event.subcategory.toUpperCase()}
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                         )}
                         {isAdmin && (
@@ -195,14 +208,14 @@ export default function EventCard({ event, showOriginalName = false }) {
                 <div className="eventcard-header">
                     <div>
                         <div className="eventcard-title">{displayName}</div>
-                        {showOriginalName && event.english_name && event.name !== event.english_name && (
-                            <div className="eventcard-original-title" lang="th">{event.name}</div>
+                        {event.english_name && event.name !== event.english_name && (
+                            <div className="eventcard-english-title" lang="en">{event.english_name}</div>
                         )}
                     </div>
 
                     {isAdmin && (
                         <div className="eventcard-actions">
-                            <Link to={ROUTES.editEvent(event.id)}>
+                            <Link to={editEventUrl} state={{ returnTo }}>
                                 <button className="eventcard-btn">Edit</button>
                             </Link>
                             <button
@@ -266,44 +279,44 @@ export default function EventCard({ event, showOriginalName = false }) {
                 )}
 
                 {(event.keyword || tags.length > 0) && (
-                    <div className="eventcard-badges">
-                        {event.keyword && (
-                            <button
-                                type="button"
-                                className="eventcard-badge eventcard-badge-click"
-                                onClick={() => handleCopyTerm(event.keyword)}
-                                title={buildTwitterQuery(
-                                    event.keyword,
-                                    eventStartDate,
-                                    event.end_date
-                                )}
-                            >
-                                {event.keyword}
-                            </button>
-                        )}
-
-                        {tags.map((t) => {
-                            const term = `#${t}`;
-                            return (
+                    <div className="eventcard-badges-area">
+                        <div className="eventcard-badges">
+                            {event.keyword && (
                                 <button
-                                    key={t}
                                     type="button"
                                     className="eventcard-badge eventcard-badge-click"
-                                    onClick={() => handleCopyTerm(term)}
+                                    onClick={() => handleCopyTerm(event.keyword)}
                                     title={buildTwitterQuery(
-                                        term,
+                                        event.keyword,
                                         eventStartDate,
                                         event.end_date
                                     )}
                                 >
-                                    {term}
+                                    {event.keyword}
                                 </button>
-                            );
-                        })}
+                            )}
+
+                            {tags.map((t) => {
+                                const term = `#${t}`;
+                                return (
+                                    <button
+                                        key={t}
+                                        type="button"
+                                        className="eventcard-badge eventcard-badge-click"
+                                        onClick={() => handleCopyTerm(term)}
+                                        title={buildTwitterQuery(
+                                            term,
+                                            eventStartDate,
+                                            event.end_date
+                                        )}
+                                    >
+                                        {term}
+                                    </button>
+                                );
+                            })}
+                        </div>
                     </div>
                 )}
-
-                {copied && <div className="eventcard-copied">Copied!</div>}
 
                 {event.media_url && (
                     <div className="eventcard-media">
