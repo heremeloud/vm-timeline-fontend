@@ -179,7 +179,7 @@ export default function ProjectDetail() {
                                         url={a.profile_photo_url}
                                         authorId={a.id}
                                         name={a.name}
-                                        size={28}
+                                        size={44}
                                     />
                                     <span>{a.name}</span>
                                 </div>
