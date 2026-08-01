@@ -214,6 +214,7 @@ export default function PostCard({ post, showReplies = true, eventTagIndex = nul
                         {isBroadcast && (
                             <InstagramBroadcast
                                 messages={post.media_urls || []}
+                                channelName={post.author_broadcast_channel_name}
                                 authorName={post.author_name}
                                 authorPhoto={post.author_ig_pfp_url || post.author_photo}
                                 authorId={post.author_id}

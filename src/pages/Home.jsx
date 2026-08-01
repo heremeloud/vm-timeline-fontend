@@ -28,6 +28,18 @@ export default function Home() {
     const [lastUpdated, setLastUpdated] = useState(null);
     const LIMIT = 10;
     const eventTagIndex = useMemo(() => buildEventTagIndex(events), [events]);
+    const timelineQuery = searchParams.toString();
+
+    // Header navigation and browser back/forward can change the URL without
+    // remounting this page. Keep the active timeline state in sync with it.
+    useEffect(() => {
+        const nextParams = new URLSearchParams(timelineQuery);
+        setPlatformFilter(nextParams.get("platform") || "all");
+        setSortOrder(nextParams.get("sort") || "newest");
+        setPage(Math.max(1, Number(nextParams.get("page")) || 1));
+        setLastPage(null);
+        setJumpPage("");
+    }, [timelineQuery]);
 
     function updateTimelineURL(next = {}) {
         const nextPlatform = next.platformFilter ?? platformFilter;
@@ -222,6 +234,7 @@ export default function Home() {
                     >
                         <option value="all">All</option>
                         <option value="ig">Instagram</option>
+                        <option value="bc">Broadcast Channel</option>
                         <option value="x">X (Twitter)</option>
                         <option value="tt">TikTok</option>
                     </select>

@@ -6,6 +6,7 @@ import { ROUTES } from "../routes";
 import { isImage, isVideo } from "../utils/media";
 import AutoResizeTextarea from "../components/AutoResizeTextarea";
 import { cleanPastedPostUrl, detectMediaAuthor, detectMediaDate, normalizePostUrl } from "../utils/postUrls";
+import { isFromR2 } from "../utils/media";
 import "../styles/EventForm.css";
 
 const emptyStoryItem = () => ({ url: "", text: "", translation: "", note: "", attachment_type: "screenshot" });
@@ -161,6 +162,36 @@ export default function EditPost() {
         );
     };
 
+    const handlePostUrlPaste = (e) => {
+        const pastedUrl = e.clipboardData.getData("text").trim();
+        if (!isFromR2(pastedUrl)) {
+            cleanPastedPostUrl(
+                e,
+                platform,
+                setExternalURL,
+                setPlatform,
+                authors,
+                (detectedAuthor) => setAuthorId(detectedAuthor.id),
+            );
+            return;
+        }
+
+        e.preventDefault();
+        setPlatform("ig");
+        setContentType("story");
+        setExternalURL("");
+        setMediaItems((items) => {
+            const emptyIndex = items.findIndex((item) => !item.url.trim());
+            if (emptyIndex < 0) return [...items, { ...emptyStoryItem(), url: pastedUrl }];
+            return items.map((item, index) => index === emptyIndex ? { ...item, url: pastedUrl } : item);
+        });
+
+        const detectedAuthor = detectMediaAuthor(pastedUrl, authors);
+        if (detectedAuthor) setAuthorId(detectedAuthor.id);
+        const detectedDate = detectMediaDate(pastedUrl);
+        if (detectedDate) setPostedAt(detectedDate);
+    };
+
     async function saveChanges(e) {
         e.preventDefault();
         let newURL = externalURL;
@@ -264,14 +295,7 @@ export default function EditPost() {
                     <input
                         value={externalURL}
                         onChange={(e) => setExternalURL(e.target.value)}
-                        onPaste={(e) => cleanPastedPostUrl(
-                            e,
-                            platform,
-                            setExternalURL,
-                            setPlatform,
-                            authors,
-                            (detectedAuthor) => setAuthorId(detectedAuthor.id),
-                        )}
+                        onPaste={handlePostUrlPaste}
                     />
                 </div>
 

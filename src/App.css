@@ -52,6 +52,101 @@ body {
   overflow-x: hidden;
 }
 
+.scroll-to-top {
+  position: fixed;
+  right: max(20px, env(safe-area-inset-right));
+  bottom: max(20px, env(safe-area-inset-bottom));
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #955803 0%, #fff8ef 100%);
+  color: #4f2f05;
+  font-size: 1.2rem;
+  line-height: 1;
+  box-shadow: 0 3px 10px rgba(80, 47, 5, 0.28);
+}
+
+.scroll-to-top:hover,
+.scroll-to-top:focus-visible {
+  background: linear-gradient(135deg, #7a4300 0%, #ffffff 100%);
+  color: #3c2303;
+  box-shadow: 0 5px 14px rgba(80, 47, 5, 0.34);
+}
+
+.admin-quick-actions {
+  position: fixed;
+  top: calc(50% - 100px);
+  right: max(20px, env(safe-area-inset-right));
+  bottom: auto;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.admin-quick-button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 60px;
+  height: 60px;
+  box-sizing: border-box;
+  padding: 0;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #955803 0%, #fff8ef 100%);
+  color: #4f2f05;
+  font-size: 1.45rem;
+  font-weight: 600;
+  line-height: 1.15;
+  text-decoration: none;
+  box-shadow: 0 3px 10px rgba(80, 47, 5, 0.24);
+}
+
+.admin-quick-button:hover {
+  background: linear-gradient(135deg, #7a4300 0%, #ffffff 100%);
+  color: #3c2303;
+}
+
+.admin-quick-button svg {
+  width: 25px;
+  height: 25px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+@media (max-width: 480px) {
+  .scroll-to-top {
+    right: max(14px, env(safe-area-inset-right));
+    bottom: max(14px, env(safe-area-inset-bottom));
+    width: 36px;
+    height: 36px;
+  }
+
+  .admin-quick-actions {
+    top: calc(50% - 100px);
+    right: max(14px, env(safe-area-inset-right));
+    bottom: auto;
+  }
+
+  .admin-quick-button {
+    width: 60px;
+    height: 60px;
+    padding: 0;
+    font-size: 1.35rem;
+  }
+}
+
 /* CENTER ALL CONTENT SITE-WIDE */
 .app-container,
 .home-container,

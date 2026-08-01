@@ -204,6 +204,7 @@ export default function ManageDisplay() {
                             <select value={platformFilter} onChange={(e) => setPlatformFilter(e.target.value)}>
                                 <option value="all">All</option>
                                 <option value="ig">Instagram</option>
+                                <option value="bc">Broadcast Channel</option>
                                 <option value="x">X</option>
                                 <option value="tt">TikTok</option>
                             </select>

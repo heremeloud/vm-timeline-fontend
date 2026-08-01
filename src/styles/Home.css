@@ -1,8 +1,10 @@
 /* Floating + button */
 .fab-button {
     position: fixed;
-    bottom: 30px;
-    right: 30px;
+    top: calc(50% + 38px);
+    right: 20px;
+    bottom: auto;
+    transform: none;
     width: 60px;
     height: 60px;
     border-radius: 50%;
@@ -12,6 +14,14 @@
     border: none;
     cursor: pointer;
     box-shadow: 0 4px 12px rgba(80, 47, 5, 0.28);
+}
+
+@media (max-width: 480px) {
+    .fab-button {
+        top: calc(50% + 38px);
+        right: 14px;
+        bottom: auto;
+    }
 }
 
 .fab-button:hover {

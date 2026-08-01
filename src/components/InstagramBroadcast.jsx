@@ -12,7 +12,7 @@ function MessageMedia({ url }) {
     return <a className="ig-broadcast-attachment" href={url} target="_blank" rel="noopener noreferrer">View attachment ↗</a>;
 }
 
-export default function InstagramBroadcast({ messages = [], authorName, authorPhoto, authorId, instagramUrl }) {
+export default function InstagramBroadcast({ messages = [], channelName, authorName, authorPhoto, authorId, instagramUrl }) {
     return (
         <section className="ig-broadcast" aria-label={`${authorName || "Instagram"} broadcast channel`}>
             <header className="ig-broadcast-header">
@@ -21,7 +21,9 @@ export default function InstagramBroadcast({ messages = [], authorName, authorPh
                     {instagramUrl ? (
                         <a className="ig-broadcast-author" href={instagramUrl} target="_blank" rel="noopener noreferrer">{authorName || "Instagram"}</a>
                     ) : <div className="ig-broadcast-author">{authorName || "Instagram"}</div>}
-                    <div className="ig-broadcast-label">Broadcast channel</div>
+                    <div className="ig-broadcast-label">
+                        Broadcast Channel{channelName ? ` - ${channelName}` : ""}
+                    </div>
                 </div>
             </header>
 

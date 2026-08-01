@@ -1,6 +1,8 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Home from "./pages/Home";
 import Header from "./components/Header";
+import ScrollToTopButton from "./components/ScrollToTopButton";
+import AdminQuickActions from "./components/AdminQuickActions";
 
 import CreatePost from "./pages/CreatePost";
 import AddReply from "./pages/AddReply";
@@ -146,6 +148,8 @@ function App() {
                     }
                 />
             </Routes>
+            <AdminQuickActions />
+            <ScrollToTopButton />
         </BrowserRouter>
     );
 }

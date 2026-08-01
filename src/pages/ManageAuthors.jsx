@@ -13,6 +13,7 @@ const TEXT_FIELDS = [
     { key: "birthday", label: "Birthday", type: "date" },
     { key: "twitter_url", label: "Twitter / X URL" },
     { key: "instagram_url", label: "Instagram URL" },
+    { key: "broadcast_channel_name", label: "Broadcast Channel Name" },
     { key: "tiktok_url", label: "TikTok URL" },
     { key: "gmmtv_url", label: "GMMTV URL" },
     { key: "mydramalist_url", label: "MyDramaList URL" },
