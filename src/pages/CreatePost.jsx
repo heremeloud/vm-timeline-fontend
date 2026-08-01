@@ -4,7 +4,7 @@ import { getAuthors, ensureAuthor } from "../api/authorsService";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { ROUTES } from "../routes";
 import AutoResizeTextarea from "../components/AutoResizeTextarea";
-import { cleanPastedPostUrl, detectMediaAuthor, detectMediaDate, normalizePostUrl } from "../utils/postUrls";
+import { cleanPastedPostUrl, detectMediaAuthor, detectMediaDate, isInstagramChannelUrl, normalizePostUrl } from "../utils/postUrls";
 import { isFromR2 } from "../utils/media";
 import "../styles/EventForm.css";
 
@@ -96,6 +96,8 @@ export default function CreatePost() {
         if (!url) return "";
 
         if (platform === "ig") {
+            const channelMatch = url.match(/\/channel\/[^/]+\/([^/?#]+)/i);
+            if (channelMatch) return channelMatch[1];
             const parts = url.split("/p/");
             if (parts.length > 1) return parts[1].split("/")[0];
             return "";
@@ -152,6 +154,7 @@ export default function CreatePost() {
                 authors,
                 (detectedAuthor) => setAuthor(detectedAuthor.name),
             );
+            if (isInstagramChannelUrl(pastedUrl)) setContentType("broadcast");
             return;
         }
 

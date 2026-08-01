@@ -82,8 +82,8 @@ export default function TweetReply({ reply }) {
                     )}
 
                     {localStorage.getItem("jwt") && (
-                        <div style={{ marginTop: 8, display: "flex", gap: 10 }}>
-                            <button onClick={() => setIsEditing(true)} className="btn btn-edit">Edit</button>
+                        <div style={{ marginTop: 8, display: "flex", gap: 6 }}>
+                            <button onClick={() => setIsEditing(true)} className="btn">Edit</button>
                             <button onClick={handleDelete} className="btn btn-delete">Delete</button>
                         </div>
                     )}
@@ -143,7 +143,7 @@ export default function TweetReply({ reply }) {
                         🔞 Adult content
                     </label>
 
-                    <div style={{ display: "flex", gap: 10 }}>
+                    <div style={{ display: "flex", gap: 6 }}>
                         <button onClick={saveEdit} className="btn btn-primary">
                             Save
                         </button>

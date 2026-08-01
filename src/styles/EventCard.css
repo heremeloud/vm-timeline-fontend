@@ -21,6 +21,7 @@
 
 .eventcard-visibility-toggle {
     display: inline-flex;
+    margin-left: auto;
     align-items: center;
     gap: 4px;
     padding: 3px 6px;
@@ -50,7 +51,7 @@
 }
 
 .eventcard-inner {
-    padding: 16px;
+    padding: 0;
 }
 
 
@@ -61,7 +62,7 @@
 .eventcard-header {
     display: flex;
     justify-content: space-between;
-    align-items: center;
+    align-items: flex-start;
 }
 
 .eventcard-title {
@@ -326,8 +327,9 @@ button.eventcard-badge:focus-visible {
 
 .eventcard-actions {
     display: flex;
-    gap: 4px;
+    gap: 6px;
     align-items: center;
+    margin-left: auto;
 }
 
 .eventcard-actions a {
@@ -335,26 +337,9 @@ button.eventcard-badge:focus-visible {
     text-decoration: none;
 }
 
-.eventcard-actions .eventcard-btn,
-.eventcard-actions .btn-delete {
-    height: 32px;
-    padding: 6px 12px;
-    box-sizing: border-box;
-    border-radius: 6px;
-    font-family: inherit;
-    font-size: 0.8rem;
-    font-weight: 500;
-    line-height: 1;
-}
-
 .eventcard-btn {
-    padding: 6px 12px;
-    font-size: 0.8rem;
-    border-radius: 6px;
-    border: 1px solid rgba(0, 0, 0, 0.2);
     background: #955803;
     cursor: pointer;
-    
 }
 
 .eventcard-btn:hover {

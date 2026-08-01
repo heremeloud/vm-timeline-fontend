@@ -203,7 +203,9 @@ export default function ManageDisplay() {
                             <label>Platform</label>
                             <select value={platformFilter} onChange={(e) => setPlatformFilter(e.target.value)}>
                                 <option value="all">All</option>
-                                <option value="ig">Instagram</option>
+                                <option value="ig">All Instagram</option>
+                                <option value="ig-post">Instagram Post</option>
+                                <option value="igs">Instagram Story</option>
                                 <option value="bc">Broadcast Channel</option>
                                 <option value="x">X</option>
                                 <option value="tt">TikTok</option>
@@ -341,6 +343,7 @@ function DisplayRow({ tab, item, author, isSearchResult = false, saving, returnT
                 padding: 12,
                 display: "grid",
                 gap: 8,
+                position: "relative",
             }}
         >
             <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "flex-start" }}>
@@ -359,22 +362,22 @@ function DisplayRow({ tab, item, author, isSearchResult = false, saving, returnT
                 </span>
             </div>
 
-            <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
+            <div className="manage-display-actions" style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
                 {canManageDisplay && (
-                    <label style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 0 }}>
+                    <label className="manage-display-visibility-toggle" title={isVisible ? "Visible to the public" : "Hidden from the public"}>
                         <input
                             type="checkbox"
                             checked={!!isVisible}
                             disabled={saving}
                             onChange={onToggle}
                         />
-                        {isAuthor ? "Author allowed" : "Visible"}
+                        <span>Visible</span>
                     </label>
                 )}
 
-                {editUrl && <Link to={editUrl} state={{ returnTo }}>Edit</Link>}
+                {editUrl && <Link className="btn-edit" to={editUrl} state={{ returnTo }} target="_blank" rel="noopener noreferrer">Edit</Link>}
 
-                {appUrl && <Link to={appUrl}>View in app</Link>}
+                {appUrl && <Link to={appUrl} target="_blank" rel="noopener noreferrer">View in app</Link>}
 
                 {tab === "posts" && item.external_url && (
                     <a href={item.external_url} target="_blank" rel="noreferrer">Open source</a>
@@ -383,7 +386,7 @@ function DisplayRow({ tab, item, author, isSearchResult = false, saving, returnT
                 {tab === "posts" && (
                     <button
                         type="button"
-                        className="btn-delete"
+                        className="btn-delete manage-display-delete"
                         disabled={saving}
                         onClick={onDelete}
                         style={{ display: onDelete ? undefined : "none" }}

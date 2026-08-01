@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
-import { getPost, createPost } from "../api/postsService";
+import { getAdminPost, createPost } from "../api/postsService";
 import { createText } from "../api/textsService";
 import { getAuthors, ensureAuthor } from "../api/authorsService";
 import { ROUTES } from "../routes";
@@ -39,7 +39,7 @@ export default function AddReply() {
             const aRes = await getAuthors();
             setAuthors(aRes.data);
 
-            const res = await getPost(postId);
+            const res = await getAdminPost(postId);
             const p = res.data.post;
             setParent(p);
 

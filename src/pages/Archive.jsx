@@ -226,7 +226,7 @@ function ProfileCard({ author: initialAuthor, defaultPhoto, thaiFullName, fcIcon
             </div>
 
             {isAdmin && (
-                <button className="archive-edit-btn" onClick={startEdit}>Edit</button>
+                <button className="archive-edit-btn btn-edit" onClick={startEdit}>Edit</button>
             )}
         </div>
     );

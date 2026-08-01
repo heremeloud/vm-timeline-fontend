@@ -215,6 +215,7 @@ export default function PostCard({ post, showReplies = true, eventTagIndex = nul
                             <InstagramBroadcast
                                 messages={post.media_urls || []}
                                 channelName={post.author_broadcast_channel_name}
+                                externalUrl={post.external_url}
                                 authorName={post.author_name}
                                 authorPhoto={post.author_ig_pfp_url || post.author_photo}
                                 authorId={post.author_id}
@@ -322,7 +323,7 @@ export default function PostCard({ post, showReplies = true, eventTagIndex = nul
                         state={{ returnTo }}
                         onClick={saveReturnScroll}
                     >
-                        <button>Edit Post</button>
+                        <button className="btn-edit">Edit Post</button>
                     </Link>
 
                     <button

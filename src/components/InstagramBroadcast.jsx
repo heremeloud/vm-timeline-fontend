@@ -12,7 +12,7 @@ function MessageMedia({ url }) {
     return <a className="ig-broadcast-attachment" href={url} target="_blank" rel="noopener noreferrer">View attachment ↗</a>;
 }
 
-export default function InstagramBroadcast({ messages = [], channelName, authorName, authorPhoto, authorId, instagramUrl }) {
+export default function InstagramBroadcast({ messages = [], channelName, externalUrl, authorName, authorPhoto, authorId, instagramUrl }) {
     return (
         <section className="ig-broadcast" aria-label={`${authorName || "Instagram"} broadcast channel`}>
             <header className="ig-broadcast-header">
@@ -22,7 +22,21 @@ export default function InstagramBroadcast({ messages = [], channelName, authorN
                         <a className="ig-broadcast-author" href={instagramUrl} target="_blank" rel="noopener noreferrer">{authorName || "Instagram"}</a>
                     ) : <div className="ig-broadcast-author">{authorName || "Instagram"}</div>}
                     <div className="ig-broadcast-label">
-                        Broadcast Channel{channelName ? ` - ${channelName}` : ""}
+                        <span>Broadcast Channel{channelName ? ` - ${channelName}` : ""}</span>
+                        {externalUrl && (
+                            <a
+                                className="ig-broadcast-source"
+                                href={externalUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                aria-label="Open Broadcast Channel message on Instagram"
+                                title="Open on Instagram"
+                            >
+                                <svg viewBox="0 0 24 24" aria-hidden="true">
+                                    <path d="M7 17 17 7M9 7h8v8" />
+                                </svg>
+                            </a>
+                        )}
                     </div>
                 </div>
             </header>
@@ -33,7 +47,7 @@ export default function InstagramBroadcast({ messages = [], channelName, authorN
                         {message.attachment_type !== "photo" && <MessageMedia url={message.url} />}
                         {message.text && message.url && message.attachment_type !== "photo" ? (
                             <details className="ig-broadcast-transcript">
-                                <summary>Original message</summary>
+                                <summary>Original Message</summary>
                                 <p className="ig-broadcast-original">{message.text}</p>
                             </details>
                         ) : message.text ? <p className="ig-broadcast-original">{message.text}</p> : null}

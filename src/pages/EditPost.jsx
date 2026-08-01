@@ -5,7 +5,7 @@ import { getAuthors } from "../api/authorsService";
 import { ROUTES } from "../routes";
 import { isImage, isVideo } from "../utils/media";
 import AutoResizeTextarea from "../components/AutoResizeTextarea";
-import { cleanPastedPostUrl, detectMediaAuthor, detectMediaDate, normalizePostUrl } from "../utils/postUrls";
+import { cleanPastedPostUrl, detectMediaAuthor, detectMediaDate, isInstagramChannelUrl, normalizePostUrl } from "../utils/postUrls";
 import { isFromR2 } from "../utils/media";
 import "../styles/EventForm.css";
 
@@ -70,6 +70,8 @@ export default function EditPost() {
     const extractExternalId = (url, platform) => {
         if (!url) return "";
         if (platform === "ig") {
+            const channelMatch = url.match(/\/channel\/[^/]+\/([^/?#]+)/i);
+            if (channelMatch) return channelMatch[1];
             const parts = url.split("/p/");
             return parts?.[1]?.split("/")[0] || "";
         }
@@ -173,6 +175,7 @@ export default function EditPost() {
                 authors,
                 (detectedAuthor) => setAuthorId(detectedAuthor.id),
             );
+            if (isInstagramChannelUrl(pastedUrl)) setContentType("broadcast");
             return;
         }
 
@@ -248,7 +251,7 @@ export default function EditPost() {
                 previewItems={previewItems}
             />
 
-            <form className="eventform-form" onSubmit={saveChanges}>
+            <form id="edit-post-form" className="eventform-form" onSubmit={saveChanges}>
 
                 <div className="eventform-section">
                     <label>Platform:</label>

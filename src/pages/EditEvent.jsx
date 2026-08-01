@@ -212,7 +212,7 @@ export default function EditEvent() {
         <div style={{ padding: 20, maxWidth: 800, margin: "0 auto" }}>
             <h2>Edit Event #{eventId}</h2>
 
-            <form className="eventform-form" onSubmit={save}>
+            <form id="edit-event-form" className="eventform-form" onSubmit={save}>
 
                 <div className="eventform-section">
                     <label>Event Name / Thai Name: *</label>

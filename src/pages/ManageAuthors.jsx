@@ -3,22 +3,39 @@ import { getAuthors, updateAuthor } from "../api/authorsService";
 import Avatar from "../components/Avatar";
 import "../styles/EventForm.css";
 
-const TEXT_FIELDS = [
-    { key: "name", label: "Display Name", required: true },
-    { key: "full_name", label: "Full Name" },
-    { key: "profile_photo_url", label: "Profile Photo URL" },
-    { key: "ig_pfp_url", label: "Instagram PFP URL" },
-    { key: "twitter_pfp_url", label: "Twitter / X PFP URL" },
-    { key: "tiktok_pfp_url", label: "TikTok PFP URL" },
-    { key: "birthday", label: "Birthday", type: "date" },
-    { key: "twitter_url", label: "Twitter / X URL" },
-    { key: "instagram_url", label: "Instagram URL" },
-    { key: "broadcast_channel_name", label: "Broadcast Channel Name" },
-    { key: "tiktok_url", label: "TikTok URL" },
-    { key: "gmmtv_url", label: "GMMTV URL" },
-    { key: "mydramalist_url", label: "MyDramaList URL" },
-    { key: "fc_url", label: "Official FC URL" },
+const FIELD_GROUPS = [
+    {
+        title: "Identity",
+        fields: [
+            { key: "name", label: "Display Name", required: true },
+            { key: "full_name", label: "Full Name" },
+            { key: "birthday", label: "Birthday", type: "date" },
+        ],
+    },
+    {
+        title: "Profile Images",
+        fields: [
+            { key: "profile_photo_url", label: "Default Profile Photo URL" },
+            { key: "ig_pfp_url", label: "Instagram PFP URL" },
+            { key: "twitter_pfp_url", label: "Twitter / X PFP URL" },
+            { key: "tiktok_pfp_url", label: "TikTok PFP URL" },
+        ],
+    },
+    {
+        title: "Social Profiles",
+        fields: [
+            { key: "instagram_url", label: "Instagram URL" },
+            { key: "broadcast_channel_name", label: "Broadcast Channel Name" },
+            { key: "twitter_url", label: "Twitter / X URL" },
+            { key: "tiktok_url", label: "TikTok URL" },
+            { key: "gmmtv_url", label: "GMMTV URL" },
+            { key: "mydramalist_url", label: "MyDramaList URL" },
+            { key: "fc_url", label: "Official FC URL" },
+        ],
+    },
 ];
+
+const TEXT_FIELDS = FIELD_GROUPS.flatMap((group) => group.fields);
 
 function buildDraft(author) {
     return TEXT_FIELDS.reduce((draft, field) => {
@@ -114,10 +131,37 @@ export default function ManageAuthors() {
         }
     }
 
+    async function saveAllAuthors(e) {
+        e.preventDefault();
+        const invalidAuthor = authors.find((author) => !drafts[author.id]?.name?.trim());
+        if (invalidAuthor) {
+            alert(`Display name is required for author #${invalidAuthor.id}.`);
+            return;
+        }
+
+        setSavingId("all");
+        try {
+            const responses = await Promise.all(
+                authors.map((author) => updateAuthor(author.id, buildPayload(drafts[author.id])))
+            );
+            const updatedAuthors = responses
+                .map((response) => response.data)
+                .sort((a, b) => (a.sort_order ?? a.id) - (b.sort_order ?? b.id));
+            setAuthors(updatedAuthors);
+            setDrafts(Object.fromEntries(updatedAuthors.map((author) => [author.id, buildDraft(author)])));
+        } catch (err) {
+            console.error("Save all authors failed:", err);
+            alert("Could not save all authors.");
+        } finally {
+            setSavingId(null);
+        }
+    }
+
     if (loading) return <div style={{ padding: 20 }}>Loading authors...</div>;
 
     return (
-        <div style={{ padding: 20, maxWidth: 1100, margin: "0 auto" }}>
+        <div className="manage-authors-page" style={{ padding: 20, maxWidth: 1100, margin: "0 auto" }}>
+            <form id="manage-authors-save-form" onSubmit={saveAllAuthors} />
             <div style={{ display: "flex", justifyContent: "space-between", gap: 16, alignItems: "end", flexWrap: "wrap" }}>
                 <div>
                     <h2 style={{ marginBottom: 4 }}>Manage Authors</h2>
@@ -137,7 +181,7 @@ export default function ManageAuthors() {
             <div style={{ display: "grid", gap: 16, marginTop: 20 }}>
                 {visibleAuthors.map((author) => {
                     const draft = drafts[author.id] || buildDraft(author);
-                    const saving = savingId === author.id;
+                    const saving = savingId === author.id || savingId === "all";
 
                     return (
                         <div
@@ -147,30 +191,55 @@ export default function ManageAuthors() {
                                 borderRadius: 8,
                                 padding: 14,
                                 display: "grid",
-                                gap: 14,
+                                gap: 19,
+                                position: "relative",
                             }}
                         >
-                            <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+                            <label className="author-visibility-toggle" title={draft.show_on_timeline ? "Visible on the public timeline" : "Hidden from the public timeline"}>
+                                <input
+                                    type="checkbox"
+                                    checked={!!draft.show_on_timeline}
+                                    onChange={(e) => updateDraft(author.id, "show_on_timeline", e.target.checked)}
+                                />
+                                <span>Timeline Public</span>
+                            </label>
+
+                            <div className="manage-author-header" style={{ display: "flex", gap: 14, alignItems: "center", paddingRight: 112 }}>
                                 <Avatar
                                     url={draft.profile_photo_url || draft.ig_pfp_url || draft.twitter_pfp_url}
                                     authorId={author.id}
                                     name={draft.name}
                                 />
                                 <div>
-                                    <strong>{draft.name || `Author #${author.id}`}</strong>
+                                    <strong className="manage-author-name">{draft.name || `Author #${author.id}`}</strong>
                                     <div style={{ fontSize: "0.85rem", color: "#777" }}>ID {author.id}</div>
                                 </div>
                             </div>
 
-                            <div
-                                style={{
-                                    display: "grid",
-                                    gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-                                    gap: 12,
-                                }}
-                            >
-                                <div className="eventform-section" style={{ marginBottom: 0 }}>
-                                    <label>Display Order <span style={{ fontWeight: 400, opacity: 0.65 }}>(lower first)</span></label>
+                            {FIELD_GROUPS.map((group) => (
+                                <section key={group.title} style={{ display: "grid", gap: 0 }}>
+                                    <h3 style={{ margin: "0 0 -2px", fontSize: "0.78rem", lineHeight: 1, color: "#777", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                                        {group.title}
+                                    </h3>
+                                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", columnGap: 12, rowGap: 0 }}>
+                                        {group.fields.map((field) => (
+                                            <div className="eventform-section" key={field.key} style={{ marginBottom: 0 }}>
+                                                <label>{field.label}</label>
+                                                <input
+                                                    type={field.type || "text"}
+                                                    value={draft[field.key] || ""}
+                                                    onChange={(e) => updateDraft(author.id, field.key, e.target.value)}
+                                                    required={field.required}
+                                                />
+                                            </div>
+                                        ))}
+                                    </div>
+                                </section>
+                            ))}
+
+                            <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "end", flexWrap: "wrap", paddingTop: 4 }}>
+                                <div className="eventform-section" style={{ width: 190, marginBottom: 0 }}>
+                                    <label style={{ whiteSpace: "nowrap" }}>Display Order <span style={{ fontWeight: 400, opacity: 0.65 }}>(lower first)</span></label>
                                     <input
                                         type="number"
                                         min="0"
@@ -179,29 +248,6 @@ export default function ManageAuthors() {
                                         onChange={(e) => updateDraft(author.id, "sort_order", e.target.value)}
                                     />
                                 </div>
-                                {TEXT_FIELDS.map((field) => (
-                                    <div className="eventform-section" key={field.key} style={{ marginBottom: 0 }}>
-                                        <label>{field.label}</label>
-                                        <input
-                                            type={field.type || "text"}
-                                            value={draft[field.key] || ""}
-                                            onChange={(e) => updateDraft(author.id, field.key, e.target.value)}
-                                            required={field.required}
-                                        />
-                                    </div>
-                                ))}
-                            </div>
-
-                            <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
-                                <label style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 0, whiteSpace: "nowrap" }}>
-                                    <input
-                                        type="checkbox"
-                                        checked={!!draft.show_on_timeline}
-                                        onChange={(e) => updateDraft(author.id, "show_on_timeline", e.target.checked)}
-                                    />
-                                    Show on timeline
-                                </label>
-
                                 <button type="button" disabled={saving} onClick={() => saveAuthor(author)}>
                                     {saving ? "Saving..." : "Save Author"}
                                 </button>

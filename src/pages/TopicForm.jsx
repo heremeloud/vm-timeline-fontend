@@ -322,9 +322,9 @@ export default function TopicForm() {
 
     return (
         <div className="eventform-container">
-            <h2>{isEdit ? "Edit Special" : "Create Special"}</h2>
+            <h2>{isEdit ? `Edit Special #${topicId}` : "Create Special"}</h2>
 
-            <form className="eventform-form" onSubmit={submit}>
+            <form id={isEdit ? "edit-special-form" : undefined} className="eventform-form" onSubmit={submit}>
                 <div className="eventform-section">
                     <label>Title</label>
                     <input

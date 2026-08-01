@@ -259,3 +259,32 @@ textarea {
   height: 70px !important;
   max-height: 70px !important;
 }
+
+/* One consistent edit-action color across the app. */
+.btn-edit,
+.btn-edit:hover,
+.btn-edit:focus,
+.btn-edit:focus-visible,
+.btn-edit:disabled {
+  background: #955803 !important;
+  color: #fff !important;
+  text-decoration: none;
+}
+
+.btn-edit:disabled {
+  opacity: 0.55;
+}
+
+/* One consistent destructive-action color across the app. */
+.btn-delete,
+.btn-delete:hover,
+.btn-delete:focus,
+.btn-delete:focus-visible,
+.btn-delete:disabled {
+  background: #e32636 !important;
+  color: #fff !important;
+}
+
+.btn-delete:disabled {
+  opacity: 0.55;
+}

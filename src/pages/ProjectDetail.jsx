@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { getProject, deleteProject } from "../api/projectsService";
+import { getAdminProject, getProject, deleteProject } from "../api/projectsService";
 import { ROUTES } from "../routes";
 import Avatar from "../components/Avatar";
 import "../styles/Projects.css";
@@ -66,7 +66,7 @@ export default function ProjectDetail() {
     useEffect(() => {
         async function load() {
             try {
-                const res = await getProject(projectId);
+                const res = await (isAdmin ? getAdminProject(projectId) : getProject(projectId));
                 setProject(res.data.project);
             } catch (err) {
                 console.error("Load project failed:", err);
@@ -75,7 +75,7 @@ export default function ProjectDetail() {
             }
         }
         load();
-    }, [projectId]);
+    }, [projectId, isAdmin]);
 
     // Load Twitter widgets script when a tweet_url is present
     useEffect(() => {
@@ -274,7 +274,7 @@ export default function ProjectDetail() {
                     {isAdmin && (
                         <div className="project-detail-actions">
                             <Link to={ROUTES.editProject(project.id)}>
-                                <button>Edit</button>
+                                <button className="btn-edit">Edit</button>
                             </Link>
                             <button
                                 className="btn-delete"

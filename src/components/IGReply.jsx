@@ -183,7 +183,7 @@ export default function IGReply({ reply }) {
                             <button onClick={() => setIsEditing(true)}>
                                 Edit
                             </button>
-                            <button onClick={handleDelete}>Delete</button>
+                            <button className="btn-delete" onClick={handleDelete}>Delete</button>
                         </div>
                     )}
                 </>

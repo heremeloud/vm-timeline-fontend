@@ -212,11 +212,10 @@ export default function EventCard({ event }) {
                             <div className="eventcard-english-title" lang="en">{event.english_name}</div>
                         )}
                     </div>
-
                     {isAdmin && (
                         <div className="eventcard-actions">
                             <Link to={editEventUrl} state={{ returnTo }}>
-                                <button className="eventcard-btn">Edit</button>
+                                <button className="eventcard-btn btn-edit">Edit</button>
                             </Link>
                             <button
                                 className="btn-delete"

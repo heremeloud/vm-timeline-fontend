@@ -166,7 +166,7 @@ export default function EditProject() {
     return (
         <div className="eventform-container">
             <h2>Edit Project #{projectId}</h2>
-            <form className="eventform-form" onSubmit={save}>
+            <form id="edit-project-form" className="eventform-form" onSubmit={save}>
 
                 <div className="eventform-section">
                     <label>Title *</label>

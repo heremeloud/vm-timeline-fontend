@@ -101,7 +101,7 @@
 .igreply-actions {
     margin-top: 8px;
     display: flex;
-    gap: 8px;
+    gap: 6px;
 }
 
 .btn-delete {
@@ -122,6 +122,6 @@
 
 .igreply-edit-buttons {
     display: flex;
-    gap: 10px;
+    gap: 6px;
     margin-top: 6px;
 }

@@ -34,11 +34,15 @@ export function detectPostPlatform(value) {
     const url = value?.trim() || "";
     return /^(?:https?:\/\/)?(?:www\.|mobile\.)?(?:x\.com|twitter\.com)\/[^/?#]+\/status\/\d+/i.test(url)
         ? "x"
-        : /^(?:https?:\/\/)?(?:www\.)?instagram\.com\/(?:p|reel|tv)\//i.test(url)
+        : /^(?:https?:\/\/)?(?:www\.)?instagram\.com\/(?:p|reel|tv|channel)\//i.test(url)
             ? "ig"
             : /^(?:https?:\/\/)?(?:www\.|m\.)?tiktok\.com\/@[^/?#]+\/video\/\d+/i.test(url)
                 ? "tt"
                 : null;
+}
+
+export function isInstagramChannelUrl(value) {
+    return /^(?:https?:\/\/)?(?:www\.)?instagram\.com\/channel\/[^/?#]+(?:\/[^/?#]+)?/i.test(value?.trim() || "");
 }
 
 function extractHandle(value, platform, isProfileUrl = false) {
@@ -50,7 +54,7 @@ function extractHandle(value, platform, isProfileUrl = false) {
         const parts = new URL(withProtocol).pathname.split("/").filter(Boolean);
         if (platform === "x") return parts[0]?.replace(/^@/, "").toLowerCase() || null;
         if (platform === "tt") return parts[0]?.replace(/^@/, "").toLowerCase() || null;
-        if (platform === "ig" && (isProfileUrl || !["p", "reel", "tv"].includes(parts[0]?.toLowerCase()))) {
+        if (platform === "ig" && (isProfileUrl || !["p", "reel", "tv", "channel"].includes(parts[0]?.toLowerCase()))) {
             return parts[0]?.replace(/^@/, "").toLowerCase() || null;
         }
     } catch {

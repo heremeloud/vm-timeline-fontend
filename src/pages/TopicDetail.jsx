@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { deleteTopic, getTopic, updateTopicItemTime } from "../api/topicsService";
+import { deleteTopic, getAdminTopic, getTopic, updateTopicItemTime } from "../api/topicsService";
 import { ROUTES } from "../routes";
 import PostCard from "../components/PostCard";
 import "../styles/Home.css";
@@ -75,7 +75,7 @@ export default function TopicDetail() {
     useEffect(() => {
         async function load() {
             try {
-                const res = await getTopic(topicId);
+                const res = await (isAdmin ? getAdminTopic(topicId) : getTopic(topicId));
                 setTopic(res.data.topic);
             } catch (err) {
                 console.error("Load special failed:", err);
@@ -84,7 +84,7 @@ export default function TopicDetail() {
             }
         }
         load();
-    }, [topicId]);
+    }, [topicId, isAdmin]);
 
     const items = useMemo(() => {
         return [...(topic?.items || [])].sort((a, b) => {
@@ -144,7 +144,7 @@ export default function TopicDetail() {
                     {isAdmin && (
                         <div className="topic-actions">
                             <Link to={ROUTES.editTopic(topic.id)}>
-                                <button>Edit</button>
+                                <button className="btn-edit">Edit</button>
                             </Link>
                             <button
                                 className="btn-delete"
@@ -222,11 +222,6 @@ export default function TopicDetail() {
                 {items.length === 0 && <p>No posts added yet.</p>}
             </div>
 
-            {isAdmin && (
-                <Link to={ROUTES.editTopic(topic.id)}>
-                    <button className="fab-button topic-edit-fab">Edit</button>
-                </Link>
-            )}
         </div>
     );
 }

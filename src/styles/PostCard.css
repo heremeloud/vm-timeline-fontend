@@ -164,7 +164,19 @@
     border-bottom: 1px solid #e5e5e5;
 }
 
+.ig-broadcast-header .avatar-wrapper,
+.ig-broadcast-header .avatar-img,
+.ig-broadcast-header .avatar-emoji {
+    width: 48px;
+    height: 48px;
+}
+
+.ig-broadcast-header .avatar-emoji {
+    font-size: 32px;
+}
+
 .ig-broadcast-author {
+    display: block;
     color: #222;
     font-size: 0.95rem;
     font-weight: 700;
@@ -172,9 +184,40 @@
 }
 
 .ig-broadcast-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
     margin-top: 2px;
     color: #777;
     font-size: 0.76rem;
+}
+
+.ig-broadcast-source {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    flex: 0 0 auto;
+    border-radius: 50%;
+    color: #777;
+    text-decoration: none;
+}
+
+.ig-broadcast-source:hover,
+.ig-broadcast-source:focus-visible {
+    background: #f3f3f3;
+    color: #222;
+}
+
+.ig-broadcast-source svg {
+    width: 19px;
+    height: 19px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
 }
 
 .ig-broadcast-messages {
@@ -427,7 +470,7 @@
 
 .post-actions {
     display: flex;
-    gap: 12px;
+    gap: 6px;
     margin-top: 25px;
 }
 
