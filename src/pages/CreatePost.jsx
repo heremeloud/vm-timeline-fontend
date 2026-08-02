@@ -1,7 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { createPost } from "../api/postsService";
 import { getAuthors, ensureAuthor } from "../api/authorsService";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { ROUTES } from "../routes";
 import AutoResizeTextarea from "../components/AutoResizeTextarea";
 import R2MediaUploader from "../components/R2MediaUploader";
@@ -12,6 +12,16 @@ import { isFromR2 } from "../utils/media";
 import "../styles/EventForm.css";
 
 const emptyStoryItem = () => ({ url: "", text: "", translation: "", note: "", attachment_type: "screenshot", deleteFromR2: false });
+
+const appendUploadedUrls = (items, urls) => {
+    const next = [...items];
+    urls.forEach((url) => {
+        const emptyIndex = next.findIndex((item) => !item.url.trim());
+        if (emptyIndex >= 0) next[emptyIndex] = { ...next[emptyIndex], url };
+        else next.push({ ...emptyStoryItem(), url });
+    });
+    return next;
+};
 
 const getStoryItemCount = (quantity) =>
     Math.min(100, Math.max(1, Math.floor(Number(quantity) || 1)));
@@ -33,7 +43,9 @@ const getSequentialStoryUrl = (url, offset) => {
 };
 
 export default function CreatePost() {
+    const mediaUploaderRef = useRef(null);
     const navigate = useNavigate();
+    const location = useLocation();
     const [params] = useSearchParams();
 
     // If this is a reply page: /create-post?parent=3
@@ -47,7 +59,10 @@ export default function CreatePost() {
 
     // form fields
     const [external_url, setExternalURL] = useState("");
-    const [posted_at, setPostedAt] = useState("");
+    const [posted_at, setPostedAt] = useState(() => {
+        const defaultDate = location.state?.defaultPostedAt;
+        return /^\d{4}-\d{2}-\d{2}$/.test(defaultDate || "") ? defaultDate : "";
+    });
 
     const [caption, setCaption] = useState("");
     const [captionTranslation, setCaptionTranslation] = useState("");
@@ -215,6 +230,18 @@ export default function CreatePost() {
                 finalAuthor = newAuthorName.trim();
             }
 
+            const isIGCollection = platform === "ig" && contentType !== "post";
+            let newlyUploadedUrls = [];
+            try {
+                newlyUploadedUrls = await mediaUploaderRef.current?.uploadPending() || [];
+            } catch (uploadError) {
+                alert(uploadError.response?.data?.detail || uploadError.message || "Media upload failed. The post was not saved.");
+                return;
+            }
+            const effectiveMediaItems = isIGCollection
+                ? appendUploadedUrls(mediaItems, newlyUploadedUrls)
+                : mediaItems;
+
             const authorRes = await ensureAuthor({
                 name: finalAuthor,
                 profile_photo_url:
@@ -239,10 +266,9 @@ export default function CreatePost() {
 
             const external_id = extractExternalId(cleanURL, platform);
 
-            const isIGCollection = platform === "ig" && contentType !== "post";
-            const finalMediaUrl = isIGCollection ? null : (mediaURL || null);
+            const finalMediaUrl = isIGCollection ? null : (newlyUploadedUrls[0] || mediaURL || null);
             const filteredMediaItems = isIGCollection
-                ? mediaItems
+                ? effectiveMediaItems
                     .map((item) => ({ ...item, url: item.url.trim() }))
                     .filter((item) => item.url || (contentType === "broadcast" && (item.text.trim() || item.translation.trim() || item.note.trim())))
                     .map((item) => ({
@@ -465,20 +491,13 @@ export default function CreatePost() {
                         <>
                             <label>{contentType === "broadcast" ? "Channel Messages:" : "Story Items:"}</label>
                             <R2MediaUploader
+                                ref={mediaUploaderRef}
                                 multiple
                                 author={author === "__new__" ? newAuthorName : author}
                                 postedAt={posted_at}
                                 mediaType={contentType === "broadcast" ? "bc" : "igs"}
                                 sequenceStart={mediaItems.filter((item) => item.url.trim()).length + 1}
-                                onUploaded={(urls) => setMediaItems((items) => {
-                                    const next = [...items];
-                                    urls.forEach((url) => {
-                                        const emptyIndex = next.findIndex((item) => !item.url.trim());
-                                        if (emptyIndex >= 0) next[emptyIndex] = { ...next[emptyIndex], url };
-                                        else next.push({ ...emptyStoryItem(), url });
-                                    });
-                                    return next;
-                                })}
+                                onUploaded={(urls) => setMediaItems((items) => appendUploadedUrls(items, urls))}
                             />
                             {mediaItems.map((item, i) => (
                                 <div key={i} style={{ border: "1px solid #ddd", borderRadius: 8, padding: 10, marginBottom: 10 }}>
@@ -614,6 +633,7 @@ export default function CreatePost() {
                         <>
                             <label>Media URL <span className="form-optional">(optional)</span></label>
                             <R2MediaUploader
+                                ref={mediaUploaderRef}
                                 author={author === "__new__" ? newAuthorName : author}
                                 postedAt={posted_at}
                                 mediaType={platform === "ig" ? "ig" : platform}

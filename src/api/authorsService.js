@@ -2,6 +2,8 @@ import api from "./api";
 
 export const getAuthors = () => api.get("/authors/");
 
+export const createAuthor = (data) => api.post("/authors/", data);
+
 export const updateAuthor = (id, data) => api.patch(`/authors/${id}`, data);
 
 export const uploadAuthorPhoto = (id, file) => {

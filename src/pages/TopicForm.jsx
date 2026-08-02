@@ -5,6 +5,7 @@ import { ensureAuthor, getAuthors } from "../api/authorsService";
 import { createTopic, getAdminTopic, updateTopic } from "../api/topicsService";
 import { ROUTES } from "../routes";
 import { cleanPastedPostUrl, detectMediaAuthor, detectMediaDate, normalizePostUrl } from "../utils/postUrls";
+import { isImage, isVideo } from "../utils/media";
 import "../styles/EventForm.css";
 import "../styles/Topics.css";
 
@@ -29,6 +30,7 @@ const emptyNewPost = {
 
 function createEmptyItem(sortOrder = 0) {
     return {
+        client_key: crypto.randomUUID(),
         source: "existing",
         post_id: "",
         newPost: { ...emptyNewPost },
@@ -86,6 +88,8 @@ export default function TopicForm() {
     const [posts, setPosts] = useState([]);
     const [authors, setAuthors] = useState([]);
     const [loading, setLoading] = useState(isEdit);
+    const [draggedItemKey, setDraggedItemKey] = useState(null);
+    const [dragTarget, setDragTarget] = useState(null);
 
     useEffect(() => {
         async function loadLists() {
@@ -116,6 +120,7 @@ export default function TopicForm() {
                 setItems(
                     topic.items?.length
                         ? topic.items.map((item, index) => ({
+                            client_key: crypto.randomUUID(),
                             source: "existing",
                             post_id: item.post_id || "",
                             newPost: { ...emptyNewPost },
@@ -202,6 +207,22 @@ export default function TopicForm() {
             const [item] = next.splice(index, 1);
             next.splice(target, 0, item);
             return next.map((row, i) => ({ ...row, sort_order: i }));
+        });
+    }
+
+    function reorderTimelineItem(targetKey, position) {
+        if (!draggedItemKey || draggedItemKey === targetKey) return;
+
+        setItems((current) => {
+            const fromIndex = current.findIndex((item) => item.client_key === draggedItemKey);
+            if (fromIndex < 0) return current;
+
+            const next = [...current];
+            const [moved] = next.splice(fromIndex, 1);
+            const targetIndex = next.findIndex((item) => item.client_key === targetKey);
+            if (targetIndex < 0) return current;
+            next.splice(position === "after" ? targetIndex + 1 : targetIndex, 0, moved);
+            return next.map((item, index) => ({ ...item, sort_order: index }));
         });
     }
 
@@ -402,9 +423,80 @@ export default function TopicForm() {
                             selectedPostMediaItems.length > 1;
 
                         return (
-                            <div className="topic-item-row" key={index}>
+                            <div
+                                className="topic-item-row"
+                                key={item.client_key}
+                                onDragOver={(e) => {
+                                    e.preventDefault();
+                                    const rect = e.currentTarget.getBoundingClientRect();
+                                    const position = e.clientY < rect.top + rect.height / 2 ? "before" : "after";
+                                    setDragTarget({ key: item.client_key, position });
+                                }}
+                                onDrop={(e) => {
+                                    e.preventDefault();
+                                    reorderTimelineItem(item.client_key, dragTarget?.position || "before");
+                                    setDraggedItemKey(null);
+                                    setDragTarget(null);
+                                }}
+                                style={{
+                                    position: "relative",
+                                    opacity: draggedItemKey === item.client_key ? 0.55 : 1,
+                                    height: draggedItemKey === item.client_key ? 58 : "auto",
+                                    minHeight: draggedItemKey === item.client_key ? 58 : undefined,
+                                    overflow: draggedItemKey === item.client_key ? "hidden" : "visible",
+                                    boxSizing: "border-box",
+                                    transition: "opacity 140ms ease",
+                                }}
+                            >
+                                {dragTarget?.key === item.client_key && draggedItemKey !== item.client_key && (
+                                    <div
+                                        aria-hidden="true"
+                                        style={{
+                                            position: "absolute",
+                                            left: 8,
+                                            right: 8,
+                                            [dragTarget.position === "before" ? "top" : "bottom"]: -10,
+                                            height: 4,
+                                            borderRadius: 999,
+                                            background: "#a76719",
+                                            boxShadow: "0 0 0 2px #fff8ef",
+                                            zIndex: 5,
+                                            pointerEvents: "none",
+                                        }}
+                                    />
+                                )}
                                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, flexWrap: "wrap" }}>
-                                    <strong>Item {index + 1}</strong>
+                                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                                        <div
+                                            draggable
+                                            onDragStart={(e) => {
+                                                setDraggedItemKey(item.client_key);
+                                                e.dataTransfer.effectAllowed = "move";
+                                                e.dataTransfer.setData("text/plain", item.client_key);
+                                            }}
+                                            onDragEnd={() => {
+                                                setDraggedItemKey(null);
+                                                setDragTarget(null);
+                                            }}
+                                            title="Drag to change timeline order"
+                                            aria-label="Drag to change timeline order"
+                                            style={{
+                                                cursor: "grab",
+                                                color: "#8a7768",
+                                                fontSize: "1.2rem",
+                                                lineHeight: 1,
+                                                letterSpacing: 3,
+                                                userSelect: "none",
+                                                padding: "4px 16px",
+                                                border: "1px solid rgba(138, 119, 104, 0.28)",
+                                                borderRadius: 999,
+                                                background: "rgba(255, 248, 239, 0.9)",
+                                            }}
+                                        >
+                                            ⋮⋮
+                                        </div>
+                                        <strong>Item {index + 1}</strong>
+                                    </div>
                                     <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                                         <button
                                             type="button"
@@ -630,6 +722,12 @@ export default function TopicForm() {
                                     </div>
                                 )}
 
+                                <TimelineItemPreview
+                                    post={(item.source || "existing") === "existing" ? selectedPost : null}
+                                    draft={(item.source || "existing") === "new" ? draft : null}
+                                    selectedMediaIndices={item.media_indices || []}
+                                />
+
                                 {canSelectStory && (
                                     <div>
                                         <label>Story Display</label>
@@ -757,5 +855,79 @@ export default function TopicForm() {
                 </div>
             </form>
         </div>
+    );
+}
+
+function TimelineItemPreview({ post, draft, selectedMediaIndices }) {
+    const source = post || draft;
+    if (!source) return null;
+
+    const allMedia = post
+        ? (post.media_urls?.length
+            ? post.media_urls.map((media) => typeof media === "string" ? { url: media } : media)
+            : post.media_url ? [{ url: post.media_url }] : [])
+        : draft.media_url ? [{ url: draft.media_url }] : [];
+    const media = post && selectedMediaIndices.length
+        ? selectedMediaIndices.map((index) => allMedia[index]).filter(Boolean)
+        : allMedia;
+    const author = post?.author_name || draft?.author || draft?.newAuthorName || "No author selected";
+    const date = post?.posted_at || draft?.posted_at || "No date";
+    const caption = source.caption_translation || source.caption || "";
+    const externalUrl = source.external_url || "";
+
+    return (
+        <section
+            aria-label="Timeline item preview"
+            style={{
+                border: "1px solid rgba(138, 119, 104, 0.28)",
+                borderRadius: 8,
+                padding: 10,
+                background: "rgba(255, 248, 239, 0.52)",
+                display: "grid",
+                gap: 8,
+            }}
+        >
+            <div style={{ display: "flex", justifyContent: "space-between", gap: 10, flexWrap: "wrap" }}>
+                <strong style={{ fontSize: "0.9rem" }}>Preview</strong>
+                <span style={{ color: "#77695e", fontSize: "0.82rem" }}>{author} · {date}</span>
+            </div>
+
+            {media.length > 0 && (
+                <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 2 }}>
+                    {media.map((item, index) => {
+                        const url = item?.url || "";
+                        if (!url) return null;
+                        return isVideo(url) ? (
+                            <video
+                                key={`${url}-${index}`}
+                                src={url}
+                                muted
+                                controls
+                                preload="metadata"
+                                style={{ width: 112, height: 112, flex: "0 0 112px", objectFit: "cover", borderRadius: 6, background: "#171411" }}
+                            />
+                        ) : (
+                            <img
+                                key={`${url}-${index}`}
+                                src={url}
+                                alt={`Preview ${index + 1}`}
+                                loading="lazy"
+                                style={{ width: 112, height: 112, flex: "0 0 112px", objectFit: "cover", borderRadius: 6, background: "#eee" }}
+                            />
+                        );
+                    })}
+                </div>
+            )}
+
+            {caption && <div style={{ whiteSpace: "pre-wrap", fontSize: "0.88rem", lineHeight: 1.4 }}>{caption}</div>}
+            {!caption && media.length === 0 && (
+                <span style={{ color: "#887b71", fontSize: "0.85rem" }}>Add or select a post to see its content here.</span>
+            )}
+            {externalUrl && !isImage(externalUrl) && !isVideo(externalUrl) && (
+                <a href={externalUrl} target="_blank" rel="noreferrer" style={{ fontSize: "0.82rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {externalUrl}
+                </a>
+            )}
+        </section>
     );
 }

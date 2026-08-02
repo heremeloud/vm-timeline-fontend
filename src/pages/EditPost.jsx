@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { getAdminPost, updatePost } from "../api/postsService";
 import { getAuthors } from "../api/authorsService";
@@ -7,12 +7,25 @@ import { isImage, isVideo } from "../utils/media";
 import AutoResizeTextarea from "../components/AutoResizeTextarea";
 import R2MediaUploader from "../components/R2MediaUploader";
 import MediaUrlField from "../components/MediaUrlField";
+import InstagramEmbed from "../components/InstagramEmbed";
+import TikTokEmbed from "../components/TikTokEmbed";
+import TweetEmbed from "../components/TweetEmbed";
 import { deleteMediaObject } from "../api/mediaService";
 import { cleanPastedPostUrl, detectMediaAuthor, detectMediaDate, isInstagramChannelUrl, normalizePostUrl } from "../utils/postUrls";
 import { isFromR2 } from "../utils/media";
 import "../styles/EventForm.css";
 
 const emptyStoryItem = () => ({ url: "", text: "", translation: "", note: "", attachment_type: "screenshot", deleteFromR2: false });
+
+const appendUploadedUrls = (items, urls) => {
+    const next = [...items];
+    urls.forEach((url) => {
+        const emptyIndex = next.findIndex((item) => !item.url.trim());
+        if (emptyIndex >= 0) next[emptyIndex] = { ...next[emptyIndex], url };
+        else next.push({ ...emptyStoryItem(), url });
+    });
+    return next;
+};
 
 const getStoryItemCount = (quantity) =>
     Math.min(100, Math.max(1, Math.floor(Number(quantity) || 1)));
@@ -38,6 +51,7 @@ export default function EditPost() {
     const navigate = useNavigate();
     const location = useLocation();
     const returnTo = location.state?.returnTo;
+    const mediaUploaderRef = useRef(null);
 
     const [loading, setLoading] = useState(true);
     const [post, setPost] = useState(null);
@@ -231,10 +245,21 @@ export default function EditPost() {
         else if (platform === "x") newURL = normalizePostUrl(newURL, platform);
         else if (platform === "tt") newURL = normalizeTikTokURL(newURL);
 
-        const newId = extractExternalId(newURL, platform);
         const isIGCollection = platform === "ig" && contentType !== "post";
+        let newlyUploadedUrls = [];
+        try {
+            newlyUploadedUrls = await mediaUploaderRef.current?.uploadPending() || [];
+        } catch (uploadError) {
+            alert(uploadError.response?.data?.detail || uploadError.message || "Media upload failed. The post was not saved.");
+            return;
+        }
+
+        const effectiveMediaItems = isIGCollection
+            ? appendUploadedUrls(mediaItems, newlyUploadedUrls)
+            : mediaItems;
+        const newId = extractExternalId(newURL, platform);
         const filteredMediaItems = isIGCollection
-            ? mediaItems
+            ? effectiveMediaItems
                 .map((item) => ({ ...item, url: item.url.trim() }))
                 .filter((item) => item.url || (contentType === "broadcast" && (item.text.trim() || item.translation.trim() || item.note.trim())))
                 .map((item) => ({
@@ -255,7 +280,7 @@ export default function EditPost() {
             caption,
             caption_translation: captionTranslation,
             caption_translation_note: captionTranslationNote.trim() || null,
-            media_url: isIGCollection ? null : (mediaURL || null),
+            media_url: isIGCollection ? null : (newlyUploadedUrls[0] || mediaURL || null),
             media_urls_json: JSON.stringify(filteredMediaItems),
             posted_at: postedAt,
             is_visible: isVisible,
@@ -277,6 +302,7 @@ export default function EditPost() {
                 externalURL={externalURL}
                 caption={caption}
                 previewItems={previewItems}
+                post={post}
             />
 
             <form id="edit-post-form" className="eventform-form" onSubmit={saveChanges}>
@@ -384,20 +410,13 @@ export default function EditPost() {
                         <>
                             <label>{contentType === "broadcast" ? "Channel Messages:" : "Story Items:"}</label>
                             <R2MediaUploader
+                                ref={mediaUploaderRef}
                                 multiple
                                 author={authors.find((item) => item.id === Number(authorId))?.name || ""}
                                 postedAt={postedAt}
                                 mediaType={contentType === "broadcast" ? "bc" : "igs"}
                                 sequenceStart={mediaItems.filter((item) => item.url.trim()).length + 1}
-                                onUploaded={(urls) => setMediaItems((items) => {
-                                    const next = [...items];
-                                    urls.forEach((url) => {
-                                        const emptyIndex = next.findIndex((item) => !item.url.trim());
-                                        if (emptyIndex >= 0) next[emptyIndex] = { ...next[emptyIndex], url };
-                                        else next.push({ ...emptyStoryItem(), url });
-                                    });
-                                    return next;
-                                })}
+                                onUploaded={(urls) => setMediaItems((items) => appendUploadedUrls(items, urls))}
                             />
                             {mediaItems.map((item, i) => (
                                 <div key={i} style={{ border: "1px solid #ddd", borderRadius: 8, padding: 10, marginBottom: 10 }}>
@@ -536,6 +555,7 @@ export default function EditPost() {
                         <>
                             <label>Media URL</label>
                             <R2MediaUploader
+                                ref={mediaUploaderRef}
                                 author={authors.find((item) => item.id === Number(authorId))?.name || ""}
                                 postedAt={postedAt}
                                 mediaType={platform === "ig" ? "ig" : platform}
@@ -588,9 +608,10 @@ export default function EditPost() {
     );
 }
 
-function CompactPostPreview({ platform, externalURL, caption, previewItems }) {
+function CompactPostPreview({ platform, externalURL, caption, previewItems, post }) {
     const hasExternal = !!externalURL.trim();
     const hasMedia = previewItems.length > 0;
+    const primaryMediaUrl = previewItems[0]?.url || "";
 
     if (!hasExternal && !hasMedia && !caption) return null;
 
@@ -610,14 +631,42 @@ function CompactPostPreview({ platform, externalURL, caption, previewItems }) {
             </div>
 
             {hasExternal && (
-                <a
-                    href={externalURL}
-                    target="_blank"
-                    rel="noreferrer"
-                    style={{ display: "block", marginTop: 8, fontSize: "0.86rem", wordBreak: "break-all" }}
-                >
-                    {externalURL}
-                </a>
+                <div style={{ marginTop: 8, minWidth: 0 }}>
+                    <a
+                        href={externalURL}
+                        target="_blank"
+                        rel="noreferrer"
+                        style={{ display: "block", minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: "0.86rem" }}
+                    >
+                        {externalURL}
+                    </a>
+                    <div className="edit-post-social-preview">
+                        {platform === "x" || platform === "twitter" ? (
+                            <TweetEmbed url={externalURL} />
+                        ) : platform === "tt" || platform === "tiktok" ? (
+                            <TikTokEmbed
+                                external_url={externalURL}
+                                media_url={primaryMediaUrl}
+                                caption={caption}
+                                author_id={post?.author_id}
+                                author_name={post?.author_name}
+                                author_photo={post?.author_photo}
+                            />
+                        ) : (
+                            <InstagramEmbed
+                                external_url={externalURL}
+                                media_url={previewItems.length === 1 ? primaryMediaUrl : ""}
+                                media_urls={previewItems.length > 1 ? previewItems : []}
+                                caption={caption}
+                                author_id={post?.author_id}
+                                author_name={post?.author_name}
+                                author_photo={post?.author_photo}
+                                author_ig_pfp_url={post?.author_ig_pfp_url}
+                                author_instagram_url={post?.author_instagram_url}
+                            />
+                        )}
+                    </div>
+                </div>
             )}
 
             {hasMedia && (

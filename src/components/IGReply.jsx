@@ -45,6 +45,7 @@ export default function IGReply({ reply }) {
     const [editTranslation, setEditTranslation] = useState(main.translation || "");
     const [editNote, setEditNote] = useState(main.note || "");
     const [editMediaURL, setEditMediaURL] = useState(main.media_url || "");
+    const [editDate, setEditDate] = useState(main.posted_at || "");
 
     async function handleDelete() {
         if (!confirm("Delete this IG reply (caption + translation)?")) return;
@@ -63,6 +64,7 @@ export default function IGReply({ reply }) {
             translation: editTranslation,
             note: editNote || null,
             media_url: editMediaURL || null,
+            posted_at: editDate || null,
         });
         window.location.reload();
     }
@@ -222,6 +224,9 @@ export default function IGReply({ reply }) {
                         placeholder="https://..."
                     />
 
+                    <label>Reply Date <span className="form-optional">(optional)</span></label>
+                    <input type="date" value={editDate} onChange={(e) => setEditDate(e.target.value)} />
+
                     <div className="igreply-edit-buttons">
                         <button onClick={saveEdit}>Save</button>
                         <button
@@ -231,6 +236,7 @@ export default function IGReply({ reply }) {
                                 setEditTranslation(main.translation || "");
                                 setEditNote(main.note || "");
                                 setEditMediaURL(main.media_url || "");
+                                setEditDate(main.posted_at || "");
                             }}
                         >
                             Cancel

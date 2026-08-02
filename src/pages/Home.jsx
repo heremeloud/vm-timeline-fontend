@@ -1,13 +1,15 @@
 import { useEffect, useMemo, useState } from "react";
 import "../styles/Home.css";
-import { getPosts, getTimeline } from "../api/postsService";
+import { getAdminPosts, getPosts, getTimeline } from "../api/postsService";
 import { getEventTagIndex } from "../api/eventsService";
 import { ROUTES } from "../routes";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import PostCard from "../components/PostCard";
 import { buildEventTagIndex } from "../utils/eventTagLinks";
 
 export default function Home() {
+    const navigate = useNavigate();
+    const isAdmin = !!localStorage.getItem("jwt");
     const [searchParams, setSearchParams] = useSearchParams();
     const [posts, setPosts] = useState([]);
     const [events, setEvents] = useState([]);
@@ -29,6 +31,26 @@ export default function Home() {
     const LIMIT = 10;
     const eventTagIndex = useMemo(() => buildEventTagIndex(events), [events]);
     const timelineQuery = searchParams.toString();
+
+    function createPostAtCurrentDate() {
+        const viewportCenter = window.innerHeight / 2;
+        const visiblePosts = [...document.querySelectorAll("[data-timeline-post-date]")]
+            .map((element) => ({
+                date: element.dataset.timelinePostDate,
+                rect: element.getBoundingClientRect(),
+            }))
+            .filter(({ date, rect }) => date && rect.bottom > 0 && rect.top < window.innerHeight);
+
+        const currentPost = visiblePosts.sort((a, b) => {
+            const aCenter = (a.rect.top + a.rect.bottom) / 2;
+            const bCenter = (b.rect.top + b.rect.bottom) / 2;
+            return Math.abs(aCenter - viewportCenter) - Math.abs(bCenter - viewportCenter);
+        })[0];
+
+        navigate(ROUTES.createPost, {
+            state: { defaultPostedAt: currentPost?.date?.slice(0, 10) || "" },
+        });
+    }
 
     // Header navigation and browser back/forward can change the URL without
     // remounting this page. Keep the active timeline state in sync with it.
@@ -78,7 +100,8 @@ export default function Home() {
 
     // Fetch ONLY the base posts for a page (no replies)
     async function fetchBasePosts(targetPage) {
-        const res = await getPosts({
+        const request = isAdmin ? getAdminPosts : getPosts;
+        const res = await request({
             limit: LIMIT,
             offset: (targetPage - 1) * LIMIT,
             sort: sortOrder,
@@ -156,13 +179,29 @@ export default function Home() {
 
     async function load() {
         try {
-            const res = await getTimeline({
-                limit: LIMIT,
-                offset: (page - 1) * LIMIT,
-                sort: sortOrder,
-                platform: platformFilter,
-            });
-            const timeline = res.data || {};
+            let timeline;
+            if (isAdmin) {
+                const res = await getAdminPosts({
+                    limit: LIMIT + 1,
+                    offset: (page - 1) * LIMIT,
+                    sort: sortOrder,
+                    platform: platformFilter,
+                });
+                const rows = res.data || [];
+                timeline = {
+                    items: rows.slice(0, LIMIT),
+                    has_more: rows.length > LIMIT,
+                    last_updated: sortOrder === "newest" ? rows[0]?.posted_at : null,
+                };
+            } else {
+                const res = await getTimeline({
+                    limit: LIMIT,
+                    offset: (page - 1) * LIMIT,
+                    sort: sortOrder,
+                    platform: platformFilter,
+                });
+                timeline = res.data || {};
+            }
             const timelinePosts = timeline.items || [];
 
             // Discover last page when we hit it naturally
@@ -218,6 +257,7 @@ export default function Home() {
                 <h1 style={{ marginTop: "0.2rem" }}>🤎Timeline🤍</h1>
                 <p>Collecting ViewMim social media interactions</p>
                 {lastUpdated && <p>Last update: {lastUpdated}</p>}
+                <p><strong>- 99% of 2024 IGS are included. 2025 IGS: work in progress - </strong></p>
                 <small style={{ opacity: 0.7 }}>
                     ※ IG stories are included starting 2026 ※
                 </small>
@@ -257,13 +297,14 @@ export default function Home() {
             {/* Posts Page */}
             <div className="timeline-container">
                 {posts.map((post) => (
-                    <PostCard
-                        key={post.id}
-                        post={post}
-                        childrenPosts={post.childrenPosts || []}
-                        comments={post.comments || []}
-                        eventTagIndex={eventTagIndex}
-                    />
+                    <div key={post.id} data-timeline-post-date={post.posted_at || ""}>
+                        <PostCard
+                            post={post}
+                            childrenPosts={post.childrenPosts || []}
+                            comments={post.comments || []}
+                            eventTagIndex={eventTagIndex}
+                        />
+                    </div>
                 ))}
             </div>
 
@@ -327,9 +368,14 @@ export default function Home() {
 
             {/* Add Button */}
             {localStorage.getItem("jwt") && (
-                <Link to={ROUTES.createPost}>
-                    <button className="fab-button">+</button>
-                </Link>
+                <button
+                    type="button"
+                    className="fab-button"
+                    onClick={createPostAtCurrentDate}
+                    aria-label="Create post at the current timeline date"
+                >
+                    +
+                </button>
             )}
         </div>
     );

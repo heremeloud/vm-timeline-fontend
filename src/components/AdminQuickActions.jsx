@@ -92,6 +92,20 @@ export default function AdminQuickActions() {
                     <path d="M4.5 21a7.5 7.5 0 0 1 15 0" />
                 </svg>
             </Link>
+            {manageAuthorsMatch && (
+                <button
+                    type="button"
+                    className="admin-quick-button"
+                    onClick={() => document.getElementById("manage-authors-add-button")?.click()}
+                    aria-label="Add Author"
+                    title="Add Author"
+                >
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <circle cx="9" cy="8" r="4" />
+                        <path d="M2.5 21a6.5 6.5 0 0 1 13 0M18 8v6M15 11h6" />
+                    </svg>
+                </button>
+            )}
             {activeEditRoute && (
                 <Link className="admin-quick-button" to={activeEditRoute} aria-label="Edit" title={editTitle}>
                     <svg viewBox="0 0 24 24" aria-hidden="true">

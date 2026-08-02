@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import "../styles/PostCard.css";
 import { getTextsByPost } from "../api/textsService";
-import { getThread, deletePost, updatePost } from "../api/postsService";
+import { getAdminThread, getThread, deletePost, updatePost } from "../api/postsService";
 import { ROUTES } from "../routes";
 import { getEventTagLinks } from "../utils/eventTagLinks";
 
@@ -76,7 +76,7 @@ export default function PostCard({ post, showReplies = true, eventTagIndex = nul
 
                 // Only X uses child-post threads
                 if (isTwitter) {
-                    const tRes = await getThread(post.id);
+                    const tRes = await (isAdmin ? getAdminThread(post.id) : getThread(post.id));
                     if (!cancelled) setChildrenPosts(tRes.data);
 
                     // refresh Twitter embeds
@@ -97,7 +97,7 @@ export default function PostCard({ post, showReplies = true, eventTagIndex = nul
         return () => {
             cancelled = true;
         };
-    }, [post.id, isTwitter, showReplies]);
+    }, [post.id, isTwitter, showReplies, isAdmin]);
 
     // IG replies: flat list (translation + note live on the same record)
     const igReplies = useMemo(() => {

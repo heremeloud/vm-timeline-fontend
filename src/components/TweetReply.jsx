@@ -16,6 +16,7 @@ export default function TweetReply({ reply }) {
         reply.caption_translation_note || ""
     );
     const [editMedia, setEditMedia] = useState(reply.media_url);
+    const [editDate, setEditDate] = useState(reply.posted_at || "");
     const [editIsAdult, setEditIsAdult] = useState(reply.is_adult ?? false);
 
     useEffect(() => {
@@ -48,6 +49,7 @@ export default function TweetReply({ reply }) {
             caption_translation: editTranslation,
             caption_translation_note: editTranslationNote.trim() || null,
             media_url: editMedia || null,
+            posted_at: editDate || null,
             is_adult: editIsAdult,
         });
 
@@ -131,6 +133,14 @@ export default function TweetReply({ reply }) {
                         value={editMedia}
                         onChange={(e) => setEditMedia(e.target.value)}
                         style={{ resize: "none", width: "100%" }}
+                    />
+
+                    <label>Reply Date</label>
+                    <input
+                        type="date"
+                        value={editDate}
+                        onChange={(e) => setEditDate(e.target.value)}
+                        style={{ width: "100%" }}
                     />
 
                     <label style={{ display: "flex", alignItems: "center", gap: 6, fontWeight: 600, color: "#b00", margin: "10px 0 4px", width: "auto", cursor: "pointer" }}>

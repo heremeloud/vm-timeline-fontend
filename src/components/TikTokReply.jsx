@@ -41,6 +41,7 @@ export default function TikTokReply({ reply }) {
     const [editCaption, setEditCaption] = useState(main.content || "");
     const [editTranslation, setEditTranslation] = useState(main.translation || "");
     const [editNote, setEditNote] = useState(main.note || "");
+    const [editDate, setEditDate] = useState(main.posted_at || "");
 
     async function handleDelete() {
         if (!confirm("Delete this TikTok reply (caption + translation)?")) {
@@ -60,6 +61,7 @@ export default function TikTokReply({ reply }) {
             caption: editCaption,
             translation: editTranslation,
             note: editNote || null,
+            posted_at: editDate || null,
         });
         window.location.reload();
     }
@@ -183,6 +185,9 @@ export default function TikTokReply({ reply }) {
                         placeholder="For example: slang, context, or nuance"
                     />
 
+                    <label>Reply Date <span className="form-optional">(optional)</span></label>
+                    <input type="date" value={editDate} onChange={(e) => setEditDate(e.target.value)} />
+
                     <div className="igreply-edit-buttons">
                         <button onClick={saveEdit}>Save</button>
                         <button
@@ -191,6 +196,7 @@ export default function TikTokReply({ reply }) {
                                 setEditCaption(main.content || "");
                                 setEditTranslation(main.translation || "");
                                 setEditNote(main.note || "");
+                                setEditDate(main.posted_at || "");
                             }}
                         >
                             Cancel

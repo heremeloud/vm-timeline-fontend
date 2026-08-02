@@ -25,11 +25,12 @@ export const getAdminPosts = ({ limit = 100, offset = 0, sort = "newest", platfo
     return api.get(url);
 };
 
-export const searchAdminPosts = ({ q, limit = 50, offset = 0, platform, authorId, dateFrom, dateTo, searchScopes } = {}) => {
+export const searchAdminPosts = ({ q, limit = 50, offset = 0, sort = "newest", platform, authorId, dateFrom, dateTo, searchScopes } = {}) => {
     const params = new URLSearchParams({
         q: q || "",
         limit: String(limit),
         offset: String(offset),
+        sort,
     });
     if (platform && platform !== "all") params.set("platform", platform);
     if (authorId && authorId !== "all") params.set("author_id", authorId);
@@ -47,8 +48,15 @@ export const searchAdminPosts = ({ q, limit = 50, offset = 0, platform, authorId
 
 export const getThread = (id) => api.get(`/posts/${id}/thread`);
 
+export const getAdminThread = (id) => api.get(`/posts/admin/${id}/thread`);
+
 export const createPost = (data) => api.post("/posts/", data);
 
 export const updatePost = (id, data) => api.patch(`/posts/${id}`, data);
+
+export const reorderPost = (id, targetPostId, position) => api.post(`/posts/admin/${id}/order`, {
+    target_post_id: targetPostId,
+    position,
+});
 
 export const deletePost = (id) => api.delete(`/posts/${id}`);

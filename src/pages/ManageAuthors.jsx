@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { getAuthors, updateAuthor } from "../api/authorsService";
+import { createAuthor, getAuthors, updateAuthor } from "../api/authorsService";
 import Avatar from "../components/Avatar";
 import "../styles/EventForm.css";
 
@@ -64,6 +64,8 @@ export default function ManageAuthors() {
     const [loading, setLoading] = useState(true);
     const [savingId, setSavingId] = useState(null);
     const [query, setQuery] = useState("");
+    const [draggedAuthorId, setDraggedAuthorId] = useState(null);
+    const [dragTarget, setDragTarget] = useState(null);
 
     useEffect(() => {
         async function loadAuthors() {
@@ -103,6 +105,46 @@ export default function ManageAuthors() {
         }));
     }
 
+    function reorderAuthor(targetAuthorId, position) {
+        if (!draggedAuthorId || draggedAuthorId === targetAuthorId || query.trim()) return;
+
+        const fromIndex = authors.findIndex((author) => author.id === draggedAuthorId);
+        if (fromIndex < 0) return;
+
+        const reordered = [...authors];
+        const [moved] = reordered.splice(fromIndex, 1);
+        const targetIndex = reordered.findIndex((author) => author.id === targetAuthorId);
+        if (targetIndex < 0) return;
+        reordered.splice(position === "after" ? targetIndex + 1 : targetIndex, 0, moved);
+        setAuthors(reordered);
+        setDrafts((currentDrafts) => {
+            const nextDrafts = { ...currentDrafts };
+            reordered.forEach((author, index) => {
+                nextDrafts[author.id] = {
+                    ...nextDrafts[author.id],
+                    sort_order: index + 1,
+                };
+            });
+            return nextDrafts;
+        });
+    }
+
+    function addAuthor() {
+        const temporaryId = `new-${Date.now()}`;
+        const nextSortOrder = Math.max(
+            0,
+            ...authors.map((author) => Number(drafts[author.id]?.sort_order ?? author.sort_order ?? 0))
+        ) + 1;
+        const newAuthor = { id: temporaryId, isNew: true, name: "", sort_order: nextSortOrder };
+
+        setAuthors((current) => [...current, newAuthor]);
+        setDrafts((current) => ({ ...current, [temporaryId]: buildDraft(newAuthor) }));
+        setQuery("");
+        requestAnimationFrame(() => {
+            document.querySelector(`[data-author-id="${temporaryId}"]`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+        });
+    }
+
     async function saveAuthor(author) {
         const draft = drafts[author.id];
         if (!draft?.name?.trim()) {
@@ -112,15 +154,17 @@ export default function ManageAuthors() {
 
         setSavingId(author.id);
         try {
-            const res = await updateAuthor(author.id, buildPayload(draft));
+            const res = author.isNew
+                ? await createAuthor(buildPayload(draft))
+                : await updateAuthor(author.id, buildPayload(draft));
             const updated = res.data;
             setAuthors((current) =>
                 current
-                    .map((row) => row.id === updated.id ? updated : row)
+                    .map((row) => row.id === author.id ? updated : row)
                     .sort((a, b) => (a.sort_order ?? a.id) - (b.sort_order ?? b.id))
             );
             setDrafts((current) => ({
-                ...current,
+                ...Object.fromEntries(Object.entries(current).filter(([id]) => id !== String(author.id))),
                 [updated.id]: buildDraft(updated),
             }));
         } catch (err) {
@@ -135,14 +179,18 @@ export default function ManageAuthors() {
         e.preventDefault();
         const invalidAuthor = authors.find((author) => !drafts[author.id]?.name?.trim());
         if (invalidAuthor) {
-            alert(`Display name is required for author #${invalidAuthor.id}.`);
+            alert(invalidAuthor.isNew
+                ? "Display name is required for the new author."
+                : `Display name is required for author #${invalidAuthor.id}.`);
             return;
         }
 
         setSavingId("all");
         try {
             const responses = await Promise.all(
-                authors.map((author) => updateAuthor(author.id, buildPayload(drafts[author.id])))
+                authors.map((author) => author.isNew
+                    ? createAuthor(buildPayload(drafts[author.id]))
+                    : updateAuthor(author.id, buildPayload(drafts[author.id])))
             );
             const updatedAuthors = responses
                 .map((response) => response.data)
@@ -162,6 +210,12 @@ export default function ManageAuthors() {
     return (
         <div className="manage-authors-page" style={{ padding: 20, maxWidth: 1100, margin: "0 auto" }}>
             <form id="manage-authors-save-form" onSubmit={saveAllAuthors} />
+            <button
+                id="manage-authors-add-button"
+                type="button"
+                onClick={addAuthor}
+                hidden
+            />
             <div style={{ display: "flex", justifyContent: "space-between", gap: 16, alignItems: "end", flexWrap: "wrap" }}>
                 <div>
                     <h2 style={{ marginBottom: 4 }}>Manage Authors</h2>
@@ -186,6 +240,21 @@ export default function ManageAuthors() {
                     return (
                         <div
                             key={author.id}
+                            data-author-id={author.id}
+                            onDragOver={(e) => {
+                                if (!query.trim()) {
+                                    e.preventDefault();
+                                    const rect = e.currentTarget.getBoundingClientRect();
+                                    const position = e.clientY < rect.top + rect.height / 2 ? "before" : "after";
+                                    setDragTarget({ id: author.id, position });
+                                }
+                            }}
+                            onDrop={(e) => {
+                                e.preventDefault();
+                                reorderAuthor(author.id, dragTarget?.position || "before");
+                                setDraggedAuthorId(null);
+                                setDragTarget(null);
+                            }}
                             style={{
                                 border: "1px solid rgba(0, 0, 0, 0.14)",
                                 borderRadius: 8,
@@ -193,8 +262,64 @@ export default function ManageAuthors() {
                                 display: "grid",
                                 gap: 19,
                                 position: "relative",
+                                opacity: draggedAuthorId === author.id ? 0.55 : 1,
+                                height: draggedAuthorId === author.id ? 56 : "auto",
+                                minHeight: draggedAuthorId === author.id ? 56 : undefined,
+                                overflow: draggedAuthorId === author.id ? "hidden" : "visible",
+                                boxSizing: "border-box",
+                                transition: "opacity 140ms ease",
                             }}
                         >
+                            {dragTarget?.id === author.id && draggedAuthorId !== author.id && (
+                                <div
+                                    aria-hidden="true"
+                                    style={{
+                                        position: "absolute",
+                                        left: 8,
+                                        right: 8,
+                                        [dragTarget.position === "before" ? "top" : "bottom"]: -10,
+                                        height: 4,
+                                        borderRadius: 999,
+                                        background: "#a76719",
+                                        boxShadow: "0 0 0 2px #fff8ef",
+                                        zIndex: 5,
+                                        pointerEvents: "none",
+                                    }}
+                                />
+                            )}
+                            <div
+                                draggable={!query.trim()}
+                                onDragStart={(e) => {
+                                    setDraggedAuthorId(author.id);
+                                    e.dataTransfer.effectAllowed = "move";
+                                    e.dataTransfer.setData("text/plain", String(author.id));
+                                }}
+                                onDragEnd={() => {
+                                    setDraggedAuthorId(null);
+                                    setDragTarget(null);
+                                }}
+                                title={query.trim() ? "Clear search to reorder authors" : "Drag to change display order"}
+                                aria-label="Drag to change display order"
+                                style={{
+                                    position: "absolute",
+                                    top: 14,
+                                    left: "50%",
+                                    transform: "translateX(-50%)",
+                                    cursor: query.trim() ? "not-allowed" : "grab",
+                                    color: "#8a7768",
+                                    fontSize: "1.3rem",
+                                    lineHeight: 1,
+                                    letterSpacing: 3,
+                                    userSelect: "none",
+                                    padding: "4px 22px",
+                                    border: "1px solid rgba(138, 119, 104, 0.28)",
+                                    borderRadius: 999,
+                                    background: "rgba(255, 248, 239, 0.9)",
+                                    zIndex: 2,
+                                }}
+                            >
+                                ⋮⋮
+                            </div>
                             <label className="author-visibility-toggle" title={draft.show_on_timeline ? "Visible on the public timeline" : "Hidden from the public timeline"}>
                                 <input
                                     type="checkbox"
@@ -211,8 +336,8 @@ export default function ManageAuthors() {
                                     name={draft.name}
                                 />
                                 <div>
-                                    <strong className="manage-author-name">{draft.name || `Author #${author.id}`}</strong>
-                                    <div style={{ fontSize: "0.85rem", color: "#777" }}>ID {author.id}</div>
+                                    <strong className="manage-author-name">{draft.name || (author.isNew ? "New Author" : `Author #${author.id}`)}</strong>
+                                    <div style={{ fontSize: "0.85rem", color: "#777" }}>{author.isNew ? "Not saved yet" : `ID ${author.id}`}</div>
                                 </div>
                             </div>
 
@@ -262,6 +387,7 @@ export default function ManageAuthors() {
                     <p style={{ color: "#777" }}>No authors match that search.</p>
                 )}
             </div>
+
         </div>
     );
 }

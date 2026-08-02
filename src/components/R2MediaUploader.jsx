@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { forwardRef, useImperativeHandle, useState } from "react";
 import { uploadMedia } from "../api/mediaService";
 
 const destinationForAuthor = (author) => {
@@ -39,7 +39,7 @@ function QueuedFilePreview({ file }) {
     );
 }
 
-export default function R2MediaUploader({ author, postedAt, mediaType, sequenceStart = 1, onUploaded, multiple = false }) {
+const R2MediaUploader = forwardRef(function R2MediaUploader({ author, postedAt, mediaType, sequenceStart = 1, onUploaded, multiple = false }, ref) {
     const automaticDestination = destinationForAuthor(author);
     const [manualDestination, setManualDestination] = useState("");
     const destination = manualDestination || automaticDestination;
@@ -70,11 +70,18 @@ export default function R2MediaUploader({ author, postedAt, mediaType, sequenceS
         });
     };
 
-    const uploadFiles = async () => {
-        if (!files.length) return;
+    const uploadFiles = async (throwOnError = false) => {
+        if (!files.length) return [];
+        if (uploading) {
+            const error = new Error("An upload is already in progress.");
+            if (throwOnError) throw error;
+            return [];
+        }
         if (!author || !postedAt) {
-            setError("Select an author and posted date before uploading.");
-            return;
+            const message = "Select an author and posted date before uploading.";
+            setError(message);
+            if (throwOnError) throw new Error(message);
+            return [];
         }
 
         setUploading(true);
@@ -99,16 +106,23 @@ export default function R2MediaUploader({ author, postedAt, mediaType, sequenceS
             setProgress(100);
             onUploaded(urls);
             setFiles([]);
+            return urls;
         } catch (err) {
             if (urls.length) {
                 onUploaded(urls);
                 setFiles((current) => current.slice(urls.length));
             }
             setError(err.response?.data?.detail || "Upload failed. Remaining files are still queued.");
+            if (throwOnError) throw err;
+            return urls;
         } finally {
             setUploading(false);
         }
     };
+
+    useImperativeHandle(ref, () => ({
+        uploadPending: () => uploadFiles(true),
+    }));
 
     return (
         <div className="r2-uploader">
@@ -202,7 +216,7 @@ export default function R2MediaUploader({ author, postedAt, mediaType, sequenceS
                             <button type="button" className="r2-file-remove" disabled={uploading} onClick={() => setFiles((current) => current.filter((_, itemIndex) => itemIndex !== index))}>Remove</button>
                         </div>
                     ))}
-                    <button type="button" className="r2-upload-queued-button" disabled={uploading} onClick={uploadFiles}>
+                    <button type="button" className="r2-upload-queued-button" disabled={uploading} onClick={() => uploadFiles(false)}>
                         {uploading ? `Uploading ${progress}%` : `Upload ${files.length} ${files.length === 1 ? "file" : "files"}`}
                     </button>
                 </div>
@@ -212,4 +226,6 @@ export default function R2MediaUploader({ author, postedAt, mediaType, sequenceS
             {error && <div className="r2-upload-error" role="alert">{error}</div>}
         </div>
     );
-}
+});
+
+export default R2MediaUploader;
