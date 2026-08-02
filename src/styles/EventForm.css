@@ -850,6 +850,35 @@
     gap: 12px;
 }
 
+.manage-display-search-scopes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.eventform-form .manage-display-search-scope {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    min-height: 26px;
+    margin: 0;
+    padding: 3px 7px;
+    box-sizing: border-box;
+    border: 1px solid rgba(166, 124, 82, 0.32);
+    border-radius: 7px;
+    background: rgba(166, 124, 82, 0.06);
+    color: #5b4d43;
+    font-size: 0.76rem;
+    font-weight: 500;
+    cursor: pointer;
+}
+
+.eventform-form .manage-display-search-scope input[type="checkbox"] {
+    width: 12px;
+    height: 12px;
+    accent-color: #955803;
+}
+
 .manage-display-entry-summary {
     display: flex;
     align-items: flex-start;

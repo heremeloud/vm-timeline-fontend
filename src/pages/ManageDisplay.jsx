@@ -142,6 +142,13 @@ export default function ManageDisplay() {
     const [dateTo, setDateTo] = useState("");
     const [postSearch, setPostSearch] = useState("");
     const [submittedPostSearch, setSubmittedPostSearch] = useState("");
+    const [searchScopes, setSearchScopes] = useState({
+        text: true,
+        translations: true,
+        notes: true,
+        urls: true,
+        replies: true,
+    });
     const [loading, setLoading] = useState(true);
     const [savingKey, setSavingKey] = useState("");
     const [hasNextPage, setHasNextPage] = useState(false);
@@ -158,7 +165,7 @@ export default function ManageDisplay() {
 
     useEffect(() => {
         setPage(1);
-    }, [activeTab, platformFilter, authorFilter, dateFrom, dateTo, submittedPostSearch]);
+    }, [activeTab, platformFilter, authorFilter, dateFrom, dateTo, submittedPostSearch, searchScopes]);
 
     async function loadItems() {
         setLoading(true);
@@ -174,6 +181,7 @@ export default function ManageDisplay() {
                 authorId: authorFilter,
                 dateFrom,
                 dateTo,
+                searchScopes,
             }) : await getAdminPosts({
                 limit: LIMIT + 1,
                 offset,
@@ -211,7 +219,7 @@ export default function ManageDisplay() {
     useEffect(() => {
         loadItems();
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [activeTab, page, platformFilter, authorFilter, dateFrom, dateTo, submittedPostSearch, authors.length]);
+    }, [activeTab, page, platformFilter, authorFilter, dateFrom, dateTo, submittedPostSearch, searchScopes, authors.length]);
 
     const authorById = useMemo(() => {
         const map = new Map();
@@ -273,6 +281,10 @@ export default function ManageDisplay() {
 
     function submitPostSearch(e) {
         e.preventDefault();
+        if (!searchScopes.text && !searchScopes.translations && !searchScopes.notes && !searchScopes.urls) {
+            alert("Select at least one search field.");
+            return;
+        }
         setSubmittedPostSearch(postSearch.trim());
     }
 
@@ -362,6 +374,24 @@ export default function ManageDisplay() {
                                     Clear
                                 </button>
                             )}
+                        </div>
+                        <div className="manage-display-search-scopes" aria-label="Search fields">
+                            {[
+                                ["text", "Captions / Text"],
+                                ["translations", "Translations"],
+                                ["notes", "Notes"],
+                                ["urls", "URLs / Media"],
+                                ["replies", "Include Replies"],
+                            ].map(([key, label]) => (
+                                <label className="manage-display-search-scope" key={key}>
+                                    <input
+                                        type="checkbox"
+                                        checked={searchScopes[key]}
+                                        onChange={(e) => setSearchScopes((current) => ({ ...current, [key]: e.target.checked }))}
+                                    />
+                                    <span>{label}</span>
+                                </label>
+                            ))}
                         </div>
                         {submittedPostSearch && (
                             <div style={{ fontSize: "0.85rem", opacity: 0.75 }}>

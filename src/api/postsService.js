@@ -25,7 +25,7 @@ export const getAdminPosts = ({ limit = 100, offset = 0, sort = "newest", platfo
     return api.get(url);
 };
 
-export const searchAdminPosts = ({ q, limit = 50, offset = 0, platform, authorId, dateFrom, dateTo } = {}) => {
+export const searchAdminPosts = ({ q, limit = 50, offset = 0, platform, authorId, dateFrom, dateTo, searchScopes } = {}) => {
     const params = new URLSearchParams({
         q: q || "",
         limit: String(limit),
@@ -35,6 +35,13 @@ export const searchAdminPosts = ({ q, limit = 50, offset = 0, platform, authorId
     if (authorId && authorId !== "all") params.set("author_id", authorId);
     if (dateFrom) params.set("date_from", dateFrom);
     if (dateTo) params.set("date_to", dateTo);
+    if (searchScopes) {
+        params.set("include_text", String(searchScopes.text));
+        params.set("include_translations", String(searchScopes.translations));
+        params.set("include_notes", String(searchScopes.notes));
+        params.set("include_urls", String(searchScopes.urls));
+        params.set("include_replies", String(searchScopes.replies));
+    }
     return api.get(`/posts/admin/search?${params.toString()}`);
 };
 
