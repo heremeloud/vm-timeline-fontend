@@ -7,10 +7,19 @@ import { getAdminProjects, updateProject } from "../api/projectsService";
 import { getAdminTopics, updateTopic } from "../api/topicsService";
 import { ROUTES } from "../routes";
 import { formatEventDateRange } from "../utils/eventDateRange";
+import { isVideo } from "../utils/media";
+import TweetEmbed from "../components/TweetEmbed";
+import InstagramEmbed from "../components/InstagramEmbed";
+import TikTokEmbed from "../components/TikTokEmbed";
 import "../styles/EventForm.css";
 
 const LIMIT = 25;
 const TABS = ["posts", "events", "projects", "specials", "authors"];
+const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:8000";
+
+function resolvePreviewUrl(url = "") {
+    return url.startsWith("/static/") ? `${API_BASE}${url}` : url;
+}
 
 function itemStatus(isVisible, extraVisible = true) {
     return isVisible && extraVisible ? "public" : "hidden";
@@ -30,6 +39,96 @@ function postPlatformLabel(item) {
     return platform || "Unknown";
 }
 
+function previewUrlForItem(tab, item, author) {
+    if (tab === "posts") {
+        const firstMedia = Array.isArray(item.media_urls) ? item.media_urls.find((media) => typeof media === "string" ? media : media?.url) : null;
+        return (typeof firstMedia === "string" ? firstMedia : firstMedia?.url) || item.media_url || "";
+    }
+    if (tab === "events") return item.media_url || item.project_thumbnail_url || "";
+    if (tab === "projects") return item.thumbnail_url || "";
+    if (tab === "specials") return item.cover_url || "";
+    return item.ig_pfp_url || "";
+}
+
+function ManageDisplayPreview({ url, title, tab, item }) {
+    const [expanded, setExpanded] = useState(false);
+    const [imageFailed, setImageFailed] = useState(false);
+    const resolvedUrl = resolvePreviewUrl(url);
+    const video = isVideo(resolvedUrl);
+    const platform = item.platform || item.post_platform;
+    const hasSocialPreview = tab === "posts" && !!item.external_url && ["ig", "instagram", "x", "twitter", "tt", "tiktok"].includes(platform);
+
+    if ((!url || imageFailed) && !hasSocialPreview) return null;
+
+    const platformLabel = platform === "x" || platform === "twitter"
+        ? "X"
+        : platform === "tt" || platform === "tiktok"
+            ? "TikTok"
+            : "IG";
+
+    const socialEmbed = hasSocialPreview && expanded ? (
+        platform === "x" || platform === "twitter" ? (
+            <TweetEmbed url={item.external_url} />
+        ) : platform === "tt" || platform === "tiktok" ? (
+            <TikTokEmbed
+                external_url={item.external_url}
+                media_url={item.media_url}
+                caption={item.caption}
+                author_id={item.author_id}
+                author_name={item.author_name}
+                author_photo={item.author_photo}
+            />
+        ) : (
+            <InstagramEmbed
+                external_url={item.external_url}
+                media_url={item.media_url}
+                media_urls={item.media_urls || []}
+                caption={item.caption}
+                author_id={item.author_id}
+                author_name={item.author_name}
+                author_photo={item.author_photo}
+                author_ig_pfp_url={item.author_ig_pfp_url}
+                author_instagram_url={item.author_instagram_url}
+            />
+        )
+    ) : null;
+
+    return (
+        <div
+            className="manage-display-media-preview"
+            tabIndex={0}
+            aria-label={`Preview ${title}`}
+            onMouseEnter={() => setExpanded(true)}
+            onMouseLeave={() => setExpanded(false)}
+            onFocus={() => setExpanded(true)}
+            onBlur={() => setExpanded(false)}
+        >
+            {resolvedUrl && video ? (
+                <video src={resolvedUrl} muted playsInline preload="metadata" />
+            ) : resolvedUrl ? (
+                <img
+                    src={resolvedUrl}
+                    alt=""
+                    loading="lazy"
+                    referrerPolicy="no-referrer"
+                    onError={() => setImageFailed(true)}
+                />
+            ) : (
+                <span className={`manage-display-platform-preview platform-${platformLabel.toLowerCase()}`}>{platformLabel}</span>
+            )}
+            {expanded && (
+                <div className={`manage-display-hover-preview${socialEmbed ? " is-social" : ""}`}>
+                    {socialEmbed || (video ? (
+                        <video src={resolvedUrl} muted autoPlay loop playsInline preload="metadata" />
+                    ) : (
+                        <img src={resolvedUrl} alt="" loading="lazy" referrerPolicy="no-referrer" />
+                    ))}
+                </div>
+            )}
+        </div>
+    );
+}
+
 export default function ManageDisplay() {
     const location = useLocation();
     const returnTo = `${location.pathname}${location.search}`;
@@ -39,10 +138,13 @@ export default function ManageDisplay() {
     const [page, setPage] = useState(1);
     const [platformFilter, setPlatformFilter] = useState("all");
     const [authorFilter, setAuthorFilter] = useState("all");
+    const [dateFrom, setDateFrom] = useState("");
+    const [dateTo, setDateTo] = useState("");
     const [postSearch, setPostSearch] = useState("");
     const [submittedPostSearch, setSubmittedPostSearch] = useState("");
     const [loading, setLoading] = useState(true);
     const [savingKey, setSavingKey] = useState("");
+    const [hasNextPage, setHasNextPage] = useState(false);
 
     const offset = (page - 1) * LIMIT;
 
@@ -56,36 +158,49 @@ export default function ManageDisplay() {
 
     useEffect(() => {
         setPage(1);
-    }, [activeTab, platformFilter, authorFilter, submittedPostSearch]);
+    }, [activeTab, platformFilter, authorFilter, dateFrom, dateTo, submittedPostSearch]);
 
     async function loadItems() {
         setLoading(true);
+        setHasNextPage(false);
 
         if (activeTab === "posts") {
             const searchTerm = submittedPostSearch.trim();
             const res = searchTerm ? await searchAdminPosts({
                 q: searchTerm,
-                limit: LIMIT,
+                limit: LIMIT + 1,
                 offset,
                 platform: platformFilter,
                 authorId: authorFilter,
+                dateFrom,
+                dateTo,
             }) : await getAdminPosts({
-                limit: LIMIT,
+                limit: LIMIT + 1,
                 offset,
                 sort: "newest",
                 platform: platformFilter,
                 authorId: authorFilter,
+                dateFrom,
+                dateTo,
             });
-            setItems(res.data || []);
+            const rows = res.data || [];
+            setHasNextPage(rows.length > LIMIT);
+            setItems(rows.slice(0, LIMIT));
         } else if (activeTab === "events") {
-            const res = await getAdminEvents({ limit: LIMIT, offset, sort: "newest" });
-            setItems(res.data || []);
+            const res = await getAdminEvents({ limit: LIMIT + 1, offset, sort: "newest" });
+            const rows = res.data || [];
+            setHasNextPage(rows.length > LIMIT);
+            setItems(rows.slice(0, LIMIT));
         } else if (activeTab === "projects") {
-            const res = await getAdminProjects({ limit: LIMIT, offset, sort: "newest" });
-            setItems(res.data || []);
+            const res = await getAdminProjects({ limit: LIMIT + 1, offset, sort: "newest" });
+            const rows = res.data || [];
+            setHasNextPage(rows.length > LIMIT);
+            setItems(rows.slice(0, LIMIT));
         } else if (activeTab === "specials") {
             const res = await getAdminTopics();
-            setItems((res.data || []).slice(offset, offset + LIMIT));
+            const rows = (res.data || []).slice(offset, offset + LIMIT + 1);
+            setHasNextPage(rows.length > LIMIT);
+            setItems(rows.slice(0, LIMIT));
         } else {
             setItems(authors);
         }
@@ -96,7 +211,7 @@ export default function ManageDisplay() {
     useEffect(() => {
         loadItems();
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [activeTab, page, platformFilter, authorFilter, submittedPostSearch, authors.length]);
+    }, [activeTab, page, platformFilter, authorFilter, dateFrom, dateTo, submittedPostSearch, authors.length]);
 
     const authorById = useMemo(() => {
         const map = new Map();
@@ -166,7 +281,7 @@ export default function ManageDisplay() {
         setSubmittedPostSearch("");
     }
 
-    const nextDisabled = visibleItems.length < LIMIT;
+    const nextDisabled = !hasNextPage;
     const isSearchingPosts = activeTab === "posts" && submittedPostSearch.trim();
 
     return (
@@ -219,6 +334,16 @@ export default function ManageDisplay() {
                                     <option key={author.id} value={author.id}>{author.name}</option>
                                 ))}
                             </select>
+                        </div>
+                        <div className="manage-display-date-range">
+                            <div>
+                                <label>Start Date <span className="form-optional">(optional)</span></label>
+                                <input type="date" value={dateFrom} max={dateTo || undefined} onChange={(e) => setDateFrom(e.target.value)} />
+                            </div>
+                            <div>
+                                <label>End Date <span className="form-optional">(optional)</span></label>
+                                <input type="date" value={dateTo} min={dateFrom || undefined} onChange={(e) => setDateTo(e.target.value)} />
+                            </div>
                         </div>
                     </div>
 
@@ -335,6 +460,8 @@ function DisplayRow({ tab, item, author, isSearchResult = false, saving, returnT
         meta = isVisible ? "allowed on timeline" : "hidden from timeline";
     }
 
+    const previewUrl = previewUrlForItem(tab, item, author);
+
     return (
         <div
             style={{
@@ -347,14 +474,17 @@ function DisplayRow({ tab, item, author, isSearchResult = false, saving, returnT
             }}
         >
             <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "flex-start" }}>
-                <div>
-                    <strong>{title}</strong>
-                    <div style={{ fontSize: "0.9rem", opacity: 0.75, marginTop: 4 }}>{meta}</div>
-                    {tab === "posts" && !isReplySearchResult && author && !author.show_on_timeline && (
-                        <div style={{ fontSize: "0.82rem", color: "#9a3412", marginTop: 4 }}>
-                            Author is hidden, so this post stays hidden publicly.
-                        </div>
-                    )}
+                <div className="manage-display-entry-summary">
+                    <ManageDisplayPreview url={previewUrl} title={title} tab={tab} item={item} />
+                    <div>
+                        <strong>{title}</strong>
+                        <div style={{ fontSize: "0.9rem", opacity: 0.75, marginTop: 4 }}>{meta}</div>
+                        {tab === "posts" && !isReplySearchResult && author && !author.show_on_timeline && (
+                            <div style={{ fontSize: "0.82rem", color: "#9a3412", marginTop: 4 }}>
+                                Author is hidden, so this post stays hidden publicly.
+                            </div>
+                        )}
+                    </div>
                 </div>
 
                 <span style={{ whiteSpace: "nowrap", color: status === "public" ? "#2f7d32" : "#9a3412" }}>

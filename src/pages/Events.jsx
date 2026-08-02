@@ -138,7 +138,9 @@ export default function Events() {
 
     const fetchBaseEvents = useCallback(async (targetPage) => {
         const res = await getEvents({
-            limit: LIMIT,
+            // Fetch one extra row so an exact 10-result page does not falsely
+            // imply that another page exists.
+            limit: LIMIT + 1,
             offset: (targetPage - 1) * LIMIT,
             sort: sortOrder,
             name: nameFilter.trim() || undefined,
@@ -244,11 +246,13 @@ export default function Events() {
                 return;
             }
 
-            const baseEvents = await fetchBaseEvents(page);
+            const fetchedEvents = await fetchBaseEvents(page);
             if (requestIdRef.current !== requestId) return;
 
-            // Discover last page when we naturally hit it
-            if (baseEvents.length < LIMIT) setLastPage(page);
+            const baseEvents = fetchedEvents.slice(0, LIMIT);
+            const hasNextPage = fetchedEvents.length > LIMIT;
+
+            if (!hasNextPage) setLastPage(page);
 
             setEvents(baseEvents);
         } catch (err) {
