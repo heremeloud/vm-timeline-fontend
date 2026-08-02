@@ -4,6 +4,8 @@ import { getAuthors, ensureAuthor } from "../api/authorsService";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { ROUTES } from "../routes";
 import AutoResizeTextarea from "../components/AutoResizeTextarea";
+import R2MediaUploader from "../components/R2MediaUploader";
+import MediaUrlField from "../components/MediaUrlField";
 import { cleanPastedPostUrl, detectMediaAuthor, detectMediaDate, isInstagramChannelUrl, normalizePostUrl } from "../utils/postUrls";
 import { isFromR2 } from "../utils/media";
 import "../styles/EventForm.css";
@@ -12,6 +14,12 @@ const emptyStoryItem = () => ({ url: "", text: "", translation: "", note: "", at
 
 const getStoryItemCount = (quantity) =>
     Math.min(100, Math.max(1, Math.floor(Number(quantity) || 1)));
+
+const getLocalToday = () => {
+    const now = new Date();
+    const offset = now.getTimezoneOffset() * 60 * 1000;
+    return new Date(now.getTime() - offset).toISOString().slice(0, 10);
+};
 
 const getSequentialStoryUrl = (url, offset) => {
     const cleanUrl = url.trim();
@@ -290,18 +298,31 @@ export default function CreatePost() {
                     </div>
                 )}
 
-                <div className="eventform-section">
-                    <label>Author:</label>
-                    <select
-                        value={author}
-                        onChange={(e) => setAuthor(e.target.value)}
-                    >
-                        <option value="">-- select author --</option>
-                        {authors.map((a) => (
-                            <option key={a.id} value={a.name}>{a.name}</option>
-                        ))}
-                        <option value="__new__">+ Add New Author</option>
-                    </select>
+                <div className="eventform-section eventform-author-date-row">
+                    <div>
+                        <label>Author:</label>
+                        <select value={author} onChange={(e) => setAuthor(e.target.value)}>
+                            <option value="">-- select author --</option>
+                            {authors.map((a) => (
+                                <option key={a.id} value={a.name}>{a.name}</option>
+                            ))}
+                            <option value="__new__">+ Add New Author</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label>Posted At:</label>
+                        <div className="eventform-date-row">
+                            <input type="date" value={posted_at} onChange={(e) => setPostedAt(e.target.value)} />
+                            <label className="eventform-today-toggle">
+                                <input
+                                    type="checkbox"
+                                    checked={posted_at === getLocalToday()}
+                                    onChange={(e) => setPostedAt(e.target.checked ? getLocalToday() : "")}
+                                />
+                                Today
+                            </label>
+                        </div>
+                    </div>
                 </div>
 
                 {author === "__new__" && (
@@ -423,10 +444,26 @@ export default function CreatePost() {
                     {platform === "ig" && contentType !== "post" ? (
                         <>
                             <label>{contentType === "broadcast" ? "Channel Messages:" : "Story Items:"}</label>
+                            <R2MediaUploader
+                                multiple
+                                author={author === "__new__" ? newAuthorName : author}
+                                postedAt={posted_at}
+                                mediaType={contentType === "broadcast" ? "bc" : "igs"}
+                                sequenceStart={mediaItems.filter((item) => item.url.trim()).length + 1}
+                                onUploaded={(urls) => setMediaItems((items) => {
+                                    const next = [...items];
+                                    urls.forEach((url) => {
+                                        const emptyIndex = next.findIndex((item) => !item.url.trim());
+                                        if (emptyIndex >= 0) next[emptyIndex] = { ...next[emptyIndex], url };
+                                        else next.push({ ...emptyStoryItem(), url });
+                                    });
+                                    return next;
+                                })}
+                            />
                             {mediaItems.map((item, i) => (
                                 <div key={i} style={{ border: "1px solid #ddd", borderRadius: 8, padding: 10, marginBottom: 10 }}>
                                     <div style={{ display: "flex", gap: 6, marginBottom: 6 }}>
-                                        <input
+                                        <MediaUrlField
                                             value={item.url}
                                             onChange={(e) => {
                                                 const next = [...mediaItems];
@@ -441,7 +478,6 @@ export default function CreatePost() {
                                                 if (detectedDate) setPostedAt(detectedDate);
                                             }}
                                             placeholder={contentType === "broadcast" ? "Photo or screenshot URL (optional)" : `Media URL #${i + 1}`}
-                                            style={{ flex: 1 }}
                                         />
                                         {mediaItems.length > 1 && (
                                             <button
@@ -536,6 +572,12 @@ export default function CreatePost() {
                     ) : (
                         <>
                             <label>Media URL (optional):</label>
+                            <R2MediaUploader
+                                author={author === "__new__" ? newAuthorName : author}
+                                postedAt={posted_at}
+                                mediaType={platform === "ig" ? "ig" : platform}
+                                onUploaded={(urls) => setMediaURL(urls[0] || "")}
+                            />
                             <input
                                 value={mediaURL}
                                 onChange={(e) => setMediaURL(e.target.value)}
@@ -550,16 +592,6 @@ export default function CreatePost() {
                             />
                         </>
                     )}
-                </div>
-
-                <div className="eventform-section">
-                    <label>Posted At:</label>
-                    <input
-                        type="date"
-                        value={posted_at}
-                        onChange={(e) => setPostedAt(e.target.value)}
-                        style={{ width: 180 }}
-                    />
                 </div>
 
                 <div className="eventform-section">

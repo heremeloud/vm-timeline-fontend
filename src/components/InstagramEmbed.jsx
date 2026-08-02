@@ -47,12 +47,10 @@ function MediaItem({ url, caption }) {
 // -------------------------------------------------------
 // Carousel for multiple media items (each item is {url, text, translation, note})
 // -------------------------------------------------------
-function MediaCarousel({ items, caption }) {
-    const [idx, setIdx] = useState(0);
+function MediaCarousel({ items, caption, idx, setIdx }) {
     const total = items.length;
     const current = items[idx] || {};
     const displayUrl = typeof current === "string" ? current : current.url;
-    const text = current.text || null;
     const translation = current.translation || null;
     const note = current.note || null;
 
@@ -65,6 +63,7 @@ function MediaCarousel({ items, caption }) {
                     <>
                         {idx > 0 && (
                             <button
+                                type="button"
                                 onClick={() => setIdx((i) => i - 1)}
                                 style={navBtn("left")}
                                 aria-label="Previous"
@@ -74,6 +73,7 @@ function MediaCarousel({ items, caption }) {
                         )}
                         {idx < total - 1 && (
                             <button
+                                type="button"
                                 onClick={() => setIdx((i) => i + 1)}
                                 style={navBtn("right")}
                                 aria-label="Next"
@@ -84,6 +84,7 @@ function MediaCarousel({ items, caption }) {
                         <div style={dotsWrap}>
                             {items.map((_, i) => (
                                 <button
+                                    type="button"
                                     key={i}
                                     onClick={() => setIdx(i)}
                                     style={dotStyle(i === idx)}
@@ -155,6 +156,7 @@ export default function InstagramEmbed({
     author_instagram_url,
     author_id,
 }) {
+    const [storyIndex, setStoryIndex] = useState(0);
     const igUrl = (external_url || "").trim();
     const singleMediaUrl = (media_url || "").trim();
 
@@ -225,8 +227,11 @@ export default function InstagramEmbed({
             <>
                 {author_name}
                 {allItems.length > 1 && (
-                    <span style={{ fontWeight: 400, fontSize: "0.8rem", marginLeft: 8, opacity: 0.6 }}>
-                        {allItems.length} stories
+                    <span
+                        style={{ fontWeight: 400, fontSize: "0.8rem", marginLeft: 8, opacity: 0.6 }}
+                        aria-live="polite"
+                    >
+                        {storyIndex + 1} / {allItems.length} stories
                     </span>
                 )}
             </>
@@ -263,7 +268,12 @@ export default function InstagramEmbed({
                             )
                         )}
 
-                        <MediaCarousel items={allItems} caption={caption} />
+                        <MediaCarousel
+                            items={allItems}
+                            caption={caption}
+                            idx={storyIndex}
+                            setIdx={setStoryIndex}
+                        />
                     </div>
                 </div>
             </div>

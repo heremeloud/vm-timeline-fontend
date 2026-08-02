@@ -16,19 +16,21 @@ export const getPost = (id) => api.get(`/posts/${id}`);
 
 export const getAdminPost = (id) => api.get(`/posts/admin/${id}`);
 
-export const getAdminPosts = ({ limit = 100, offset = 0, sort = "newest", platform } = {}) => {
+export const getAdminPosts = ({ limit = 100, offset = 0, sort = "newest", platform, authorId } = {}) => {
     let url = `/posts/admin?limit=${limit}&offset=${offset}&sort=${sort}`;
     if (platform && platform !== "all") url += `&platform=${platform}`;
+    if (authorId && authorId !== "all") url += `&author_id=${authorId}`;
     return api.get(url);
 };
 
-export const searchAdminPosts = ({ q, limit = 50, offset = 0, platform } = {}) => {
+export const searchAdminPosts = ({ q, limit = 50, offset = 0, platform, authorId } = {}) => {
     const params = new URLSearchParams({
         q: q || "",
         limit: String(limit),
         offset: String(offset),
     });
     if (platform && platform !== "all") params.set("platform", platform);
+    if (authorId && authorId !== "all") params.set("author_id", authorId);
     return api.get(`/posts/admin/search?${params.toString()}`);
 };
 

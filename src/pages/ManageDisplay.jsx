@@ -68,11 +68,13 @@ export default function ManageDisplay() {
                 limit: LIMIT,
                 offset,
                 platform: platformFilter,
+                authorId: authorFilter,
             }) : await getAdminPosts({
                 limit: LIMIT,
                 offset,
                 sort: "newest",
                 platform: platformFilter,
+                authorId: authorFilter,
             });
             setItems(res.data || []);
         } else if (activeTab === "events") {
@@ -94,7 +96,7 @@ export default function ManageDisplay() {
     useEffect(() => {
         loadItems();
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [activeTab, page, platformFilter, submittedPostSearch, authors.length]);
+    }, [activeTab, page, platformFilter, authorFilter, submittedPostSearch, authors.length]);
 
     const authorById = useMemo(() => {
         const map = new Map();
@@ -102,9 +104,7 @@ export default function ManageDisplay() {
         return map;
     }, [authors]);
 
-    const visibleItems = activeTab === "posts" && authorFilter !== "all"
-        ? items.filter((post) => String(post.author_id || "") === authorFilter)
-        : items;
+    const visibleItems = items;
 
     async function updateRow(type, id, data) {
         if (type === "posts") return updatePost(id, data);
@@ -375,7 +375,7 @@ function DisplayRow({ tab, item, author, isSearchResult = false, saving, returnT
                     </label>
                 )}
 
-                {editUrl && <Link className="btn-edit" to={editUrl} state={{ returnTo }} target="_blank" rel="noopener noreferrer">Edit</Link>}
+                {editUrl && <Link to={editUrl} state={{ returnTo }} target="_blank" rel="noopener noreferrer">Edit</Link>}
 
                 {appUrl && <Link to={appUrl} target="_blank" rel="noopener noreferrer">View in app</Link>}
 

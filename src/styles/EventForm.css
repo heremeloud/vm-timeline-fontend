@@ -65,6 +65,32 @@
     opacity: 0.65;
 }
 
+.eventform-author-date-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: end;
+    gap: 16px;
+}
+
+.eventform-date-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.eventform-form .eventform-date-row input[type="date"] {
+    width: 180px;
+}
+
+.eventform-form .eventform-today-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    margin: 0;
+    font-weight: 500;
+    cursor: pointer;
+}
+
 /* ============================= */
 /* PARTICIPANTS BOX */
 /* ============================= */
@@ -137,6 +163,111 @@
 
 .eventform-form button:hover {
     opacity: 0.9;
+}
+
+.r2-uploader {
+    margin: 8px 0 12px;
+    padding: 10px;
+    border: 1px dashed rgba(0, 0, 0, 0.22);
+    border-radius: 8px;
+    background: rgba(166, 124, 82, 0.05);
+}
+
+.r2-uploader-controls {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.eventform-form .r2-uploader-controls select {
+    width: auto;
+    min-width: 180px;
+}
+
+.eventform-form .r2-upload-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: auto;
+    margin: 0;
+    padding: 8px 14px;
+    border-radius: 8px;
+    background: #a67c52;
+    color: white;
+    cursor: pointer;
+}
+
+.eventform-form .r2-upload-button.is-disabled {
+    cursor: wait;
+    opacity: 0.65;
+}
+
+.eventform-form .r2-upload-button input {
+    display: none;
+}
+
+.r2-uploader progress {
+    width: 100%;
+    margin-top: 8px;
+}
+
+.r2-upload-error {
+    margin-top: 8px;
+    color: #a21d31;
+    font-size: 0.85rem;
+}
+
+.r2-upload-name-preview {
+    margin-top: 7px;
+    font-size: 0.78rem;
+    opacity: 0.68;
+    word-break: break-all;
+}
+
+.media-url-compact {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-width: 0;
+    flex: 1;
+    gap: 10px;
+    padding: 8px 10px;
+    border: 1px solid rgba(0, 0, 0, 0.16);
+    border-radius: 8px;
+    background: rgba(0, 0, 0, 0.025);
+}
+
+.media-url-compact span {
+    overflow: hidden;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 0.84rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.eventform-form .media-url-compact button {
+    flex: 0 0 auto;
+    padding: 4px 8px;
+    border: 1px solid rgba(0, 0, 0, 0.18);
+    background: transparent;
+    color: inherit;
+    font-size: 0.75rem;
+}
+
+@media (max-width: 520px) {
+    .eventform-author-date-row {
+        grid-template-columns: 1fr;
+    }
+
+    .r2-uploader-controls {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .eventform-form .r2-uploader-controls select,
+    .eventform-form .r2-upload-button {
+        width: 100%;
+    }
 }
 .series-metadata-heading {
     display: flex;
