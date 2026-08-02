@@ -93,7 +93,7 @@ export default function TweetReply({ reply }) {
             {/* ================= EDIT MODE ================= */}
             {isEditing && (
                 <div style={{ marginTop: 10 }}>
-                    <label>Tweet URL:</label>
+                    <label>Tweet URL</label>
                     <input
                         type="text"
                         value={editUrl}
@@ -101,7 +101,7 @@ export default function TweetReply({ reply }) {
                         style={{ width: "100%" }}
                     />
                     <br />
-                    <label>Caption:</label>
+                    <label>Caption</label>
                     <textarea
                         value={editCaption}
                         onChange={(e) => setEditCaption(e.target.value)}
@@ -109,7 +109,7 @@ export default function TweetReply({ reply }) {
                         style={{ resize: "none", width: "100%" }}
                     />
                     <br />
-                    <label>Translation:</label>
+                    <label>Translation</label>
                     <textarea
                         value={editTranslation}
                         onChange={(e) => setEditTranslation(e.target.value)}
@@ -117,7 +117,7 @@ export default function TweetReply({ reply }) {
                         style={{ resize: "none", width: "100%" }}
                     />
                     <br />
-                    <label>Translator's note (optional):</label>
+                    <label>Translator's Note <span className="form-optional">(optional)</span></label>
                     <textarea
                         value={editTranslationNote}
                         onChange={(e) => setEditTranslationNote(e.target.value)}
@@ -125,7 +125,7 @@ export default function TweetReply({ reply }) {
                         style={{ resize: "none", width: "100%" }}
                     />
                     <br />
-                    <label>Media URL:</label>
+                    <label>Media URL</label>
                     <input
                         type="text"
                         value={editMedia}

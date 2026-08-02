@@ -6,11 +6,12 @@ import { ROUTES } from "../routes";
 import AutoResizeTextarea from "../components/AutoResizeTextarea";
 import R2MediaUploader from "../components/R2MediaUploader";
 import MediaUrlField from "../components/MediaUrlField";
+import { deleteMediaObject } from "../api/mediaService";
 import { cleanPastedPostUrl, detectMediaAuthor, detectMediaDate, isInstagramChannelUrl, normalizePostUrl } from "../utils/postUrls";
 import { isFromR2 } from "../utils/media";
 import "../styles/EventForm.css";
 
-const emptyStoryItem = () => ({ url: "", text: "", translation: "", note: "", attachment_type: "screenshot" });
+const emptyStoryItem = () => ({ url: "", text: "", translation: "", note: "", attachment_type: "screenshot", deleteFromR2: false });
 
 const getStoryItemCount = (quantity) =>
     Math.min(100, Math.max(1, Math.floor(Number(quantity) || 1)));
@@ -132,6 +133,25 @@ export default function CreatePost() {
             ...items,
             ...Array.from({ length: count }, emptyStoryItem),
         ]);
+    };
+
+    const removeMediaItem = async (index) => {
+        const item = mediaItems[index];
+        if (!item) return;
+
+        if (item.deleteFromR2 && item.url.trim()) {
+            const confirmed = window.confirm("Permanently delete this file from R2 now? This cannot be undone.");
+            if (!confirmed) return;
+
+            try {
+                await deleteMediaObject(item.url.trim());
+            } catch (error) {
+                alert(error.response?.data?.detail || "Could not delete the file from R2.");
+                return;
+            }
+        }
+
+        setMediaItems((items) => items.filter((_, itemIndex) => itemIndex !== index));
     };
 
     const generateStoryItemUrls = () => {
@@ -271,7 +291,7 @@ export default function CreatePost() {
             <form className="eventform-form" onSubmit={submit}>
 
                 <div className="eventform-section">
-                    <label>Platform:</label>
+                    <label>Platform</label>
                     <select
                         value={platform}
                         disabled={!!parent_id}
@@ -285,7 +305,7 @@ export default function CreatePost() {
 
                 {platform === "ig" && !parent_id && (
                     <div className="eventform-section">
-                        <label>Instagram content type:</label>
+                        <label>Instagram Content Type</label>
                         <select value={contentType} onChange={(e) => {
                             const next = e.target.value;
                             setContentType(next);
@@ -300,9 +320,9 @@ export default function CreatePost() {
 
                 <div className="eventform-section eventform-author-date-row">
                     <div>
-                        <label>Author:</label>
+                        <label>Author <span className="form-required">*</span></label>
                         <select value={author} onChange={(e) => setAuthor(e.target.value)}>
-                            <option value="">-- select author --</option>
+                            <option value="">-- Select Author --</option>
                             {authors.map((a) => (
                                 <option key={a.id} value={a.name}>{a.name}</option>
                             ))}
@@ -310,7 +330,7 @@ export default function CreatePost() {
                         </select>
                     </div>
                     <div>
-                        <label>Posted At:</label>
+                        <label>Posted At <span className="form-required">*</span></label>
                         <div className="eventform-date-row">
                             <input type="date" value={posted_at} onChange={(e) => setPostedAt(e.target.value)} />
                             <label className="eventform-today-toggle">
@@ -328,7 +348,7 @@ export default function CreatePost() {
                 {author === "__new__" && (
                     <>
                         <div className="eventform-section">
-                            <label>New Author Name:</label>
+                            <label>New Author Name <span className="form-required">*</span></label>
                             <input
                                 type="text"
                                 value={newAuthorName}
@@ -338,7 +358,7 @@ export default function CreatePost() {
                         </div>
 
                         <div className="eventform-section">
-                            <label>Profile Photo URL (optional):</label>
+                            <label>Profile Photo URL <span className="form-optional">(optional)</span></label>
                             <input
                                 type="text"
                                 value={newAuthorPhoto}
@@ -348,7 +368,7 @@ export default function CreatePost() {
                         </div>
 
                         <div className="eventform-section">
-                            <label>Instagram PFP URL (optional):</label>
+                            <label>Instagram Profile Photo URL <span className="form-optional">(optional)</span></label>
                             <input
                                 type="text"
                                 value={newAuthorInstagramPhoto}
@@ -358,7 +378,7 @@ export default function CreatePost() {
                         </div>
 
                         <div className="eventform-section">
-                            <label>Instagram URL (optional):</label>
+                            <label>Instagram Profile URL <span className="form-optional">(optional)</span></label>
                             <input
                                 type="text"
                                 value={newAuthorInstagramURL}
@@ -368,7 +388,7 @@ export default function CreatePost() {
                         </div>
 
                         <div className="eventform-section">
-                            <label>Twitter / X PFP URL (optional):</label>
+                            <label>X Profile Photo URL <span className="form-optional">(optional)</span></label>
                             <input
                                 type="text"
                                 value={newAuthorTwitterPhoto}
@@ -378,7 +398,7 @@ export default function CreatePost() {
                         </div>
 
                         <div className="eventform-section">
-                            <label>Twitter / X URL (optional):</label>
+                            <label>X Profile URL <span className="form-optional">(optional)</span></label>
                             <input
                                 type="text"
                                 value={newAuthorTwitterURL}
@@ -388,7 +408,7 @@ export default function CreatePost() {
                         </div>
 
                         <div className="eventform-section">
-                            <label>TikTok PFP URL (optional):</label>
+                            <label>TikTok Profile Photo URL <span className="form-optional">(optional)</span></label>
                             <input
                                 type="text"
                                 value={newAuthorTikTokPhoto}
@@ -400,7 +420,7 @@ export default function CreatePost() {
                 )}
 
                 <div className="eventform-section">
-                    <label>Post URL:</label>
+                    <label>Post URL</label>
                     <input
                         value={external_url}
                         onChange={(e) => setExternalURL(e.target.value)}
@@ -410,31 +430,31 @@ export default function CreatePost() {
                 </div>
 
                 <div className="eventform-section">
-                    <label>Caption / Tweet Text:</label>
+                    <label>Caption / Tweet Text</label>
                     <AutoResizeTextarea
                         value={caption}
                         onChange={(e) => setCaption(e.target.value)}
-                        placeholder="Optional original caption"
+                        placeholder="Enter the original caption"
                         style={{ minHeight: 80 }}
                     />
                 </div>
 
                 <div className="eventform-section">
-                    <label>Translation:</label>
+                    <label>Translation</label>
                     <AutoResizeTextarea
                         value={captionTranslation}
                         onChange={(e) => setCaptionTranslation(e.target.value)}
-                        placeholder="Optional translation"
+                        placeholder="Enter a translation"
                         style={{ minHeight: 80 }}
                     />
                 </div>
 
                 <div className="eventform-section">
-                    <label>Translator's note (optional):</label>
+                    <label>Translator's Note <span className="form-optional">(optional)</span></label>
                     <AutoResizeTextarea
                         value={captionTranslationNote}
                         onChange={(e) => setCaptionTranslationNote(e.target.value)}
-                        placeholder="e.g. slang, context, nuance…"
+                        placeholder="For example: slang, context, or nuance"
                         style={{ minHeight: 80 }}
                     />
                 </div>
@@ -477,18 +497,39 @@ export default function CreatePost() {
                                                 const detectedDate = detectMediaDate(pastedUrl);
                                                 if (detectedDate) setPostedAt(detectedDate);
                                             }}
-                                            placeholder={contentType === "broadcast" ? "Photo or screenshot URL (optional)" : `Media URL #${i + 1}`}
+                                            placeholder={contentType === "broadcast" ? "Photo or screenshot URL" : `Media URL ${i + 1}`}
                                         />
-                                        {mediaItems.length > 1 && (
-                                            <button
-                                                type="button"
-                                                onClick={() => setMediaItems(mediaItems.filter((_, j) => j !== i))}
-                                                style={{ color: "red", background: "none", border: "1px solid red", borderRadius: 4, cursor: "pointer", padding: "0 8px" }}
-                                            >
-                                                ✕
-                                            </button>
+                                        {isFromR2(item.url) && (
+                                            <label className="r2-delete-toggle" title="Also delete this file from R2 when removed">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={item.deleteFromR2 || false}
+                                                    onChange={(event) => {
+                                                        const next = [...mediaItems];
+                                                        next[i] = { ...next[i], deleteFromR2: event.target.checked };
+                                                        setMediaItems(next);
+                                                    }}
+                                                />
+                                                <span>R2</span>
+                                            </label>
                                         )}
+                                        <button
+                                            type="button"
+                                            onClick={() => removeMediaItem(i)}
+                                            className="form-remove-button"
+                                            aria-label={`Remove media ${i + 1}`}
+                                            title="Remove media"
+                                        >
+                                            <svg viewBox="0 0 24 24" aria-hidden="true">
+                                                <path d="M6 6l12 12M18 6L6 18" />
+                                            </svg>
+                                        </button>
                                     </div>
+                                    {item.deleteFromR2 && (
+                                        <div className="r2-delete-warning">
+                                            Warning: clicking X will permanently delete this file from R2 immediately.
+                                        </div>
+                                    )}
                                     {contentType === "broadcast" && item.url.trim() && (
                                         <select
                                             value={item.attachment_type || "screenshot"}
@@ -511,7 +552,7 @@ export default function CreatePost() {
                                             next[i] = { ...next[i], text: e.target.value };
                                             setMediaItems(next);
                                         }}
-                                        placeholder={contentType === "broadcast" ? "Message text" : "Text (optional)"}
+                                        placeholder={contentType === "broadcast" ? "Message text" : "Enter text"}
                                         style={{ width: "100%", minHeight: 56, marginBottom: 4, boxSizing: "border-box" }}
                                     />
                                     <AutoResizeTextarea
@@ -521,7 +562,7 @@ export default function CreatePost() {
                                             next[i] = { ...next[i], translation: e.target.value };
                                             setMediaItems(next);
                                         }}
-                                        placeholder="Translation (optional)"
+                                        placeholder="Enter a translation"
                                         style={{ width: "100%", minHeight: 56, marginBottom: 4, boxSizing: "border-box" }}
                                     />
                                     <AutoResizeTextarea
@@ -531,7 +572,7 @@ export default function CreatePost() {
                                             next[i] = { ...next[i], note: e.target.value };
                                             setMediaItems(next);
                                         }}
-                                        placeholder="Translator's note (optional)"
+                                        placeholder="Add translation context"
                                         style={{ width: "100%", minHeight: 56, marginBottom: 4, boxSizing: "border-box" }}
                                     />
                                 </div>
@@ -571,7 +612,7 @@ export default function CreatePost() {
                         </>
                     ) : (
                         <>
-                            <label>Media URL (optional):</label>
+                            <label>Media URL <span className="form-optional">(optional)</span></label>
                             <R2MediaUploader
                                 author={author === "__new__" ? newAuthorName : author}
                                 postedAt={posted_at}
@@ -620,7 +661,7 @@ export default function CreatePost() {
                 </div>
 
                 <div className="eventform-section">
-                    <button type="submit">
+                    <button type="submit" className="form-primary-submit">
                         {parent_id ? "Save Reply" : "Save Post"}
                     </button>
                 </div>

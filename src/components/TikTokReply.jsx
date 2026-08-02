@@ -161,26 +161,26 @@ export default function TikTokReply({ reply }) {
 
             {isEditing && (
                 <div className="igreply-edit">
-                    <label>Caption:</label>
+                    <label>Caption</label>
                     <textarea
                         value={editCaption}
                         onChange={(e) => setEditCaption(e.target.value)}
                         rows={3}
                     />
 
-                    <label>Translation:</label>
+                    <label>Translation</label>
                     <textarea
                         value={editTranslation}
                         onChange={(e) => setEditTranslation(e.target.value)}
                         rows={3}
                     />
 
-                    <label>Translator's note (optional):</label>
+                    <label>Translator's Note <span className="form-optional">(optional)</span></label>
                     <input
                         type="text"
                         value={editNote}
                         onChange={(e) => setEditNote(e.target.value)}
-                        placeholder="e.g. slang, context, nuance…"
+                        placeholder="For example: slang, context, or nuance"
                     />
 
                     <div className="igreply-edit-buttons">

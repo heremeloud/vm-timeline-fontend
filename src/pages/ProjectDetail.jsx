@@ -160,7 +160,7 @@ export default function ProjectDetail() {
                     {(project.start_date || project.year) && (
                         <div className="project-card-year">
                             {project.start_date
-                                ? project.start_date + (project.end_date ? ` – ${project.end_date}` : "")
+                                ? project.start_date + (project.end_date ? ` to ${project.end_date}` : "")
                                 : project.year}
                         </div>
                     )}
@@ -430,7 +430,7 @@ export default function ProjectDetail() {
                                 <div key={ev.id}>
                                     <Link to={ROUTES.eventDetail(ev.id)} className="project-detail-event-item">
                                         <span className="project-detail-event-date">
-                                            {formatEventDateRange(ev, "—")}
+                                            {formatEventDateRange(ev, "to")}
                                         </span>
                                         <span className="project-detail-event-name">{ev.english_name || ev.name}</span>
                                         {ev.category && (
@@ -444,7 +444,7 @@ export default function ProjectDetail() {
                                             {children.map((child) => (
                                                 <Link key={child.id} to={ROUTES.eventDetail(child.id)} className="project-detail-event-item project-detail-event-child">
                                                     <span className="project-detail-event-date">
-                                                        {formatEventDateRange(child, "—")}
+                                                        {formatEventDateRange(child, "to")}
                                                     </span>
                                                     <span className="project-detail-event-name">{child.english_name || child.name}</span>
                                                     {child.category && (

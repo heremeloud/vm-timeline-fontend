@@ -6,55 +6,78 @@ export default function FocalPointPicker({ imageUrl, x, y, onChange }) {
     const focalX = x ?? 50;
     const focalY = y ?? 50;
 
+    const setFocusFromPointer = (event) => {
+        const bounds = event.currentTarget.getBoundingClientRect();
+        const nextX = Math.max(0, Math.min(100, ((event.clientX - bounds.left) / bounds.width) * 100));
+        const nextY = Math.max(0, Math.min(100, ((event.clientY - bounds.top) / bounds.height) * 100));
+        onChange(Math.round(nextX), Math.round(nextY));
+    };
+
     return (
         <div className="focal-point-picker">
-            <div className="focal-point-preview">
-                <img
-                    src={imageUrl}
-                    alt=""
-                    style={{ objectPosition: `${focalX}% ${focalY}%` }}
-                />
+            <div className="focal-point-picker-heading">
+                <div>
+                    <strong>Display Focus</strong>
+                    <p>Click the preview or use the sliders to choose which part stays visible.</p>
+                </div>
+                <span>{Math.round(focalX)}% X, {Math.round(focalY)}% Y</span>
             </div>
 
-            <div className="focal-point-sliders">
-                <label>
-                    Horizontal focus: {Math.round(focalX)}%
-                    <input
-                        type="range"
-                        min={0}
-                        max={100}
-                        value={focalX}
-                        onChange={(e) => onChange(Number(e.target.value), focalY)}
+            <div className="focal-point-picker-body">
+                <button
+                    type="button"
+                    className="focal-point-preview"
+                    onClick={setFocusFromPointer}
+                    aria-label="Choose the image display focus"
+                >
+                    <img
+                        src={imageUrl}
+                        alt="Display focus preview"
+                        style={{ objectPosition: `${focalX}% ${focalY}%` }}
                     />
-                </label>
-
-                <label>
-                    Vertical focus: {Math.round(focalY)}%
-                    <input
-                        type="range"
-                        min={0}
-                        max={100}
-                        value={focalY}
-                        onChange={(e) => onChange(focalX, Number(e.target.value))}
+                    <span
+                        className="focal-point-marker"
+                        style={{ left: `${focalX}%`, top: `${focalY}%` }}
+                        aria-hidden="true"
                     />
-                </label>
+                    <span className="focal-point-preview-hint">Click to reposition</span>
+                </button>
 
-                <div className="focal-point-presets">
-                    <button
-                        type="button"
-                        className="focal-point-reset"
-                        onClick={() => onChange(50, 50)}
-                    >
-                        Reset to center
-                    </button>
+                <div className="focal-point-sliders">
+                    <label>
+                        <span>Horizontal <b>{Math.round(focalX)}%</b></span>
+                        <input
+                            type="range"
+                            min={0}
+                            max={100}
+                            value={focalX}
+                            onChange={(e) => onChange(Number(e.target.value), focalY)}
+                        />
+                    </label>
 
-                    <button
-                        type="button"
-                        className="focal-point-reset"
-                        onClick={() => onChange(focalX, 80)}
-                    >
-                        Focus lower (80%)
-                    </button>
+                    <label>
+                        <span>Vertical <b>{Math.round(focalY)}%</b></span>
+                        <input
+                            type="range"
+                            min={0}
+                            max={100}
+                            value={focalY}
+                            onChange={(e) => onChange(focalX, Number(e.target.value))}
+                        />
+                    </label>
+
+                    <div className="focal-point-presets">
+                        <button type="button" className="focal-point-reset" onClick={() => onChange(50, 25)}>
+                            Focus Top
+                        </button>
+                        <button type="button" className="focal-point-reset" onClick={() => onChange(50, 50)}>
+                            Focus Center
+                        </button>
+
+                        <button type="button" className="focal-point-reset" onClick={() => onChange(50, 80)}>
+                            Focus Lower
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>

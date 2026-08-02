@@ -99,7 +99,7 @@ export default function IGReply({ reply }) {
                                 ) : main.author_name} :
                             </div>
 
-                            {/* Caption — only show if exists */}
+                            {/* Only show the caption if it exists. */}
                             {!main.media_url && main.content && (
                                 <div className="igreply-caption">
                                     {main.content}
@@ -192,29 +192,29 @@ export default function IGReply({ reply }) {
             {/* EDIT MODE */}
             {isEditing && (
                 <div className="igreply-edit">
-                    <label>Caption:</label>
+                    <label>Caption</label>
                     <textarea
                         value={editCaption}
                         onChange={(e) => setEditCaption(e.target.value)}
                         rows={3}
                     />
 
-                    <label>Translation:</label>
+                    <label>Translation</label>
                     <textarea
                         value={editTranslation}
                         onChange={(e) => setEditTranslation(e.target.value)}
                         rows={3}
                     />
 
-                    <label>Translator's note (optional):</label>
+                    <label>Translator's Note <span className="form-optional">(optional)</span></label>
                     <input
                         type="text"
                         value={editNote}
                         onChange={(e) => setEditNote(e.target.value)}
-                        placeholder="e.g. slang, context, nuance…"
+                        placeholder="For example: slang, context, or nuance"
                     />
 
-                    <label>Media URL (optional):</label>
+                    <label>Media URL <span className="form-optional">(optional)</span></label>
                     <input
                         type="url"
                         value={editMediaURL}

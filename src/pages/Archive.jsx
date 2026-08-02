@@ -142,15 +142,15 @@ function ProfileCard({ author: initialAuthor, defaultPhoto, thaiFullName, fcIcon
                         <input type="date" value={draft.birthday} onChange={(e) => setDraft({ ...draft, birthday: e.target.value })} />
                     </div>
                     <div className="archive-edit-row">
-                        <label>Instagram PFP URL</label>
+                        <label>Instagram Profile Photo URL</label>
                         <input value={draft.ig_pfp_url} onChange={(e) => setDraft({ ...draft, ig_pfp_url: e.target.value })} placeholder="https://..." />
                     </div>
                     <div className="archive-edit-row">
-                        <label>Twitter / X PFP URL</label>
+                        <label>X Profile Photo URL</label>
                         <input value={draft.twitter_pfp_url} onChange={(e) => setDraft({ ...draft, twitter_pfp_url: e.target.value })} placeholder="https://..." />
                     </div>
                     <div className="archive-edit-row">
-                        <label>TikTok PFP URL</label>
+                        <label>TikTok Profile Photo URL</label>
                         <input value={draft.tiktok_pfp_url} onChange={(e) => setDraft({ ...draft, tiktok_pfp_url: e.target.value })} placeholder="https://..." />
                     </div>
                     {SOCIAL_FIELDS.map(({ key, label, placeholder }) => (

@@ -99,13 +99,13 @@ export default function PostCard({ post, showReplies = true, eventTagIndex = nul
         };
     }, [post.id, isTwitter, showReplies]);
 
-    // IG replies — flat list (translation + note live on the same record)
+    // IG replies: flat list (translation + note live on the same record)
     const igReplies = useMemo(() => {
         if (!isInstagram) return [];
         return comments.filter((c) => c.type === "ig-reply");
     }, [comments, isInstagram]);
 
-    // TikTok replies — flat list
+    // TikTok replies: flat list
     const ttReplies = useMemo(() => {
         if (!isTikTok) return [];
         return comments.filter((c) => c.type === "tt-reply");

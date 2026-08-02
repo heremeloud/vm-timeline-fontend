@@ -169,7 +169,7 @@ export default function EditProject() {
             <form id="edit-project-form" className="eventform-form" onSubmit={save}>
 
                 <div className="eventform-section">
-                    <label>Title *</label>
+                    <label>Title <span className="form-required">*</span></label>
                     <input
                         value={title}
                         onChange={(e) => {
@@ -193,7 +193,7 @@ export default function EditProject() {
                 </div>
 
                 <div className="eventform-section">
-                    <label>URL slug</label>
+                    <label>URL Slug</label>
                     <input
                         value={slug}
                         onChange={(e) => setSlug(slugify(e.target.value))}
@@ -207,11 +207,34 @@ export default function EditProject() {
                 <div className="eventform-section">
                     <label>Category</label>
                     <select value={category} onChange={(e) => setCategory(e.target.value)}>
-                        <option value="">- none -</option>
+                        <option value="">-- None --</option>
                         {PROJECT_CATEGORIES.map((c) => (
                             <option key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</option>
                         ))}
                     </select>
+                </div>
+
+                <div className="eventform-section">
+                    <label>Part of Project <span style={{ fontWeight: 400, opacity: 0.6 }}>(optional - e.g. OST of a series)</span></label>
+                    <select value={parentProjectId} onChange={(e) => setParentProjectId(e.target.value)}>
+                        <option value="">-- None --</option>
+                        {allProjects.filter((p) => String(p.id) !== projectId).map((p) => (
+                            <option key={p.id} value={p.id}>{p.title}</option>
+                        ))}
+                    </select>
+                </div>
+
+                <div className="eventform-section project-year-dates-row">
+                    <div>
+                        <label>Year</label>
+                        <input type="number" value={year} onChange={(e) => setYear(e.target.value)} placeholder="2024" />
+                    </div>
+                    <div>
+                        <div className="project-date-inputs">
+                            <div><label>Project Dates <span style={{ fontWeight: 400 }}>Start Date</span></label><input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} /></div>
+                            <div><label style={{ fontWeight: 400 }}>End Date <span style={{ opacity: 0.6 }}>(optional)</span></label><input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} /></div>
+                        </div>
+                    </div>
                 </div>
 
                 {category === "series" && (
@@ -288,35 +311,6 @@ export default function EditProject() {
                 )}
 
                 <div className="eventform-section">
-                    <label>Part of Project <span style={{ fontWeight: 400, opacity: 0.6 }}>(optional - e.g. OST of a series)</span></label>
-                    <select value={parentProjectId} onChange={(e) => setParentProjectId(e.target.value)}>
-                        <option value="">- none -</option>
-                        {allProjects.filter((p) => String(p.id) !== projectId).map((p) => (
-                            <option key={p.id} value={p.id}>{p.title}</option>
-                        ))}
-                    </select>
-                </div>
-
-                <div className="eventform-section">
-                    <label>Year</label>
-                    <input type="number" value={year} onChange={(e) => setYear(e.target.value)} placeholder="2024" style={{ width: 120 }} />
-                </div>
-
-                <div className="eventform-section">
-                    <label>Project Dates</label>
-                    <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-                        <div>
-                            <label style={{ fontWeight: 400 }}>Start Date</label>
-                            <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} style={{ width: 180 }} />
-                        </div>
-                        <div>
-                            <label style={{ fontWeight: 400 }}>End Date <span style={{ opacity: 0.6 }}>(optional)</span></label>
-                            <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} style={{ width: 180 }} />
-                        </div>
-                    </div>
-                </div>
-
-                <div className="eventform-section">
                     <label>Description</label>
                     <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={3} />
                 </div>
@@ -332,7 +326,7 @@ export default function EditProject() {
                                     next[i] = { ...next[i], name: e.target.value };
                                     setPlaylists(next);
                                 }}
-                                placeholder="Name (optional)"
+                                placeholder="Enter a display name"
                                 style={{ flex: 1 }}
                             />
                             <input
@@ -400,7 +394,7 @@ export default function EditProject() {
                 </div>
 
                 <div className="eventform-section">
-                    <button type="submit">Save Changes</button>
+                    <button type="submit" className="form-primary-submit">Save Changes</button>
                 </div>
 
             </form>

@@ -1,65 +1,190 @@
 .focal-point-picker {
-    display: flex;
-    gap: 16px;
-    align-items: flex-start;
     margin-top: 10px;
-    flex-wrap: wrap;
+    padding: 9px;
+    border: 1px solid rgba(166, 124, 82, 0.3);
+    border-radius: 12px;
+    background: rgba(166, 124, 82, 0.07);
 }
 
-.focal-point-preview {
-    flex: 0 0 200px;
-    width: 200px;
-    aspect-ratio: 4 / 3;
-    border-radius: 8px;
+.focal-point-picker-heading {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.focal-point-picker-heading strong {
+    color: #3f352d;
+    font-size: 1rem;
+}
+
+.focal-point-picker-heading p {
+    margin: 3px 0 0;
+    color: #756b63;
+    font-size: 0.82rem;
+    line-height: 1.4;
+}
+
+.focal-point-picker-heading > span {
+    flex: 0 0 auto;
+    padding: 4px 7px;
+    border-radius: 999px;
+    background: rgba(166, 124, 82, 0.14);
+    color: #79512e;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.focal-point-picker-body {
+    display: grid;
+    grid-template-columns: minmax(220px, 0.85fr) minmax(240px, 1.15fr);
+    gap: 16px;
+    align-items: center;
+}
+
+.eventform-form .focal-point-preview {
+    position: relative;
+    display: block;
+    width: 100%;
+    min-height: 0;
+    padding: 0;
+    aspect-ratio: 16 / 10;
     overflow: hidden;
-    border: 1px solid rgba(0, 0, 0, 0.15);
-    background: #eadfce;
+    border: 1px solid rgba(166, 124, 82, 0.35);
+    border-radius: 10px;
+    background: #211e1b;
+    cursor: crosshair;
+    box-shadow: 0 2px 8px rgba(65, 42, 25, 0.12);
+}
+
+.eventform-form .focal-point-preview:hover,
+.eventform-form .focal-point-preview:focus-visible {
+    opacity: 1;
+    border-color: #a67c52;
+    outline: none;
 }
 
 .focal-point-preview img {
+    display: block;
     width: 100%;
     height: 100%;
     object-fit: cover;
 }
 
+.focal-point-marker {
+    position: absolute;
+    width: 22px;
+    height: 22px;
+    border: 2px solid #fff;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(149, 88, 3, 0.62);
+    box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.35);
+    pointer-events: none;
+}
+
+.focal-point-marker::before,
+.focal-point-marker::after {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    content: "";
+    background: #fff;
+    transform: translate(-50%, -50%);
+}
+
+.focal-point-marker::before {
+    width: 10px;
+    height: 1px;
+}
+
+.focal-point-marker::after {
+    width: 1px;
+    height: 10px;
+}
+
+.focal-point-preview-hint {
+    position: absolute;
+    right: 8px;
+    bottom: 8px;
+    padding: 3px 6px;
+    border-radius: 5px;
+    background: rgba(0, 0, 0, 0.68);
+    color: #fff;
+    font-size: 0.7rem;
+    font-weight: 500;
+    pointer-events: none;
+}
+
 .focal-point-sliders {
-    flex: 1;
-    min-width: 200px;
     display: flex;
+    min-width: 0;
     flex-direction: column;
-    gap: 10px;
+    gap: 14px;
 }
 
-.focal-point-sliders label {
+.eventform-form .focal-point-sliders label {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    margin: 0;
+    color: #5b4d43;
+    font-size: 0.84rem;
     font-weight: 600;
-    font-size: 0.85rem;
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
 }
 
-.focal-point-sliders input[type="range"] {
+.focal-point-sliders label > span {
+    display: flex;
+    justify-content: space-between;
+}
+
+.focal-point-sliders label b {
+    color: #79512e;
+    font-size: 0.8rem;
+}
+
+.eventform-form .focal-point-sliders input[type="range"] {
     width: 100%;
+    height: 5px;
+    margin: 0;
+    accent-color: #955803;
+    cursor: pointer;
 }
 
 .focal-point-presets {
     display: flex;
-    gap: 8px;
+    gap: 7px;
     flex-wrap: wrap;
 }
 
-.focal-point-reset {
-    align-self: flex-start;
-    padding: 5px 10px;
-    font-size: 0.8rem;
-    font-weight: 600;
-    border-radius: 6px;
+.eventform-form .focal-point-reset {
+    padding: 6px 9px;
     border: 1px solid #a67c52;
-    background: #fff;
-    color: #a67c52;
-    cursor: pointer;
+    border-radius: 7px;
+    background: transparent;
+    color: #79512e;
+    font-size: 0.78rem;
+    font-weight: 600;
 }
 
-.focal-point-reset:hover {
-    background: #f5ece1;
+.eventform-form .focal-point-reset:hover {
+    background: rgba(166, 124, 82, 0.12);
+    color: #5f3d20;
+    opacity: 1;
+}
+
+@media (max-width: 640px) {
+    .focal-point-picker-body {
+        grid-template-columns: 1fr;
+    }
+
+    .focal-point-picker-heading {
+        display: block;
+    }
+
+    .focal-point-picker-heading > span {
+        display: inline-block;
+        margin-top: 8px;
+    }
 }

@@ -71,7 +71,7 @@ export default function Projects() {
                 <div className="filter-group">
                     <label>Category</label>
                     <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)}>
-                        <option value="">All</option>
+                        <option value="">-- All --</option>
                         {PROJECT_CATEGORIES.map((c) => (
                             <option key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</option>
                         ))}

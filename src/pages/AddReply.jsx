@@ -173,9 +173,9 @@ export default function AddReply() {
             <form className="eventform-form" onSubmit={submit}>
 
                 <div className="eventform-section">
-                    <label>Author:</label>
+                    <label>Author <span className="form-required">*</span></label>
                     <select value={author} onChange={(e) => setAuthor(e.target.value)}>
-                        <option value="">-- select author --</option>
+                        <option value="">-- Select Author --</option>
                         {authors.map((a) => (
                             <option key={a.id} value={a.name}>{a.name}</option>
                         ))}
@@ -186,7 +186,7 @@ export default function AddReply() {
                 {author === "__new__" && (
                     <>
                         <div className="eventform-section">
-                            <label>New Author Name:</label>
+                            <label>New Author Name <span className="form-required">*</span></label>
                             <input
                                 type="text"
                                 value={newAuthorName}
@@ -196,7 +196,7 @@ export default function AddReply() {
                         </div>
 
                         <div className="eventform-section">
-                            <label>Profile Photo URL (optional):</label>
+                            <label>Profile Photo URL <span className="form-optional">(optional)</span></label>
                             <input
                                 type="text"
                                 value={newAuthorPhoto}
@@ -206,7 +206,7 @@ export default function AddReply() {
                         </div>
 
                         <div className="eventform-section">
-                            <label>Instagram PFP URL (optional):</label>
+                            <label>Instagram Profile Photo URL <span className="form-optional">(optional)</span></label>
                             <input
                                 type="text"
                                 value={newAuthorInstagramPhoto}
@@ -216,7 +216,7 @@ export default function AddReply() {
                         </div>
 
                         <div className="eventform-section">
-                            <label>Instagram URL (optional):</label>
+                            <label>Instagram Profile URL <span className="form-optional">(optional)</span></label>
                             <input
                                 type="text"
                                 value={newAuthorInstagramURL}
@@ -226,7 +226,7 @@ export default function AddReply() {
                         </div>
 
                         <div className="eventform-section">
-                            <label>Twitter / X PFP URL (optional):</label>
+                            <label>X Profile Photo URL <span className="form-optional">(optional)</span></label>
                             <input
                                 type="text"
                                 value={newAuthorTwitterPhoto}
@@ -236,7 +236,7 @@ export default function AddReply() {
                         </div>
 
                         <div className="eventform-section">
-                            <label>Twitter / X URL (optional):</label>
+                            <label>X Profile URL <span className="form-optional">(optional)</span></label>
                             <input
                                 type="text"
                                 value={newAuthorTwitterURL}
@@ -246,7 +246,7 @@ export default function AddReply() {
                         </div>
 
                         <div className="eventform-section">
-                            <label>TikTok PFP URL (optional):</label>
+                            <label>TikTok Profile Photo URL <span className="form-optional">(optional)</span></label>
                             <input
                                 type="text"
                                 value={newAuthorTikTokPhoto}
@@ -258,7 +258,7 @@ export default function AddReply() {
                 )}
 
                 <div className="eventform-section">
-                    <label>Reply Date:</label>
+                    <label>Reply Date <span className="form-required">*</span></label>
                     <input
                         type="date"
                         value={postedAt}
@@ -271,7 +271,7 @@ export default function AddReply() {
                 {isInstagram && (
                     <>
                         <div className="eventform-section">
-                            <label>IG Comment (caption): *</label>
+                            <label>Instagram Comment <span className="form-required">*</span></label>
                             <textarea
                                 value={caption}
                                 onChange={(e) => setCaption(e.target.value)}
@@ -280,7 +280,7 @@ export default function AddReply() {
                         </div>
 
                         <div className="eventform-section">
-                            <label>Optional Translation:</label>
+                            <label>Translation <span className="form-optional">(optional)</span></label>
                             <textarea
                                 value={translation}
                                 onChange={(e) => setTranslation(e.target.value)}
@@ -289,17 +289,17 @@ export default function AddReply() {
                         </div>
 
                         <div className="eventform-section">
-                            <label>Translator's note (optional):</label>
+                            <label>Translator's Note <span className="form-optional">(optional)</span></label>
                             <input
                                 type="text"
                                 value={translationNote}
                                 onChange={(e) => setTranslationNote(e.target.value)}
-                                placeholder="e.g. slang, context, nuance…"
+                                placeholder="For example: slang, context, or nuance"
                             />
                         </div>
 
                         <div className="eventform-section">
-                            <label>Optional Media URL:</label>
+                            <label>Media URL <span className="form-optional">(optional)</span></label>
                             <input
                                 type="text"
                                 value={mediaURL}
@@ -314,7 +314,7 @@ export default function AddReply() {
                 {isTikTok && (
                     <>
                         <div className="eventform-section">
-                            <label>TikTok Reply (caption): *</label>
+                            <label>TikTok Reply <span className="form-required">*</span></label>
                             <textarea
                                 value={caption}
                                 onChange={(e) => setCaption(e.target.value)}
@@ -323,7 +323,7 @@ export default function AddReply() {
                         </div>
 
                         <div className="eventform-section">
-                            <label>Optional Translation:</label>
+                            <label>Translation <span className="form-optional">(optional)</span></label>
                             <textarea
                                 value={translation}
                                 onChange={(e) => setTranslation(e.target.value)}
@@ -332,17 +332,17 @@ export default function AddReply() {
                         </div>
 
                         <div className="eventform-section">
-                            <label>Translator's note (optional):</label>
+                            <label>Translator's Note <span className="form-optional">(optional)</span></label>
                             <input
                                 type="text"
                                 value={translationNote}
                                 onChange={(e) => setTranslationNote(e.target.value)}
-                                placeholder="e.g. slang, context, nuance…"
+                                placeholder="For example: slang, context, or nuance"
                             />
                         </div>
 
                         <div className="eventform-section">
-                            <label>Optional Media URL:</label>
+                            <label>Media URL <span className="form-optional">(optional)</span></label>
                             <input
                                 type="text"
                                 value={mediaURL}
@@ -357,7 +357,7 @@ export default function AddReply() {
                 {isTwitter && (
                     <>
                         <div className="eventform-section">
-                            <label>Tweet URL: *</label>
+                            <label>Tweet URL <span className="form-required">*</span></label>
                             <input
                                 type="text"
                                 value={tweetURL}
@@ -375,7 +375,7 @@ export default function AddReply() {
                         </div>
 
                         <div className="eventform-section">
-                            <label>Tweet Text (caption): *</label>
+                            <label>Tweet Text <span className="form-required">*</span></label>
                             <textarea
                                 value={caption}
                                 onChange={(e) => setCaption(e.target.value)}
@@ -384,7 +384,7 @@ export default function AddReply() {
                         </div>
 
                         <div className="eventform-section">
-                            <label>Optional Translation:</label>
+                            <label>Translation <span className="form-optional">(optional)</span></label>
                             <textarea
                                 value={translation}
                                 onChange={(e) => setTranslation(e.target.value)}
@@ -393,17 +393,17 @@ export default function AddReply() {
                         </div>
 
                         <div className="eventform-section">
-                            <label>Translator's note (optional):</label>
+                            <label>Translator's Note <span className="form-optional">(optional)</span></label>
                             <input
                                 type="text"
                                 value={translationNote}
                                 onChange={(e) => setTranslationNote(e.target.value)}
-                                placeholder="e.g. slang, context, nuance…"
+                                placeholder="For example: slang, context, or nuance"
                             />
                         </div>
 
                         <div className="eventform-section">
-                            <label>Optional Media URL:</label>
+                            <label>Media URL <span className="form-optional">(optional)</span></label>
                             <input
                                 type="text"
                                 value={mediaURL}
@@ -415,7 +415,7 @@ export default function AddReply() {
                 )}
 
                 <div className="eventform-section">
-                    <button type="submit">Save Reply</button>
+                    <button type="submit" className="form-primary-submit">Save Reply</button>
                 </div>
 
             </form>

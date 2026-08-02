@@ -228,7 +228,7 @@ export default function InstagramEmbed({
                 {author_name}
                 {allItems.length > 1 && (
                     <span
-                        style={{ fontWeight: 400, fontSize: "0.8rem", marginLeft: 8, opacity: 0.6 }}
+                        style={{ fontWeight: 400, fontSize: "0.8rem", opacity: 0.6, lineHeight: 1 }}
                         aria-live="polite"
                     >
                         {storyIndex + 1} / {allItems.length} stories
@@ -254,14 +254,14 @@ export default function InstagramEmbed({
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="igpost-author ig-author-link"
-                                    style={{ fontWeight: 600, marginBottom: 6 }}
+                                    style={{ display: "flex", alignItems: "baseline", gap: 8, flexWrap: "wrap", fontWeight: 600, marginBottom: 6 }}
                                 >
                                     {authorName}
                                 </a>
                             ) : (
                                 <div
                                 className="igpost-author"
-                                style={{ fontWeight: 600, marginBottom: 6 }}
+                                style={{ display: "flex", alignItems: "baseline", gap: 8, flexWrap: "wrap", fontWeight: 600, marginBottom: 6 }}
                             >
                                     {authorName}
                                 </div>

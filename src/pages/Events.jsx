@@ -353,7 +353,7 @@ export default function Events() {
                     <div className="filter-group">
                         <label>Artist</label>
                         <select value={authorFilter} onChange={(e) => setAuthorFilter(e.target.value)}>
-                            <option value="">All</option>
+                            <option value="">-- All --</option>
                             <option value="viewmim">ViewMim</option>
                             <option value="view">View</option>
                             <option value="mim">Mim</option>
@@ -372,7 +372,7 @@ export default function Events() {
                                 setSubcategoryFilter(nextSubcategory);
                             }}
                         >
-                            <option value="">All</option>
+                            <option value="">-- All --</option>
                             {EVENT_CATEGORIES.flatMap((category) => {
                                 const subcategories = EVENT_SUBCATEGORIES[category.value] || [];
                                 return [

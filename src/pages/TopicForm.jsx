@@ -326,7 +326,7 @@ export default function TopicForm() {
 
             <form id={isEdit ? "edit-special-form" : undefined} className="eventform-form" onSubmit={submit}>
                 <div className="eventform-section">
-                    <label>Title</label>
+                    <label>Title <span className="form-required">*</span></label>
                     <input
                         value={title}
                         onChange={(e) => {
@@ -339,7 +339,7 @@ export default function TopicForm() {
                 </div>
 
                 <div className="eventform-section">
-                    <label>URL slug</label>
+                    <label>URL Slug</label>
                     <input
                         value={slug}
                         onChange={(e) => setSlug(slugify(e.target.value))}
@@ -356,7 +356,7 @@ export default function TopicForm() {
                 </div>
 
                 <div className="eventform-section">
-                    <label>Special order</label>
+                    <label>Special Order</label>
                     <input
                         type="number"
                         value={sortOrder}
@@ -367,7 +367,7 @@ export default function TopicForm() {
 
                 <div className="eventform-section" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12 }}>
                     <div>
-                        <label>Start date</label>
+                        <label>Start Date</label>
                         <input
                             type="date"
                             value={startDate}
@@ -376,7 +376,7 @@ export default function TopicForm() {
                     </div>
 
                     <div>
-                        <label>End date</label>
+                        <label>End Date</label>
                         <input
                             type="date"
                             value={endDate}
@@ -436,7 +436,7 @@ export default function TopicForm() {
                                 </div>
 
                                 <div>
-                                    <label>Timeline item source</label>
+                                    <label>Timeline Item Source</label>
                                     <select
                                         value={item.source || "existing"}
                                         onChange={(e) => updateItem(index, "source", e.target.value)}
@@ -453,7 +453,7 @@ export default function TopicForm() {
                                             value={item.post_id}
                                             onChange={(e) => selectExistingPost(index, e.target.value)}
                                         >
-                                            <option value="">Select saved post</option>
+                                            <option value="">-- Select Saved Post --</option>
                                             {posts.map((post) => (
                                                 <option key={post.id} value={post.id}>
                                                     {postLabel(post)}
@@ -476,12 +476,12 @@ export default function TopicForm() {
                                         </div>
 
                                         <div>
-                                            <label>Author</label>
+                                            <label>Author <span className="form-required">*</span></label>
                                             <select
                                                 value={draft.author}
                                                 onChange={(e) => updateNewPost(index, "author", e.target.value)}
                                             >
-                                                <option value="">Select author</option>
+                                                <option value="">-- Select Author --</option>
                                                 {authors.map((author) => (
                                                     <option key={author.id} value={author.name}>
                                                         {author.name}
@@ -494,14 +494,14 @@ export default function TopicForm() {
                                         {draft.author === "__new__" && (
                                             <>
                                                 <div>
-                                                    <label>New author name</label>
+                                                    <label>New Author Name <span className="form-required">*</span></label>
                                                     <input
                                                         value={draft.newAuthorName}
                                                         onChange={(e) => updateNewPost(index, "newAuthorName", e.target.value)}
                                                     />
                                                 </div>
                                                 <div>
-                                                    <label>New author photo URL</label>
+                                                    <label>New Author Photo URL</label>
                                                     <input
                                                         value={draft.newAuthorPhoto}
                                                         onChange={(e) => updateNewPost(index, "newAuthorPhoto", e.target.value)}
@@ -509,7 +509,7 @@ export default function TopicForm() {
                                                     />
                                                 </div>
                                                 <div>
-                                                    <label>New author Instagram PFP URL</label>
+                                                    <label>New Author Instagram Profile Photo URL</label>
                                                     <input
                                                         value={draft.newAuthorInstagramPhoto || ""}
                                                         onChange={(e) => updateNewPost(index, "newAuthorInstagramPhoto", e.target.value)}
@@ -517,7 +517,7 @@ export default function TopicForm() {
                                                     />
                                                 </div>
                                                 <div>
-                                                    <label>New author Instagram URL</label>
+                                                    <label>New Author Instagram Profile URL</label>
                                                     <input
                                                         value={draft.newAuthorInstagramURL || ""}
                                                         onChange={(e) => updateNewPost(index, "newAuthorInstagramURL", e.target.value)}
@@ -525,7 +525,7 @@ export default function TopicForm() {
                                                     />
                                                 </div>
                                                 <div>
-                                                    <label>New author Twitter / X PFP URL</label>
+                                                    <label>New Author X Profile Photo URL</label>
                                                     <input
                                                         value={draft.newAuthorTwitterPhoto || ""}
                                                         onChange={(e) => updateNewPost(index, "newAuthorTwitterPhoto", e.target.value)}
@@ -533,7 +533,7 @@ export default function TopicForm() {
                                                     />
                                                 </div>
                                                 <div>
-                                                    <label>New author Twitter / X URL</label>
+                                                    <label>New Author X Profile URL</label>
                                                     <input
                                                         value={draft.newAuthorTwitterURL || ""}
                                                         onChange={(e) => updateNewPost(index, "newAuthorTwitterURL", e.target.value)}
@@ -541,7 +541,7 @@ export default function TopicForm() {
                                                     />
                                                 </div>
                                                 <div>
-                                                    <label>New author TikTok PFP URL</label>
+                                                    <label>New Author TikTok Profile Photo URL</label>
                                                     <input
                                                         value={draft.newAuthorTikTokPhoto || ""}
                                                         onChange={(e) => updateNewPost(index, "newAuthorTikTokPhoto", e.target.value)}
@@ -585,7 +585,7 @@ export default function TopicForm() {
                                         </div>
 
                                         <div>
-                                            <label>Caption / text</label>
+                                            <label>Caption / Text</label>
                                             <textarea
                                                 rows={3}
                                                 value={draft.caption}
@@ -603,7 +603,7 @@ export default function TopicForm() {
                                         </div>
 
                                         <div>
-                                            <label>Translator's note</label>
+                                            <label>Translator's Note</label>
                                             <input
                                                 value={draft.caption_translation_note}
                                                 onChange={(e) => updateNewPost(index, "caption_translation_note", e.target.value)}
@@ -611,7 +611,7 @@ export default function TopicForm() {
                                         </div>
 
                                         <div>
-                                            <label>Post date</label>
+                                            <label>Post Date</label>
                                             <input
                                                 type="date"
                                                 value={draft.posted_at}
@@ -632,7 +632,7 @@ export default function TopicForm() {
 
                                 {canSelectStory && (
                                     <div>
-                                        <label>Story display</label>
+                                        <label>Story Display</label>
                                         <small style={{ display: "block", opacity: 0.7, marginBottom: 6 }}>
                                             Leave all unchecked to show all grouped stories.
                                         </small>
@@ -689,7 +689,7 @@ export default function TopicForm() {
                                 )}
 
                                 <div>
-                                    <label>Approx. posting time</label>
+                                    <label>Approx. Posting Time</label>
                                     <input
                                         type="datetime-local"
                                         value={item.happened_at}
@@ -703,7 +703,7 @@ export default function TopicForm() {
                                 </div>
 
                                 <div>
-                                    <label>Timeline label</label>
+                                    <label>Timeline Label</label>
                                     <input
                                         value={item.label}
                                         onChange={(e) => updateItem(index, "label", e.target.value)}
@@ -753,7 +753,7 @@ export default function TopicForm() {
                 </div>
 
                 <div className="eventform-section">
-                    <button type="submit">Save Special</button>
+                    <button type="submit" className="form-primary-submit">Save Special</button>
                 </div>
             </form>
         </div>

@@ -22,6 +22,12 @@ const DEFAULT_TAG_OPTIONS = [
     { key: "mim-fandom", label: "ด้อมเป็ดจิ๋ว", value: "ด้อมเป็ดจิ๋ว", defaultChecked: false, row: "mim" },
 ];
 
+const getLocalToday = () => {
+    const now = new Date();
+    const offset = now.getTimezoneOffset() * 60 * 1000;
+    return new Date(now.getTime() - offset).toISOString().slice(0, 10);
+};
+
 export default function EditEvent() {
     const { eventId } = useParams();
     const navigate = useNavigate();
@@ -215,7 +221,7 @@ export default function EditEvent() {
             <form id="edit-event-form" className="eventform-form" onSubmit={save}>
 
                 <div className="eventform-section">
-                    <label>Event Name / Thai Name: *</label>
+                    <label>Event Name / Thai Name <span className="form-required">*</span></label>
                     <input
                         value={name}
                         onChange={(e) => setName(e.target.value)}
@@ -223,7 +229,7 @@ export default function EditEvent() {
                 </div>
 
                 <div className="eventform-section">
-                    <label>English Event Name (optional):</label>
+                    <label>English Event Name <span className="form-optional">(optional)</span></label>
                     <input
                         value={englishName}
                         onChange={(e) => setEnglishName(e.target.value)}
@@ -232,25 +238,36 @@ export default function EditEvent() {
                 </div>
 
                 <div className="eventform-section">
-                    <label>Event Date (optional):</label>
-                    <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-                        <input
-                            type="date"
-                            value={startDate}
-                            onChange={(e) => setStartDate(e.target.value)}
-                            style={{ width: 180 }}
-                        />
-                        <input
-                            type="date"
-                            value={endDate}
-                            onChange={(e) => setEndDate(e.target.value)}
-                            style={{ width: 180 }}
-                        />
+                    <div className="eventform-event-date-fields">
+                        <div>
+                            <label>Start Date <span className="form-optional">(optional)</span></label>
+                            <input
+                                type="date"
+                                value={startDate}
+                                onChange={(e) => setStartDate(e.target.value)}
+                            />
+                        </div>
+                        <div>
+                            <label>End Date <span className="form-optional">(optional)</span></label>
+                            <input
+                                type="date"
+                                value={endDate}
+                                onChange={(e) => setEndDate(e.target.value)}
+                            />
+                        </div>
+                        <label className="eventform-today-toggle">
+                            <input
+                                type="checkbox"
+                                checked={startDate === getLocalToday()}
+                                onChange={(e) => setStartDate(e.target.checked ? getLocalToday() : "")}
+                            />
+                            Today
+                        </label>
                     </div>
                 </div>
 
                 <div className="eventform-section">
-                    <label>Category (optional):</label>
+                    <label>Category <span className="form-optional">(optional)</span></label>
                     <select
                         value={category}
                         onChange={(e) => {
@@ -258,7 +275,7 @@ export default function EditEvent() {
                             setSubcategory("");
                         }}
                     >
-                        <option value="">— None —</option>
+                        <option value="">-- None --</option>
                         {EVENT_CATEGORIES.map((c) => (
                             <option key={c.value} value={c.value}>{c.label}</option>
                         ))}
@@ -267,9 +284,9 @@ export default function EditEvent() {
 
                 {EVENT_SUBCATEGORIES[category]?.length > 0 && (
                     <div className="eventform-section">
-                        <label>Subcategory (optional):</label>
+                        <label>Subcategory <span className="form-optional">(optional)</span></label>
                         <select value={subcategory} onChange={(e) => setSubcategory(e.target.value)}>
-                            <option value="">— None —</option>
+                            <option value="">-- None --</option>
                             {EVENT_SUBCATEGORIES[category].map((value) => (
                                 <option key={value} value={value}>
                                     {formatEventSubcategory(value)}
@@ -280,7 +297,7 @@ export default function EditEvent() {
                 )}
 
                 <div className="eventform-section">
-                    <label>Location (optional):</label>
+                    <label>Location <span className="form-optional">(optional)</span></label>
                     <input
                         value={location}
                         onChange={(e) => setLocation(e.target.value)}
@@ -288,7 +305,7 @@ export default function EditEvent() {
                 </div>
 
                 <div className="eventform-section">
-                    <label>Keyword (optional):</label>
+                    <label>Keyword <span className="form-optional">(optional)</span></label>
                     <input
                         value={keyword}
                         onChange={(e) => setKeyword(e.target.value)}
@@ -296,7 +313,7 @@ export default function EditEvent() {
                 </div>
 
                 <div className="eventform-section">
-                    <label>Tags (comma separated):</label>
+                    <label>Tags <span className="form-optional">(optional, comma separated)</span></label>
                     <input
                         value={tagsInput}
                         onChange={(e) => setTagsInput(e.target.value)}
@@ -309,7 +326,7 @@ export default function EditEvent() {
                 </div>
 
                 <div className="eventform-section">
-                    <label>Event Photo URL (optional):</label>
+                    <label>Event Photo URL <span className="form-optional">(optional)</span></label>
                     <input
                         value={mediaURL}
                         onChange={(e) => setMediaURL(e.target.value)}
@@ -327,7 +344,7 @@ export default function EditEvent() {
                 </div>
 
                 <div className="eventform-section">
-                    <label>Announcement URLs (private, one per line):</label>
+                    <label>Announcement URLs <span className="form-optional">(optional, private, one per line)</span></label>
                     <textarea
                         value={announcementURLsInput}
                         onChange={(e) => setAnnouncementURLsInput(e.target.value)}
@@ -338,7 +355,7 @@ export default function EditEvent() {
                 </div>
 
                 <div className="eventform-section">
-                    <label>Private Notes (not shown publicly):</label>
+                    <label>Private Notes <span className="form-optional">(optional, not shown publicly)</span></label>
                     <textarea
                         value={privateNotes}
                         onChange={(e) => setPrivateNotes(e.target.value)}
@@ -348,7 +365,7 @@ export default function EditEvent() {
                 </div>
 
                 <div className="eventform-section">
-                    <label>Live URLs (optional, one per line):</label>
+                    <label>Live URLs <span className="form-optional">(optional, one per line)</span></label>
                     <textarea
                         value={liveURLsInput}
                         onChange={(e) => setLiveURLsInput(e.target.value)}
@@ -358,9 +375,9 @@ export default function EditEvent() {
                 </div>
 
                 <div className="eventform-section">
-                    <label>Part of Press Tour (optional):</label>
+                    <label>Part of Press Tour <span className="form-optional">(optional)</span></label>
                     <select value={parentEventId} onChange={(e) => setParentEventId(e.target.value)}>
-                        <option value="">— none —</option>
+                        <option value="">-- None --</option>
                         {pressTours.filter(pt => String(pt.id) !== eventId).map((pt) => (
                             <option key={pt.id} value={pt.id}>{pt.name}{formatEventDateRange(pt) ? ` (${formatEventDateRange(pt)})` : ""}</option>
                         ))}
@@ -368,9 +385,9 @@ export default function EditEvent() {
                 </div>
 
                 <div className="eventform-section">
-                    <label>Linked Project (optional):</label>
+                    <label>Linked Project <span className="form-optional">(optional)</span></label>
                     <select value={projectId} onChange={(e) => setProjectId(e.target.value)}>
-                        <option value="">— none —</option>
+                        <option value="">-- None --</option>
                         {projects.map((p) => (
                             <option key={p.id} value={p.id}>{p.title}{p.year ? ` (${p.year})` : ""}</option>
                         ))}
@@ -378,7 +395,7 @@ export default function EditEvent() {
                 </div>
 
                 <div className="eventform-section">
-                    <label>Participants:</label>
+                    <label>Participants</label>
                     <div className="eventform-participants-box">
                         {authors.map((a) => (
                             <label
@@ -403,7 +420,7 @@ export default function EditEvent() {
                 </div>
 
                 <div className="eventform-section">
-                    <button type="submit">Save Changes</button>
+                    <button type="submit" className="form-primary-submit">Save Changes</button>
                 </div>
 
             </form>

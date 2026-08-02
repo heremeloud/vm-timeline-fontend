@@ -224,7 +224,9 @@ export default function ManageAuthors() {
                                     <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", columnGap: 12, rowGap: 0 }}>
                                         {group.fields.map((field) => (
                                             <div className="eventform-section" key={field.key} style={{ marginBottom: 0 }}>
-                                                <label>{field.label}</label>
+                                                <label>
+                                                    {field.label} {field.required && <span className="form-required">*</span>}
+                                                </label>
                                                 <input
                                                     type={field.type || "text"}
                                                     value={draft[field.key] || ""}

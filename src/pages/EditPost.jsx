@@ -7,11 +7,12 @@ import { isImage, isVideo } from "../utils/media";
 import AutoResizeTextarea from "../components/AutoResizeTextarea";
 import R2MediaUploader from "../components/R2MediaUploader";
 import MediaUrlField from "../components/MediaUrlField";
+import { deleteMediaObject } from "../api/mediaService";
 import { cleanPastedPostUrl, detectMediaAuthor, detectMediaDate, isInstagramChannelUrl, normalizePostUrl } from "../utils/postUrls";
 import { isFromR2 } from "../utils/media";
 import "../styles/EventForm.css";
 
-const emptyStoryItem = () => ({ url: "", text: "", translation: "", note: "", attachment_type: "screenshot" });
+const emptyStoryItem = () => ({ url: "", text: "", translation: "", note: "", attachment_type: "screenshot", deleteFromR2: false });
 
 const getStoryItemCount = (quantity) =>
     Math.min(100, Math.max(1, Math.floor(Number(quantity) || 1)));
@@ -119,11 +120,11 @@ export default function EditPost() {
             const parsed = p.media_urls && p.media_urls.length > 0
                 ? p.media_urls.map((item) =>
                     typeof item === "string"
-                        ? { url: item, text: "", translation: "", note: "" }
-                        : { url: item.url || "", text: item.text || "", translation: item.translation || "", note: item.note || "", attachment_type: item.attachment_type || "screenshot" }
+                        ? { url: item, text: "", translation: "", note: "", deleteFromR2: false }
+                        : { url: item.url || "", text: item.text || "", translation: item.translation || "", note: item.note || "", attachment_type: item.attachment_type || "screenshot", deleteFromR2: false }
                 )
                 : p.media_url
-                    ? [{ url: p.media_url, text: "", translation: "", note: "" }]
+                    ? [{ url: p.media_url, text: "", translation: "", note: "", deleteFromR2: false }]
                     : [emptyStoryItem()];
             setMediaItems(parsed);
             setPostedAt(p.posted_at || "");
@@ -153,6 +154,25 @@ export default function EditPost() {
             ...items,
             ...Array.from({ length: count }, emptyStoryItem),
         ]);
+    };
+
+    const removeMediaItem = async (index) => {
+        const item = mediaItems[index];
+        if (!item) return;
+
+        if (item.deleteFromR2 && item.url.trim()) {
+            const confirmed = window.confirm("Permanently delete this file from R2 now? This cannot be undone.");
+            if (!confirmed) return;
+
+            try {
+                await deleteMediaObject(item.url.trim());
+            } catch (error) {
+                alert(error.response?.data?.detail || "Could not delete the file from R2.");
+                return;
+            }
+        }
+
+        setMediaItems((items) => items.filter((_, itemIndex) => itemIndex !== index));
     };
 
     const generateStoryItemUrls = () => {
@@ -262,7 +282,7 @@ export default function EditPost() {
             <form id="edit-post-form" className="eventform-form" onSubmit={saveChanges}>
 
                 <div className="eventform-section">
-                    <label>Platform:</label>
+                    <label>Platform</label>
                     <select
                         value={platform}
                         onChange={(e) => setPlatform(e.target.value)}
@@ -275,7 +295,7 @@ export default function EditPost() {
 
                 {platform === "ig" && (
                     <div className="eventform-section">
-                        <label>Instagram content type:</label>
+                        <label>Instagram Content Type</label>
                         <select value={contentType} onChange={(e) => {
                             const next = e.target.value;
                             setContentType(next);
@@ -290,16 +310,16 @@ export default function EditPost() {
 
                 <div className="eventform-section eventform-author-date-row">
                     <div>
-                        <label>Author:</label>
+                        <label>Author <span className="form-required">*</span></label>
                         <select value={authorId} onChange={(e) => setAuthorId(Number(e.target.value))}>
-                            <option value="">-- select author --</option>
+                            <option value="">-- Select Author --</option>
                             {authors.map((a) => (
                                 <option key={a.id} value={a.id}>{a.name}</option>
                             ))}
                         </select>
                     </div>
                     <div>
-                        <label>Posted At:</label>
+                        <label>Posted At <span className="form-required">*</span></label>
                         <div className="eventform-date-row">
                             <input type="date" value={postedAt} onChange={(e) => setPostedAt(e.target.value)} />
                             <label className="eventform-today-toggle">
@@ -315,7 +335,7 @@ export default function EditPost() {
                 </div>
 
                 <div className="eventform-section">
-                    <label>External URL:</label>
+                    <label>External URL</label>
                     <input
                         value={externalURL}
                         onChange={(e) => setExternalURL(e.target.value)}
@@ -324,7 +344,7 @@ export default function EditPost() {
                 </div>
 
                 <div className="eventform-section">
-                    <label>External ID:</label>
+                    <label>External ID</label>
                     <input
                         value={externalId}
                         onChange={(e) => setExternalId(e.target.value)}
@@ -332,7 +352,7 @@ export default function EditPost() {
                 </div>
 
                 <div className="eventform-section">
-                    <label>Caption:</label>
+                    <label>Caption</label>
                     <AutoResizeTextarea
                         rows={3}
                         value={caption}
@@ -341,7 +361,7 @@ export default function EditPost() {
                 </div>
 
                 <div className="eventform-section">
-                    <label>Caption Translation:</label>
+                    <label>Caption Translation</label>
                     <AutoResizeTextarea
                         rows={3}
                         value={captionTranslation}
@@ -350,11 +370,11 @@ export default function EditPost() {
                 </div>
 
                 <div className="eventform-section">
-                    <label>Translator's note (optional):</label>
+                    <label>Translator's Note <span className="form-optional">(optional)</span></label>
                     <AutoResizeTextarea
                         value={captionTranslationNote}
                         onChange={(e) => setCaptionTranslationNote(e.target.value)}
-                        placeholder="e.g. slang, context, nuance…"
+                        placeholder="For example: slang, context, or nuance"
                         style={{ minHeight: 80 }}
                     />
                 </div>
@@ -396,18 +416,42 @@ export default function EditPost() {
                                                 const detectedDate = detectMediaDate(pastedUrl);
                                                 if (detectedDate) setPostedAt(detectedDate);
                                             }}
-                                            placeholder={contentType === "broadcast" ? "Photo or screenshot URL (optional)" : `Media URL #${i + 1}`}
+                                            placeholder={contentType === "broadcast" ? "Photo or screenshot URL" : `Media URL ${i + 1}`}
                                         />
-                                        {mediaItems.length > 1 && (
-                                            <button
-                                                type="button"
-                                                onClick={() => setMediaItems(mediaItems.filter((_, j) => j !== i))}
-                                                style={{ color: "red", background: "none", border: "1px solid red", borderRadius: 4, cursor: "pointer", padding: "0 8px" }}
+                                        {isFromR2(item.url) && (
+                                            <label
+                                                className="r2-delete-toggle"
+                                                title="Also delete this file from R2 when removed"
                                             >
-                                                ✕
-                                            </button>
+                                                <input
+                                                    type="checkbox"
+                                                    checked={item.deleteFromR2 || false}
+                                                    onChange={(event) => {
+                                                        const next = [...mediaItems];
+                                                        next[i] = { ...next[i], deleteFromR2: event.target.checked };
+                                                        setMediaItems(next);
+                                                    }}
+                                                />
+                                                <span>R2</span>
+                                            </label>
                                         )}
+                                        <button
+                                            type="button"
+                                            onClick={() => removeMediaItem(i)}
+                                            className="form-remove-button"
+                                            aria-label={`Remove media ${i + 1}`}
+                                            title="Remove media"
+                                        >
+                                            <svg viewBox="0 0 24 24" aria-hidden="true">
+                                                <path d="M6 6l12 12M18 6L6 18" />
+                                            </svg>
+                                        </button>
                                     </div>
+                                    {item.deleteFromR2 && (
+                                        <div className="r2-delete-warning">
+                                            Warning: clicking X will permanently delete this file from R2 immediately.
+                                        </div>
+                                    )}
                                     {contentType === "broadcast" && item.url.trim() && (
                                         <select
                                             value={item.attachment_type || "screenshot"}
@@ -430,7 +474,7 @@ export default function EditPost() {
                                             next[i] = { ...next[i], text: e.target.value };
                                             setMediaItems(next);
                                         }}
-                                        placeholder={contentType === "broadcast" ? "Message text" : "Text (optional)"}
+                                        placeholder={contentType === "broadcast" ? "Message text" : "Enter text"}
                                         style={{ width: "100%", minHeight: 56, marginBottom: 4, boxSizing: "border-box" }}
                                     />
                                     <AutoResizeTextarea
@@ -440,7 +484,7 @@ export default function EditPost() {
                                             next[i] = { ...next[i], translation: e.target.value };
                                             setMediaItems(next);
                                         }}
-                                        placeholder="Translation (optional)"
+                                        placeholder="Enter a translation"
                                         style={{ width: "100%", minHeight: 56, marginBottom: 4, boxSizing: "border-box" }}
                                     />
                                     <AutoResizeTextarea
@@ -450,7 +494,7 @@ export default function EditPost() {
                                             next[i] = { ...next[i], note: e.target.value };
                                             setMediaItems(next);
                                         }}
-                                        placeholder="Translator's note (optional)"
+                                        placeholder="Add translation context"
                                         style={{ width: "100%", minHeight: 56, marginBottom: 4, boxSizing: "border-box" }}
                                     />
                                 </div>
@@ -490,7 +534,7 @@ export default function EditPost() {
                         </>
                     ) : (
                         <>
-                            <label>Media URL:</label>
+                            <label>Media URL</label>
                             <R2MediaUploader
                                 author={authors.find((item) => item.id === Number(authorId))?.name || ""}
                                 postedAt={postedAt}
@@ -536,7 +580,7 @@ export default function EditPost() {
                 </div>
 
                 <div className="eventform-section">
-                    <button type="submit">Save Changes</button>
+                    <button type="submit" className="form-primary-submit">Save Changes</button>
                 </div>
 
             </form>
@@ -611,10 +655,18 @@ function CompactPostPreview({ platform, externalURL, caption, previewItems }) {
 
 function CompactMediaTile({ item, index }) {
     const url = item.url.trim();
+    const video = isVideo(url);
+    const image = isImage(url);
 
     return (
-        <div style={{ minWidth: 0 }}>
+        <div
+            className="compact-media-tile"
+            style={{ minWidth: 0 }}
+            tabIndex={image || video ? 0 : undefined}
+            aria-label={image || video ? `Preview media ${index + 1}` : undefined}
+        >
             <div
+                className="compact-media-thumbnail"
                 style={{
                     position: "relative",
                     width: "100%",
@@ -625,7 +677,7 @@ function CompactMediaTile({ item, index }) {
                     border: "1px solid rgba(0,0,0,0.08)",
                 }}
             >
-                {isVideo(url) ? (
+                {video ? (
                     <video
                         src={url}
                         muted
@@ -633,7 +685,7 @@ function CompactMediaTile({ item, index }) {
                         preload="metadata"
                         style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
                     />
-                ) : isImage(url) ? (
+                ) : image ? (
                     <img
                         src={url}
                         alt=""
@@ -659,6 +711,18 @@ function CompactMediaTile({ item, index }) {
                     {index + 1}
                 </span>
             </div>
+
+            {(image || video) && (
+                <div className="compact-media-hover-preview" aria-hidden="true">
+                    {video ? (
+                        <video src={url} muted autoPlay loop playsInline preload="metadata" />
+                    ) : (
+                        <img src={url} alt="" loading="lazy" />
+                    )}
+                    <span>Media {index + 1}</span>
+                </div>
+            )}
+
             {(item.translation || item.note) && (
                 <div style={{ marginTop: 4, fontSize: "0.72rem", opacity: 0.7 }}>
                     {item.translation ? "translation" : "note"}

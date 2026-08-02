@@ -10,3 +10,5 @@ export const uploadMedia = (file, metadata, onUploadProgress) => {
     form.append("file", file);
     return api.post("/media/upload", form, { onUploadProgress });
 };
+
+export const deleteMediaObject = (url) => api.delete("/media/object", { data: { url } });
