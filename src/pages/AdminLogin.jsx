@@ -1,7 +1,7 @@
 // pages/AdminLogin.jsx
 import { useState } from "react";
 import { login as loginRequest } from "../api/authService";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { ROUTES } from "../routes";
 import "../styles/EventForm.css";
 
@@ -9,6 +9,7 @@ export default function AdminLogin() {
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
 
     async function login(e) {
         e.preventDefault();
@@ -26,6 +27,9 @@ export default function AdminLogin() {
     return (
         <div className="eventform-container">
             <h2>Admin Login</h2>
+            {searchParams.get("expired") === "1" && (
+                <p className="eventform-field-note">Your admin session expired. Please sign in again.</p>
+            )}
 
             <form className="eventform-form" onSubmit={login}>
                 <div className="eventform-section">

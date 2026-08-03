@@ -22,4 +22,26 @@ api.interceptors.request.use((config) => {
     return config;
 });
 
+let redirectingToLogin = false;
+
+api.interceptors.response.use(
+    (response) => response,
+    (error) => {
+        const status = error.response?.status;
+        const detail = error.response?.data?.detail;
+        const isStaleAuthentication = status === 401
+            || (status === 403 && detail === "Invalid token");
+
+        if (isStaleAuthentication && localStorage.getItem("jwt")) {
+            localStorage.removeItem("jwt");
+            if (!redirectingToLogin && window.location.pathname !== "/admin") {
+                redirectingToLogin = true;
+                window.location.assign("/admin?expired=1");
+            }
+        }
+
+        return Promise.reject(error);
+    },
+);
+
 export default api;
