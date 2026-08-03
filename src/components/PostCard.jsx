@@ -31,6 +31,16 @@ export default function PostCard({ post, showReplies = true, eventTagIndex = nul
         () => getEventTagLinks(post, eventTagIndex),
         [post, eventTagIndex]
     );
+    const standaloneEventTagLinks = useMemo(() => {
+        if (!post.timeline_context || !(post.show_timeline_context ?? true)) return eventTagLinks;
+        const contextTags = new Set(
+            (post.timeline_context.match(/#[\p{L}\p{M}\p{N}_]+/gu) || [])
+                .map((tag) => tag.slice(1).toLocaleLowerCase())
+        );
+        return eventTagLinks.filter(({ hashtag }) =>
+            !contextTags.has(hashtag.replace(/^#/, "").toLocaleLowerCase())
+        );
+    }, [eventTagLinks, post.timeline_context, post.show_timeline_context]);
 
     const [comments, setComments] = useState([]);
     const [childrenPosts, setChildrenPosts] = useState([]);
@@ -144,11 +154,23 @@ export default function PostCard({ post, showReplies = true, eventTagIndex = nul
                         {isBroadcast ? "Instagram Broadcast Channel" : isInstagram ? "Instagram" : isTwitter ? "X (Twitter)" : "TikTok"}
                     </span>
                     <span className="post-date-sep">·</span>
-                    {new Date(post.posted_at + "T00:00:00").toLocaleDateString("en-US", {
-                        year: "numeric",
-                        month: "long",
-                        day: "numeric",
-                    })}
+                    {isAdmin && post.posted_at_utc
+                        ? new Date(post.posted_at_utc).toLocaleString("en-US", {
+                            timeZone: "Asia/Bangkok",
+                            year: "numeric",
+                            month: "long",
+                            day: "numeric",
+                            hour: "numeric",
+                            minute: "2-digit",
+                            second: "2-digit",
+                            timeZoneName: "short",
+                        })
+                        : new Date(post.posted_at + "T00:00:00").toLocaleDateString("en-US", {
+                            year: "numeric",
+                            month: "long",
+                            day: "numeric",
+                        })}
+                    {isAdmin && post.posted_at_utc && post.posted_at_is_estimated && " (estimated)"}
                 </div>
             )}
             <div className="post-embed">
@@ -175,7 +197,7 @@ export default function PostCard({ post, showReplies = true, eventTagIndex = nul
                                 <EventLinkedText text={post.caption_translation} eventTagLinks={eventTagLinks} />
                             </p>
                         )}
-                        {post.caption_translation_note && (
+                        {post.caption_translation_note && (post.show_translation_note ?? true) && (
                             <p className="post-adult-note">
                                 📝 <EventLinkedText text={post.caption_translation_note} eventTagLinks={eventTagLinks} />
                             </p>
@@ -239,17 +261,26 @@ export default function PostCard({ post, showReplies = true, eventTagIndex = nul
                 )}
             </div>
 
-            {post.caption_translation && !rendersAdultFallback && (
+            {(post.caption_translation || (post.caption_translation_note && (post.show_translation_note ?? true))) && !rendersAdultFallback && (
                 <div className="post-caption-translation">
-                    <p>
+                    {post.caption_translation && <p>
                         <EventLinkedText text={post.caption_translation} eventTagLinks={eventTagLinks} />
-                    </p>
-                    {post.caption_translation_note && (
+                    </p>}
+                    {post.caption_translation_note && (post.show_translation_note ?? true) && (
                         <p className="post-translation-note">
                             📝 <EventLinkedText text={post.caption_translation_note} eventTagLinks={eventTagLinks} />
                         </p>
                     )}
                 </div>
+            )}
+
+            {post.timeline_context && (post.show_timeline_context ?? true) && (
+                <aside className="post-timeline-context" aria-label="About this post, added by the timeline curator">
+                    <div className="post-timeline-context-label">About this post</div>
+                    <p>
+                        <EventLinkedText text={post.timeline_context} eventTagLinks={eventTagLinks} />
+                    </p>
+                </aside>
             )}
 
             {/* Separate media block for X.
@@ -260,9 +291,9 @@ export default function PostCard({ post, showReplies = true, eventTagIndex = nul
                 </div>
             )}
 
-            {!post.caption_translation && !rendersAdultFallback && eventTagLinks.length > 0 && (
+            {!post.caption_translation && !(post.caption_translation_note && (post.show_translation_note ?? true)) && !rendersAdultFallback && standaloneEventTagLinks.length > 0 && (
                 <div className="post-event-tags" aria-label="Related events">
-                    {eventTagLinks.map(({ hashtag, event, projectId }) => (
+                    {standaloneEventTagLinks.map(({ hashtag, event, projectId }) => (
                         <Link
                             key={`${hashtag}-${event.id}`}
                             to={projectId ? ROUTES.projectDetail(projectId) : ROUTES.eventDetail(event.id)}

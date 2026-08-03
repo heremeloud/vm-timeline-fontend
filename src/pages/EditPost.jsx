@@ -11,7 +11,7 @@ import InstagramEmbed from "../components/InstagramEmbed";
 import TikTokEmbed from "../components/TikTokEmbed";
 import TweetEmbed from "../components/TweetEmbed";
 import { deleteMediaObject } from "../api/mediaService";
-import { cleanPastedPostUrl, detectMediaAuthor, detectMediaDate, isInstagramChannelUrl, normalizePostUrl } from "../utils/postUrls";
+import { bangkokDateTimeToUtc, cleanPastedPostUrl, detectMediaAuthor, detectMediaDate, detectPostDateTime, isInstagramChannelUrl, normalizePostUrl, utcToBangkokDateTime } from "../utils/postUrls";
 import { isFromR2 } from "../utils/media";
 import "../styles/EventForm.css";
 
@@ -68,12 +68,18 @@ export default function EditPost() {
     const [caption, setCaption] = useState("");
     const [captionTranslation, setCaptionTranslation] = useState("");
     const [captionTranslationNote, setCaptionTranslationNote] = useState("");
+    const [timelineContext, setTimelineContext] = useState("");
+    const [showTimelineContext, setShowTimelineContext] = useState(true);
+    const [showTranslationNote, setShowTranslationNote] = useState(true);
     const [mediaURL, setMediaURL] = useState("");
     const [mediaItems, setMediaItems] = useState([emptyStoryItem()]);
     const [storyItemQuantity, setStoryItemQuantity] = useState(10);
     const [postedAt, setPostedAt] = useState("");
+    const [postedTime, setPostedTime] = useState("");
+    const [postedAtIsEstimated, setPostedAtIsEstimated] = useState(false);
     const [isVisible, setIsVisible] = useState(true);
     const [isAdult, setIsAdult] = useState(false);
+    const supportsExactPostTime = platform !== "ig" || contentType === "post";
 
     // -----------------------------
     // URL NORMALIZATION HELPERS
@@ -129,6 +135,9 @@ export default function EditPost() {
             setCaption(p.caption || "");
             setCaptionTranslation(p.caption_translation || "");
             setCaptionTranslationNote(p.caption_translation_note || "");
+            setTimelineContext(p.timeline_context || "");
+            setShowTimelineContext(p.show_timeline_context ?? true);
+            setShowTranslationNote(p.show_translation_note ?? true);
             setMediaURL(p.media_url || "");
             // media_urls is now an array of objects {url, text, translation, note}
             const parsed = p.media_urls && p.media_urls.length > 0
@@ -142,6 +151,8 @@ export default function EditPost() {
                     : [emptyStoryItem()];
             setMediaItems(parsed);
             setPostedAt(p.posted_at || "");
+            setPostedTime(utcToBangkokDateTime(p.posted_at_utc)?.time || "");
+            setPostedAtIsEstimated(p.posted_at_is_estimated ?? false);
             setIsVisible(p.is_visible ?? true);
             setIsAdult(p.is_adult ?? false);
 
@@ -218,6 +229,12 @@ export default function EditPost() {
                 (detectedAuthor) => setAuthorId(detectedAuthor.id),
             );
             if (isInstagramChannelUrl(pastedUrl)) setContentType("broadcast");
+            const detectedDateTime = detectPostDateTime(pastedUrl);
+            if (detectedDateTime) {
+                setPostedAt(detectedDateTime.date);
+                setPostedTime(detectedDateTime.time);
+                setPostedAtIsEstimated(detectedDateTime.estimated);
+            }
             return;
         }
 
@@ -280,9 +297,14 @@ export default function EditPost() {
             caption,
             caption_translation: captionTranslation,
             caption_translation_note: captionTranslationNote.trim() || null,
+            timeline_context: timelineContext.trim() || null,
+            show_timeline_context: showTimelineContext,
+            show_translation_note: showTranslationNote,
             media_url: isIGCollection ? null : (newlyUploadedUrls[0] || mediaURL || null),
             media_urls_json: JSON.stringify(filteredMediaItems),
             posted_at: postedAt,
+            posted_at_utc: supportsExactPostTime ? bangkokDateTimeToUtc(postedAt, postedTime) : null,
+            posted_at_is_estimated: supportsExactPostTime && postedAtIsEstimated,
             is_visible: isVisible,
             is_adult: isAdult,
         });
@@ -299,6 +321,7 @@ export default function EditPost() {
 
             <CompactPostPreview
                 platform={platform}
+                contentType={contentType}
                 externalURL={externalURL}
                 caption={caption}
                 previewItems={previewItems}
@@ -348,6 +371,17 @@ export default function EditPost() {
                         <label>Posted At <span className="form-required">*</span></label>
                         <div className="eventform-date-row">
                             <input type="date" value={postedAt} onChange={(e) => setPostedAt(e.target.value)} />
+                            {supportsExactPostTime && <input
+                                type="time"
+                                step="1"
+                                value={postedTime}
+                                onChange={(e) => {
+                                    setPostedTime(e.target.value);
+                                    setPostedAtIsEstimated(false);
+                                }}
+                                aria-label="Posting time in Bangkok"
+                                title="Bangkok time (UTC+7)"
+                            />}
                             <label className="eventform-today-toggle">
                                 <input
                                     type="checkbox"
@@ -357,6 +391,7 @@ export default function EditPost() {
                                 Today
                             </label>
                         </div>
+                        {supportsExactPostTime && <div className="eventform-field-note">URLs auto-fill this when possible. Instagram times are estimates. Time is shown in Bangkok (UTC+7) and stored as UTC.</div>}
                     </div>
                 </div>
 
@@ -403,6 +438,33 @@ export default function EditPost() {
                         placeholder="For example: slang, context, or nuance"
                         style={{ minHeight: 80 }}
                     />
+                    <label style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8 }}>
+                        <input
+                            type="checkbox"
+                            checked={showTranslationNote}
+                            onChange={(e) => setShowTranslationNote(e.target.checked)}
+                        />
+                        Show translator's note
+                    </label>
+                </div>
+
+                <div className="eventform-section">
+                    <label>About This Post <span className="form-optional">(optional)</span></label>
+                    <AutoResizeTextarea
+                        value={timelineContext}
+                        onChange={(e) => setTimelineContext(e.target.value)}
+                        placeholder="Explain what this post relates to. Add an event or project hashtag to link it."
+                        style={{ minHeight: 72 }}
+                    />
+                    <label style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8 }}>
+                        <input
+                            type="checkbox"
+                            checked={showTimelineContext}
+                            onChange={(e) => setShowTimelineContext(e.target.checked)}
+                        />
+                        Show “About this post”
+                    </label>
+                    <div className="eventform-field-note">Shown as curator-provided context, separate from the author's original caption.</div>
                 </div>
 
                 <div className="eventform-section">
@@ -608,10 +670,14 @@ export default function EditPost() {
     );
 }
 
-function CompactPostPreview({ platform, externalURL, caption, previewItems, post }) {
+function CompactPostPreview({ platform, contentType, externalURL, caption, previewItems, post }) {
     const hasExternal = !!externalURL.trim();
     const hasMedia = previewItems.length > 0;
     const primaryMediaUrl = previewItems[0]?.url || "";
+    const isInstagram = platform === "ig" || platform === "instagram";
+    const canEmbedExternal = hasExternal && !(
+        isInstagram && (contentType !== "post" || isInstagramChannelUrl(externalURL))
+    );
 
     if (!hasExternal && !hasMedia && !caption) return null;
 
@@ -640,7 +706,7 @@ function CompactPostPreview({ platform, externalURL, caption, previewItems, post
                     >
                         {externalURL}
                     </a>
-                    <div className="edit-post-social-preview">
+                    {canEmbedExternal && <div className="edit-post-social-preview">
                         {platform === "x" || platform === "twitter" ? (
                             <TweetEmbed url={externalURL} />
                         ) : platform === "tt" || platform === "tiktok" ? (
@@ -665,7 +731,7 @@ function CompactPostPreview({ platform, externalURL, caption, previewItems, post
                                 author_instagram_url={post?.author_instagram_url}
                             />
                         )}
-                    </div>
+                    </div>}
                 </div>
             )}
 

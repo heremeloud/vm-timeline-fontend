@@ -4,7 +4,7 @@ import { createPost, getAdminPosts } from "../api/postsService";
 import { ensureAuthor, getAuthors } from "../api/authorsService";
 import { createTopic, getAdminTopic, updateTopic } from "../api/topicsService";
 import { ROUTES } from "../routes";
-import { cleanPastedPostUrl, detectMediaAuthor, detectMediaDate, normalizePostUrl } from "../utils/postUrls";
+import { bangkokDateTimeToUtc, cleanPastedPostUrl, detectMediaAuthor, detectMediaDate, detectPostDateTime, normalizePostUrl } from "../utils/postUrls";
 import { isImage, isVideo } from "../utils/media";
 import "../styles/EventForm.css";
 import "../styles/Topics.css";
@@ -23,8 +23,13 @@ const emptyNewPost = {
     caption: "",
     caption_translation: "",
     caption_translation_note: "",
+    timeline_context: "",
+    show_timeline_context: true,
+    show_translation_note: true,
     media_url: "",
     posted_at: "",
+    posted_time: "",
+    posted_at_is_estimated: false,
     is_visible: false,
 };
 
@@ -272,9 +277,14 @@ export default function TopicForm() {
             caption: draft.caption,
             caption_translation: draft.caption_translation,
             caption_translation_note: draft.caption_translation_note.trim() || null,
+            timeline_context: draft.timeline_context.trim() || null,
+            show_timeline_context: draft.show_timeline_context,
+            show_translation_note: draft.show_translation_note,
             media_url: draft.media_url || null,
             media_urls_json: "[]",
             posted_at: postedAt,
+            posted_at_utc: bangkokDateTimeToUtc(postedAt, draft.posted_time),
+            posted_at_is_estimated: draft.posted_at_is_estimated,
             parent_id: null,
             is_visible: draft.is_visible,
         });
@@ -648,14 +658,23 @@ export default function TopicForm() {
                                             <input
                                                 value={draft.external_url}
                                                 onChange={(e) => updateNewPost(index, "external_url", e.target.value)}
-                                                onPaste={(e) => cleanPastedPostUrl(
-                                                    e,
-                                                    draft.platform,
-                                                    (value) => updateNewPost(index, "external_url", value),
-                                                    (value) => updateNewPost(index, "platform", value),
-                                                    authors,
-                                                    (detectedAuthor) => updateNewPost(index, "author", detectedAuthor.name),
-                                                )}
+                                                onPaste={(e) => {
+                                                    const pastedUrl = e.clipboardData.getData("text").trim();
+                                                    cleanPastedPostUrl(
+                                                        e,
+                                                        draft.platform,
+                                                        (value) => updateNewPost(index, "external_url", value),
+                                                        (value) => updateNewPost(index, "platform", value),
+                                                        authors,
+                                                        (detectedAuthor) => updateNewPost(index, "author", detectedAuthor.name),
+                                                    );
+                                                    const detected = detectPostDateTime(pastedUrl);
+                                                    if (detected) {
+                                                        updateNewPost(index, "posted_at", detected.date);
+                                                        updateNewPost(index, "posted_time", detected.time);
+                                                        updateNewPost(index, "posted_at_is_estimated", detected.estimated);
+                                                    }
+                                                }}
                                                 placeholder={draft.platform === "ig" ? "Leave blank for IG story/manual media" : "https://..."}
                                             />
                                         </div>
@@ -683,6 +702,14 @@ export default function TopicForm() {
                                                 value={draft.caption}
                                                 onChange={(e) => updateNewPost(index, "caption", e.target.value)}
                                             />
+                                            <label style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 6 }}>
+                                                <input
+                                                    type="checkbox"
+                                                    checked={draft.show_timeline_context}
+                                                    onChange={(e) => updateNewPost(index, "show_timeline_context", e.target.checked)}
+                                                />
+                                                Show “About this post”
+                                            </label>
                                         </div>
 
                                         <div>
@@ -700,6 +727,24 @@ export default function TopicForm() {
                                                 value={draft.caption_translation_note}
                                                 onChange={(e) => updateNewPost(index, "caption_translation_note", e.target.value)}
                                             />
+                                            <label style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 6 }}>
+                                                <input
+                                                    type="checkbox"
+                                                    checked={draft.show_translation_note}
+                                                    onChange={(e) => updateNewPost(index, "show_translation_note", e.target.checked)}
+                                                />
+                                                Show translator's note
+                                            </label>
+                                        </div>
+
+                                        <div>
+                                            <label>About This Post</label>
+                                            <textarea
+                                                rows={2}
+                                                value={draft.timeline_context}
+                                                onChange={(e) => updateNewPost(index, "timeline_context", e.target.value)}
+                                                placeholder="Curator context; hashtags link to events/projects"
+                                            />
                                         </div>
 
                                         <div>
@@ -709,6 +754,18 @@ export default function TopicForm() {
                                                 value={draft.posted_at}
                                                 onChange={(e) => updateNewPost(index, "posted_at", e.target.value)}
                                             />
+                                            <input
+                                                type="time"
+                                                step="1"
+                                                value={draft.posted_time}
+                                                onChange={(e) => {
+                                                    updateNewPost(index, "posted_time", e.target.value);
+                                                    updateNewPost(index, "posted_at_is_estimated", false);
+                                                }}
+                                                aria-label="Posting time in Bangkok"
+                                                style={{ marginTop: 6 }}
+                                            />
+                                            <div className="eventform-field-note">Bangkok time (UTC+7); stored as UTC.</div>
                                         </div>
 
                                         <label style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 0 }}>

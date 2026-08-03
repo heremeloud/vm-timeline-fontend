@@ -41,6 +41,81 @@ export function detectPostPlatform(value) {
                 : null;
 }
 
+const X_EPOCH_MS = 1288834974657n;
+
+function bangkokPartsFromEpochMs(epochMs) {
+    const parts = new Intl.DateTimeFormat("en-CA", {
+        timeZone: "Asia/Bangkok",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hourCycle: "h23",
+    }).formatToParts(new Date(Number(epochMs)));
+    const value = (type) => parts.find((part) => part.type === type)?.value;
+    return {
+        date: `${value("year")}-${value("month")}-${value("day")}`,
+        time: `${value("hour")}:${value("minute")}:${value("second")}`,
+    };
+}
+
+export function utcToBangkokDateTime(utcValue) {
+    if (!utcValue) return null;
+    const epochMs = Date.parse(utcValue);
+    return Number.isNaN(epochMs) ? null : bangkokPartsFromEpochMs(epochMs);
+}
+
+export function bangkokDateTimeToUtc(date, time) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date || "") || !/^\d{2}:\d{2}(?::\d{2})?$/.test(time || "")) return null;
+    const normalizedTime = time.length === 5 ? `${time}:00` : time;
+    const parsed = new Date(`${date}T${normalizedTime}+07:00`);
+    return Number.isNaN(parsed.getTime()) ? null : parsed.toISOString();
+}
+
+// X Snowflake IDs contain milliseconds; TikTok video IDs contain Unix seconds.
+export function detectPostDateTime(value) {
+    const platform = detectPostPlatform(value);
+    if (!platform) return null;
+
+    try {
+        let epochMs;
+        let estimated = false;
+        if (platform === "ig") {
+            const shortcode = value?.match(/\/(?:p|reel|tv)\/([A-Za-z0-9_-]+)/i)?.[1];
+            if (!shortcode) return null; // Stories and broadcast messages intentionally stay date/order based.
+            const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
+            let mediaId = 0n;
+            for (const character of shortcode) {
+                const index = alphabet.indexOf(character);
+                if (index < 0) return null;
+                mediaId = mediaId * 64n + BigInt(index);
+            }
+            epochMs = (mediaId >> 23n) + 1314220021721n;
+            estimated = true;
+        } else {
+            const id = value?.match(platform === "x" ? /\/status\/(\d+)/i : /\/video\/(\d+)/i)?.[1];
+            if (!id) return null;
+            const numericId = BigInt(id);
+            epochMs = platform === "x"
+                ? (numericId >> 22n) + X_EPOCH_MS
+                : (numericId >> 32n) * 1000n;
+        }
+        const earliest = Date.UTC(2006, 0, 1);
+        const latest = Date.now() + 24 * 60 * 60 * 1000;
+        if (Number(epochMs) < earliest || Number(epochMs) > latest) return null;
+        return {
+            ...bangkokPartsFromEpochMs(epochMs),
+            utc: new Date(Number(epochMs)).toISOString(),
+            platform,
+            estimated,
+        };
+    } catch {
+        return null;
+    }
+}
+
 export function isInstagramChannelUrl(value) {
     return /^(?:https?:\/\/)?(?:www\.)?instagram\.com\/channel\/[^/?#]+(?:\/[^/?#]+)?/i.test(value?.trim() || "");
 }

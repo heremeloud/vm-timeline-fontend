@@ -63,7 +63,7 @@ export default function AdultTweetCard({ tweet, eventTagLinks = [] }) {
                     <EventLinkedText text={tweet.caption_translation} eventTagLinks={eventTagLinks} />
                 </p>
             )}
-            {tweet.caption_translation_note && (
+            {tweet.caption_translation_note && (tweet.show_translation_note ?? true) && (
                 <p className="post-adult-note">
                     📝 <EventLinkedText text={tweet.caption_translation_note} eventTagLinks={eventTagLinks} />
                 </p>

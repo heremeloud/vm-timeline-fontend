@@ -74,7 +74,7 @@ export default function TweetReply({ reply }) {
                                     {reply.caption_translation}
                                 </div>
                             )}
-                            {reply.caption_translation_note && (
+                            {reply.caption_translation_note && (reply.show_translation_note ?? true) && (
                                 <p className="post-translation-note">📝 {reply.caption_translation_note}</p>
                             )}
                             {reply.media_url && (

@@ -427,6 +427,31 @@
     white-space: pre-wrap;
 }
 
+.post-timeline-context {
+    margin-top: 14px;
+    padding: 11px 13px;
+    border-left: 3px solid #a67c52;
+    border-radius: 0 9px 9px 0;
+    background: rgba(166, 124, 82, 0.09);
+    color: #4b4039;
+}
+
+.post-timeline-context-label {
+    margin-bottom: 5px;
+    color: #80592f;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
+.post-timeline-context p {
+    margin: 0;
+    white-space: pre-wrap;
+    font-size: 0.94rem;
+    line-height: 1.5;
+}
+
 .post-media img {
     width: 100%;
     border-radius: 8px;

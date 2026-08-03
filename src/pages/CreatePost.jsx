@@ -7,7 +7,7 @@ import AutoResizeTextarea from "../components/AutoResizeTextarea";
 import R2MediaUploader from "../components/R2MediaUploader";
 import MediaUrlField from "../components/MediaUrlField";
 import { deleteMediaObject } from "../api/mediaService";
-import { cleanPastedPostUrl, detectMediaAuthor, detectMediaDate, isInstagramChannelUrl, normalizePostUrl } from "../utils/postUrls";
+import { bangkokDateTimeToUtc, cleanPastedPostUrl, detectMediaAuthor, detectMediaDate, detectPostDateTime, isInstagramChannelUrl, normalizePostUrl } from "../utils/postUrls";
 import { isFromR2 } from "../utils/media";
 import "../styles/EventForm.css";
 
@@ -46,6 +46,7 @@ export default function CreatePost() {
     const mediaUploaderRef = useRef(null);
     const navigate = useNavigate();
     const location = useLocation();
+    const returnTo = location.state?.returnTo;
     const [params] = useSearchParams();
 
     // If this is a reply page: /create-post?parent=3
@@ -63,16 +64,22 @@ export default function CreatePost() {
         const defaultDate = location.state?.defaultPostedAt;
         return /^\d{4}-\d{2}-\d{2}$/.test(defaultDate || "") ? defaultDate : "";
     });
+    const [postedTime, setPostedTime] = useState("");
+    const [postedAtIsEstimated, setPostedAtIsEstimated] = useState(false);
 
     const [caption, setCaption] = useState("");
     const [captionTranslation, setCaptionTranslation] = useState("");
     const [captionTranslationNote, setCaptionTranslationNote] = useState("");
+    const [timelineContext, setTimelineContext] = useState("");
+    const [showTimelineContext, setShowTimelineContext] = useState(true);
+    const [showTranslationNote, setShowTranslationNote] = useState(true);
     const [mediaURL, setMediaURL] = useState("");
     const [isVisible, setIsVisible] = useState(true);
     const [isAdult, setIsAdult] = useState(false);
     // Multiple media items for IG stories: [{url, text, translation, note}]
     const [mediaItems, setMediaItems] = useState([emptyStoryItem()]);
     const [storyItemQuantity, setStoryItemQuantity] = useState(10);
+    const supportsExactPostTime = platform !== "ig" || contentType === "post";
 
     // Author list from backend
     const [authors, setAuthors] = useState([]);
@@ -198,6 +205,12 @@ export default function CreatePost() {
                 (detectedAuthor) => setAuthor(detectedAuthor.name),
             );
             if (isInstagramChannelUrl(pastedUrl)) setContentType("broadcast");
+            const detectedDateTime = detectPostDateTime(pastedUrl);
+            if (detectedDateTime) {
+                setPostedAt(detectedDateTime.date);
+                setPostedTime(detectedDateTime.time);
+                setPostedAtIsEstimated(detectedDateTime.estimated);
+            }
             return;
         }
 
@@ -289,15 +302,20 @@ export default function CreatePost() {
                 caption,
                 caption_translation: captionTranslation,
                 caption_translation_note: captionTranslationNote.trim() || null,
+                timeline_context: timelineContext.trim() || null,
+                show_timeline_context: showTimelineContext,
+                show_translation_note: showTranslationNote,
                 media_url: finalMediaUrl,
                 media_urls_json: JSON.stringify(filteredMediaItems),
                 posted_at,
+                posted_at_utc: supportsExactPostTime ? bangkokDateTimeToUtc(posted_at, postedTime) : null,
+                posted_at_is_estimated: supportsExactPostTime && postedAtIsEstimated,
                 parent_id: parent_id || null,
                 is_visible: isVisible,
                 is_adult: isAdult,
             });
 
-            navigate(ROUTES.home);
+            navigate(returnTo || ROUTES.home, { replace: true });
         } catch (err) {
             console.error("CreatePost error:", err);
             alert("Error creating post. Check console for details.");
@@ -359,6 +377,17 @@ export default function CreatePost() {
                         <label>Posted At <span className="form-required">*</span></label>
                         <div className="eventform-date-row">
                             <input type="date" value={posted_at} onChange={(e) => setPostedAt(e.target.value)} />
+                            {supportsExactPostTime && <input
+                                type="time"
+                                step="1"
+                                value={postedTime}
+                                onChange={(e) => {
+                                    setPostedTime(e.target.value);
+                                    setPostedAtIsEstimated(false);
+                                }}
+                                aria-label="Posting time in Bangkok"
+                                title="Bangkok time (UTC+7)"
+                            />}
                             <label className="eventform-today-toggle">
                                 <input
                                     type="checkbox"
@@ -368,6 +397,7 @@ export default function CreatePost() {
                                 Today
                             </label>
                         </div>
+                        {supportsExactPostTime && <div className="eventform-field-note">URLs auto-fill this when possible. Instagram times are estimates. Time is shown in Bangkok (UTC+7) and stored as UTC.</div>}
                     </div>
                 </div>
 
@@ -483,6 +513,33 @@ export default function CreatePost() {
                         placeholder="For example: slang, context, or nuance"
                         style={{ minHeight: 80 }}
                     />
+                    <label style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8 }}>
+                        <input
+                            type="checkbox"
+                            checked={showTranslationNote}
+                            onChange={(e) => setShowTranslationNote(e.target.checked)}
+                        />
+                        Show translator's note
+                    </label>
+                </div>
+
+                <div className="eventform-section">
+                    <label>About This Post <span className="form-optional">(optional)</span></label>
+                    <AutoResizeTextarea
+                        value={timelineContext}
+                        onChange={(e) => setTimelineContext(e.target.value)}
+                        placeholder="Explain what this post relates to. Add an event or project hashtag to link it."
+                        style={{ minHeight: 72 }}
+                    />
+                    <label style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8 }}>
+                        <input
+                            type="checkbox"
+                            checked={showTimelineContext}
+                            onChange={(e) => setShowTimelineContext(e.target.checked)}
+                        />
+                        Show “About this post”
+                    </label>
+                    <div className="eventform-field-note">Shown as curator-provided context, separate from the author's original caption.</div>
                 </div>
 
                 <div className="eventform-section">

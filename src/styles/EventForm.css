@@ -113,7 +113,7 @@
 
 .eventform-author-date-row {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-columns: minmax(200px, 1fr) minmax(0, auto);
     align-items: start;
     gap: 16px;
 }
@@ -134,13 +134,22 @@
 }
 
 .eventform-date-row {
-    display: flex;
+    display: grid;
+    grid-template-columns: 180px 145px max-content;
     align-items: center;
     gap: 12px;
 }
 
+.eventform-date-row--date-only {
+    grid-template-columns: 180px;
+}
+
 .eventform-form .eventform-date-row input[type="date"] {
-    width: 180px;
+    width: 100%;
+}
+
+.eventform-form .eventform-date-row input[type="time"] {
+    width: 100%;
 }
 
 .eventform-form .eventform-today-toggle {
@@ -513,9 +522,31 @@
     font-weight: 600;
 }
 
-@media (max-width: 520px) {
+@media (max-width: 720px) {
     .eventform-author-date-row {
         grid-template-columns: 1fr;
+    }
+
+    .eventform-date-row {
+        grid-template-columns: minmax(0, 1fr) 145px max-content;
+    }
+
+    .eventform-date-row--date-only {
+        grid-template-columns: 180px;
+    }
+}
+
+@media (max-width: 520px) {
+    .eventform-date-row {
+        grid-template-columns: minmax(0, 1fr) 135px;
+    }
+
+    .eventform-date-row--date-only {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .eventform-today-toggle {
+        grid-column: 1 / -1;
     }
 
     .project-year-dates-row,

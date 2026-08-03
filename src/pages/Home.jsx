@@ -3,12 +3,13 @@ import "../styles/Home.css";
 import { getAdminPosts, getPosts, getTimeline } from "../api/postsService";
 import { getEventTagIndex } from "../api/eventsService";
 import { ROUTES } from "../routes";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import PostCard from "../components/PostCard";
 import { buildEventTagIndex } from "../utils/eventTagLinks";
 
 export default function Home() {
     const navigate = useNavigate();
+    const location = useLocation();
     const isAdmin = !!localStorage.getItem("jwt");
     const [searchParams, setSearchParams] = useSearchParams();
     const [posts, setPosts] = useState([]);
@@ -48,7 +49,10 @@ export default function Home() {
         })[0];
 
         navigate(ROUTES.createPost, {
-            state: { defaultPostedAt: currentPost?.date?.slice(0, 10) || "" },
+            state: {
+                defaultPostedAt: currentPost?.date?.slice(0, 10) || "",
+                returnTo: `${location.pathname}${location.search}`,
+            },
         });
     }
 

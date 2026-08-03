@@ -4,7 +4,7 @@ import { getAdminPost, createPost } from "../api/postsService";
 import { createText } from "../api/textsService";
 import { getAuthors, ensureAuthor } from "../api/authorsService";
 import { ROUTES } from "../routes";
-import { cleanPastedPostUrl, normalizeXStatusUrl } from "../utils/postUrls";
+import { bangkokDateTimeToUtc, cleanPastedPostUrl, detectPostDateTime, normalizeXStatusUrl } from "../utils/postUrls";
 import "../styles/EventForm.css";
 
 export default function AddReply() {
@@ -30,6 +30,7 @@ export default function AddReply() {
     const [translationNote, setTranslationNote] = useState("");
     const [mediaURL, setMediaURL] = useState("");
     const [postedAt, setPostedAt] = useState("");
+    const [postedTime, setPostedTime] = useState("");
 
     // Twitter-only
     const [tweetURL, setTweetURL] = useState("");
@@ -93,6 +94,9 @@ export default function AddReply() {
         const authorId = authorRes.data.id;
 
         if (!postedAt.trim()) return alert("Date is required.");
+        if (parent.posted_at && postedAt < parent.posted_at.slice(0, 10)) {
+            return alert("A reply cannot happen before the original post.");
+        }
 
         // -------------------- Instagram Reply --------------------
         if (isInstagram) {
@@ -153,6 +157,7 @@ export default function AddReply() {
                 media_url: mediaURL || null,
                 author_id: authorId,
                 posted_at: postedAt,
+                posted_at_utc: bangkokDateTimeToUtc(postedAt, postedTime),
                 parent_id: Number(postId),
             });
         }
@@ -259,12 +264,22 @@ export default function AddReply() {
 
                 <div className="eventform-section">
                     <label>Reply Date <span className="form-required">*</span></label>
-                    <input
-                        type="date"
-                        value={postedAt}
-                        onChange={(e) => setPostedAt(e.target.value)}
-                        style={{ width: 180 }}
-                    />
+                    <div className={`eventform-date-row${isTwitter ? "" : " eventform-date-row--date-only"}`}>
+                        <input
+                            type="date"
+                            value={postedAt}
+                            onChange={(e) => setPostedAt(e.target.value)}
+                            min={parent.posted_at?.slice(0, 10) || undefined}
+                        />
+                        {isTwitter && <input
+                                type="time"
+                                step="1"
+                                value={postedTime}
+                                onChange={(e) => setPostedTime(e.target.value)}
+                                aria-label="Reply time in Bangkok"
+                            />}
+                    </div>
+                    {isTwitter && <div className="eventform-field-note">Bangkok time (UTC+7); stored as UTC.</div>}
                 </div>
 
                 {/* IG UI */}
@@ -362,14 +377,22 @@ export default function AddReply() {
                                 type="text"
                                 value={tweetURL}
                                 onChange={(e) => setTweetURL(e.target.value)}
-                                onPaste={(e) => cleanPastedPostUrl(
-                                    e,
-                                    "x",
-                                    setTweetURL,
-                                    null,
-                                    authors,
-                                    (detectedAuthor) => setAuthor(detectedAuthor.name),
-                                )}
+                                onPaste={(e) => {
+                                    const pastedUrl = e.clipboardData.getData("text").trim();
+                                    cleanPastedPostUrl(
+                                        e,
+                                        "x",
+                                        setTweetURL,
+                                        null,
+                                        authors,
+                                        (detectedAuthor) => setAuthor(detectedAuthor.name),
+                                    );
+                                    const detected = detectPostDateTime(pastedUrl);
+                                    if (detected) {
+                                        setPostedAt(detected.date);
+                                        setPostedTime(detected.time);
+                                    }
+                                }}
                                 placeholder="https://x.com/.../status/12345"
                             />
                         </div>

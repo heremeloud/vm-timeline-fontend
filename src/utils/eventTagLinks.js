@@ -62,6 +62,7 @@ export function getEventTagLinks(post, eventTagIndex) {
         post.caption,
         post.caption_translation,
         post.caption_translation_note,
+        (post.show_timeline_context ?? true) ? post.timeline_context : null,
     ].filter(Boolean).join("\n");
     const hashtags = text.match(/#[\p{L}\p{M}\p{N}_]+/gu) || [];
     const seen = new Set();
@@ -97,7 +98,9 @@ export function getEventTagLinks(post, eventTagIndex) {
         links.push({
             hashtag,
             event,
-            projectId: nearbyMatches.length === 0 ? event.project_id : null,
+            projectId: event.is_project
+                ? event.project_id
+                : nearbyMatches.length === 0 ? event.project_id : null,
         });
     });
 
