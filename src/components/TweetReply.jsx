@@ -3,6 +3,7 @@ import { deletePost, updatePost } from "../api/postsService";
 import TweetEmbed from "./TweetEmbed";
 import AdultTweetCard from "./AdultTweetCard";
 import "../styles/PostCard.css";
+import "../styles/ReplyActions.css";
 
 export default function TweetReply({ reply }) {
     const [isEditing, setIsEditing] = useState(false);
@@ -84,9 +85,9 @@ export default function TweetReply({ reply }) {
                     )}
 
                     {localStorage.getItem("jwt") && (
-                        <div style={{ marginTop: 8, display: "flex", gap: 6 }}>
-                            <button onClick={() => setIsEditing(true)} className="btn">Edit</button>
-                            <button onClick={handleDelete} className="btn btn-delete">Delete</button>
+                        <div className="reply-admin-actions">
+                            <button onClick={() => setIsEditing(true)} className="reply-action-button btn-edit">Edit</button>
+                            <button onClick={handleDelete} className="reply-action-button btn-delete">Delete</button>
                         </div>
                     )}
                 </>

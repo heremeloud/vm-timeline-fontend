@@ -57,7 +57,8 @@ const R2MediaUploader = forwardRef(function R2MediaUploader({ author, postedAt, 
             return;
         }
         setError(accepted.length === incoming.length ? "" : "Some unsupported files were skipped.");
-        setFiles((current) => multiple ? [...current, ...accepted] : accepted.slice(0, 1));
+        const queued = accepted.map((file) => ({ file, filename: "" }));
+        setFiles((current) => multiple ? [...current, ...queued] : queued.slice(0, 1));
     };
 
     const moveFile = (from, to) => {
@@ -91,12 +92,16 @@ const R2MediaUploader = forwardRef(function R2MediaUploader({ author, postedAt, 
 
         try {
             for (let index = 0; index < files.length; index += 1) {
-                const response = await uploadMedia(files[index], {
+                const queuedFile = files[index];
+                const uploadFilename = queuedFile.filename.trim()
+                    || generatedFilename(queuedFile.file, author, postedAt, mediaType, sequenceStart + index);
+                const response = await uploadMedia(queuedFile.file, {
                     destination,
                     author,
                     postedAt,
                     mediaType,
                     sequence: sequenceStart + index,
+                    filename: uploadFilename,
                 }, (progressEvent) => {
                     const fileProgress = progressEvent.total ? progressEvent.loaded / progressEvent.total : 0;
                     setProgress(Math.round(((index + fileProgress) / files.length) * 100));
@@ -175,7 +180,11 @@ const R2MediaUploader = forwardRef(function R2MediaUploader({ author, postedAt, 
 
             {files.length > 0 && (
                 <div className="r2-upload-queue">
-                    {files.map((file, index) => (
+                    {files.map(({ file, filename }, index) => {
+                        const automaticFilename = author && postedAt
+                            ? generatedFilename(file, author, postedAt, mediaType, sequenceStart + index)
+                            : file.name;
+                        return (
                         <div
                             key={`${file.name}-${file.size}-${file.lastModified}-${index}`}
                             className={`r2-queued-file${multiple ? "" : " is-single"}`}
@@ -202,9 +211,16 @@ const R2MediaUploader = forwardRef(function R2MediaUploader({ author, postedAt, 
                             <QueuedFilePreview file={file} />
                             <span className="r2-file-details">
                                 <small className="r2-upload-as-label">Will upload as</small>
-                                <strong title={author && postedAt ? generatedFilename(file, author, postedAt, mediaType, sequenceStart + index) : file.name}>
-                                    {author && postedAt ? generatedFilename(file, author, postedAt, mediaType, sequenceStart + index) : "Select author and date"}
-                                </strong>
+                                <input
+                                    className="r2-upload-filename"
+                                    value={filename || automaticFilename}
+                                    disabled={uploading || !author || !postedAt}
+                                    aria-label={`Upload filename for ${file.name}`}
+                                    title="Edit the filename used in R2"
+                                    onChange={(event) => setFiles((current) => current.map((entry, itemIndex) =>
+                                        itemIndex === index ? { ...entry, filename: event.target.value } : entry
+                                    ))}
+                                />
                                 <small title={file.name}>Original: {file.name} · {formatSize(file.size)}</small>
                             </span>
                             {multiple && (
@@ -215,7 +231,8 @@ const R2MediaUploader = forwardRef(function R2MediaUploader({ author, postedAt, 
                             )}
                             <button type="button" className="r2-file-remove" disabled={uploading} onClick={() => setFiles((current) => current.filter((_, itemIndex) => itemIndex !== index))}>Remove</button>
                         </div>
-                    ))}
+                        );
+                    })}
                     <button type="button" className="r2-upload-queued-button" disabled={uploading} onClick={() => uploadFiles(false)}>
                         {uploading ? `Uploading ${progress}%` : `Upload ${files.length} ${files.length === 1 ? "file" : "files"}`}
                     </button>

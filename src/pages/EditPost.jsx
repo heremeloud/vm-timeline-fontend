@@ -13,19 +13,10 @@ import TweetEmbed from "../components/TweetEmbed";
 import { deleteMediaObject } from "../api/mediaService";
 import { bangkokDateTimeToUtc, cleanPastedPostUrl, detectMediaAuthor, detectMediaDate, detectPostDateTime, extractTikTokPostId, isInstagramChannelUrl, normalizePostUrl, utcToBangkokDateTime } from "../utils/postUrls";
 import { isFromR2 } from "../utils/media";
+import { appendUploadedUrls, nextMediaSequence } from "../utils/mediaItemOrder";
 import "../styles/EventForm.css";
 
 const emptyStoryItem = () => ({ url: "", text: "", translation: "", note: "", attachment_type: "screenshot", deleteFromR2: false });
-
-const appendUploadedUrls = (items, urls) => {
-    const next = [...items];
-    urls.forEach((url) => {
-        const emptyIndex = next.findIndex((item) => !item.url.trim());
-        if (emptyIndex >= 0) next[emptyIndex] = { ...next[emptyIndex], url };
-        else next.push({ ...emptyStoryItem(), url });
-    });
-    return next;
-};
 
 const getStoryItemCount = (quantity) =>
     Math.min(100, Math.max(1, Math.floor(Number(quantity) || 1)));
@@ -271,7 +262,7 @@ export default function EditPost() {
         }
 
         const effectiveMediaItems = isIGCollection
-            ? appendUploadedUrls(mediaItems, newlyUploadedUrls)
+            ? appendUploadedUrls(mediaItems, newlyUploadedUrls, emptyStoryItem)
             : mediaItems;
         const newId = extractExternalId(newURL, platform);
         const filteredMediaItems = isIGCollection
@@ -476,8 +467,8 @@ export default function EditPost() {
                                 author={authors.find((item) => item.id === Number(authorId))?.name || ""}
                                 postedAt={postedAt}
                                 mediaType={contentType === "broadcast" ? "bc" : "igs"}
-                                sequenceStart={mediaItems.filter((item) => item.url.trim()).length + 1}
-                                onUploaded={(urls) => setMediaItems((items) => appendUploadedUrls(items, urls))}
+                                sequenceStart={nextMediaSequence(mediaItems)}
+                                onUploaded={(urls) => setMediaItems((items) => appendUploadedUrls(items, urls, emptyStoryItem))}
                             />
                             {mediaItems.map((item, i) => (
                                 <div key={i} style={{ border: "1px solid #ddd", borderRadius: 8, padding: 10, marginBottom: 10 }}>

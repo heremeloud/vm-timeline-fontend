@@ -1,0 +1,13 @@
+.reply-admin-actions {
+    display: flex;
+    gap: 5px;
+    margin-top: 8px;
+}
+
+button.reply-action-button {
+    min-height: 24px;
+    padding: 3px 8px;
+    border-radius: 5px;
+    font-size: 0.72rem;
+    line-height: 1.2;
+}

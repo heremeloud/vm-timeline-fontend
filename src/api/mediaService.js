@@ -7,6 +7,7 @@ export const uploadMedia = (file, metadata, onUploadProgress) => {
     form.append("posted_at", metadata.postedAt);
     form.append("media_type", metadata.mediaType);
     form.append("sequence", String(metadata.sequence));
+    if (metadata.filename) form.append("filename", metadata.filename);
     form.append("file", file);
     return api.post("/media/upload", form, { onUploadProgress });
 };

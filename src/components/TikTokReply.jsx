@@ -2,6 +2,7 @@ import { useState } from "react";
 import { deleteTextPair, updateTextPair } from "../api/textsService";
 import Avatar from "./Avatar";
 import "../styles/IGReply.css";
+import "../styles/ReplyActions.css";
 
 function isYouTube(url) {
     if (!url) return false;
@@ -151,11 +152,11 @@ export default function TikTokReply({ reply }) {
                     </div>
 
                     {localStorage.getItem("jwt") && (
-                        <div className="igreply-actions">
-                            <button onClick={() => setIsEditing(true)}>
+                        <div className="reply-admin-actions">
+                            <button className="reply-action-button btn-edit" onClick={() => setIsEditing(true)}>
                                 Edit
                             </button>
-                            <button className="btn-delete" onClick={handleDelete}>Delete</button>
+                            <button className="reply-action-button btn-delete" onClick={handleDelete}>Delete</button>
                         </div>
                     )}
                 </>

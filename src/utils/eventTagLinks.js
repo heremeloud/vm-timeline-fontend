@@ -76,7 +76,12 @@ export function getEventTagLinks(post, eventTagIndex) {
         const matches = eventTagIndex.get(normalized);
         if (!matches?.length) return;
 
-        const nearbyMatches = matches.filter(
+        // Event hashtags take priority. Project and episode hashtags are a
+        // fallback when this hashtag does not identify an event.
+        const eventMatches = matches.filter((event) => !event.is_project);
+        const eligibleMatches = eventMatches.length > 0 ? eventMatches : matches;
+
+        const nearbyMatches = eligibleMatches.filter(
             (event) => distanceFromPost(event, post.posted_at) <= NEARBY_EVENT_WINDOW_MS
         );
         const nearbyPhysicalMatches = nearbyMatches.filter((event) =>
@@ -87,7 +92,7 @@ export function getEventTagLinks(post, eventTagIndex) {
                 ? nearbyPhysicalMatches
                 : nearbyMatches.length > 0
                   ? nearbyMatches
-                  : matches;
+                  : eligibleMatches;
         const event = [...candidates].sort((a, b) => {
             const distanceDifference =
                 distanceFromPost(a, post.posted_at) - distanceFromPost(b, post.posted_at);

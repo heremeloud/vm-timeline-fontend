@@ -746,6 +746,7 @@ function DisplayRow({ tab, item, author, isSearchResult = false, saving, returnT
 
     return (
         <div
+            className="manage-display-card"
             onDragOver={canDrag ? onDragOver : undefined}
             onDrop={canDrag ? onDrop : undefined}
             style={{
@@ -808,12 +809,12 @@ function DisplayRow({ tab, item, author, isSearchResult = false, saving, returnT
                     ⋮⋮
                 </div>
             )}
-            <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "flex-start" }}>
+            <div className="manage-display-card-header" style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "flex-start" }}>
                 <div className="manage-display-entry-summary">
                     <ManageDisplayPreview url={previewUrl} title={title} tab={tab} item={item} />
                     <div>
                         <strong>{title}</strong>
-                        <div style={{ fontSize: "0.9rem", opacity: 0.75, marginTop: 4 }}>{meta}</div>
+                        <div className="manage-display-entry-meta" style={{ fontSize: "0.9rem", opacity: 0.75, marginTop: 4 }}>{meta}</div>
                         {tab === "posts" && !isReplySearchResult && author && !author.show_on_timeline && (
                             <div style={{ fontSize: "0.82rem", color: "#9a3412", marginTop: 4 }}>
                                 Author is hidden, so this post stays hidden publicly.
