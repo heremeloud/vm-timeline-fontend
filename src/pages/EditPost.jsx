@@ -61,7 +61,7 @@ export default function EditPost() {
 
     // Form fields
     const [platform, setPlatform] = useState("ig");
-    const [contentType, setContentType] = useState("post");
+    const [contentType, setContentType] = useState("story");
     const [authorId, setAuthorId] = useState("");
     const [externalURL, setExternalURL] = useState("");
     const [externalId, setExternalId] = useState("");
@@ -350,9 +350,9 @@ export default function EditPost() {
                             setContentType(next);
                             if (next !== "post") setExternalURL("");
                         }}>
-                            <option value="post">Post / Reel</option>
                             <option value="story">Story</option>
                             <option value="broadcast">Broadcast channel</option>
+                            <option value="post">Post / Reel</option>
                         </select>
                     </div>
                 )}
@@ -575,7 +575,7 @@ export default function EditPost() {
                                             next[i] = { ...next[i], note: e.target.value };
                                             setMediaItems(next);
                                         }}
-                                        placeholder="Add translation context"
+                                        placeholder="Add translator's note"
                                         style={{ width: "100%", minHeight: 56, marginBottom: 4, boxSizing: "border-box" }}
                                     />
                                 </div>

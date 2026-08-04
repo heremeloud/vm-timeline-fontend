@@ -56,7 +56,7 @@ export default function CreatePost() {
 
     // platform: ig or x
     const [platform, setPlatform] = useState(parent_id ? "x" : "ig");
-    const [contentType, setContentType] = useState("post");
+    const [contentType, setContentType] = useState("story");
 
     // form fields
     const [external_url, setExternalURL] = useState("");
@@ -355,9 +355,9 @@ export default function CreatePost() {
                             setContentType(next);
                             if (next !== "post") setExternalURL("");
                         }}>
-                            <option value="post">Post / Reel</option>
                             <option value="story">Story</option>
                             <option value="broadcast">Broadcast channel</option>
+                            <option value="post">Post / Reel</option>
                         </select>
                     </div>
                 )}
@@ -648,7 +648,7 @@ export default function CreatePost() {
                                             next[i] = { ...next[i], note: e.target.value };
                                             setMediaItems(next);
                                         }}
-                                        placeholder="Add translation context"
+                                        placeholder="Add translator's note"
                                         style={{ width: "100%", minHeight: 56, marginBottom: 4, boxSizing: "border-box" }}
                                     />
                                 </div>
