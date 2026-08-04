@@ -8,37 +8,59 @@ import Avatar from "./Avatar";
 function MediaItem({ url, caption }) {
     if (isVideo(url)) {
         return (
-            <video
-                src={url}
-                controls
-                playsInline
-                muted
-                autoPlay
-                preload="metadata"
-                style={{
-                    width: "100%",
-                    height: "auto",
-                    borderRadius: 12,
-                    background: "black",
-                    display: "block",
-                }}
-            />
+            <div className="ig-media-video">
+                <video
+                    src={url}
+                    controls
+                    playsInline
+                    muted
+                    autoPlay
+                    preload="metadata"
+                    style={{
+                        width: "100%",
+                        height: "auto",
+                        borderRadius: 12,
+                        background: "black",
+                        display: "block",
+                    }}
+                />
+                <a
+                    className="ig-media-download"
+                    href={url}
+                    download
+                    target="_blank"
+                    rel="noopener noreferrer"
+                >
+                    Download media
+                </a>
+            </div>
         );
     }
     if (isImage(url)) {
         return (
-            <img
-                src={url}
-                alt={caption || "Instagram media"}
-                loading="lazy"
-                style={{
-                    width: "100%",
-                    height: "auto",
-                    borderRadius: 12,
-                    objectFit: "contain",
-                    display: "block",
-                }}
-            />
+            <div className="ig-media-image">
+                <img
+                    src={url}
+                    alt={caption || "Instagram media"}
+                    loading="lazy"
+                    style={{
+                        width: "100%",
+                        height: "auto",
+                        borderRadius: 12,
+                        objectFit: "contain",
+                        display: "block",
+                    }}
+                />
+                <a
+                    className="ig-media-download"
+                    href={url}
+                    download
+                    target="_blank"
+                    rel="noopener noreferrer"
+                >
+                    Download media
+                </a>
+            </div>
         );
     }
     return null;

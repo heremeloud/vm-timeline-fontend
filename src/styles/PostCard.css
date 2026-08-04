@@ -375,6 +375,21 @@
     box-sizing: border-box !important;
 }
 
+.ig-media-video,
+.ig-media-image {
+    display: grid;
+    gap: 7px;
+}
+
+.ig-media-download {
+    justify-self: end;
+    color: #76522e;
+    font-size: 0.82rem;
+    font-weight: 600;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
 /* Manual Instagram stories use the same bounded width behavior. */
 .igpost-container,
 .igpost-row {
