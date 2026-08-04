@@ -455,7 +455,7 @@ export default function ManageDisplay() {
                             onClick={() => setPage((current) => Math.max(1, current - 1))}
                             disabled={page === 1}
                         >
-                            Prev
+                            ‹ Prev
                         </button>
                         <strong>Page {page} / {lastPage}</strong>
                         <button
@@ -463,7 +463,7 @@ export default function ManageDisplay() {
                             onClick={() => setPage((current) => current + 1)}
                             disabled={nextDisabled}
                         >
-                            Next
+                            Next ›
                         </button>
                     </div>
                     <div className="manage-display-page-jump">

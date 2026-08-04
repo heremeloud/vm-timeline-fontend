@@ -330,7 +330,7 @@ export default function Home() {
                         onClick={() => setTimelinePage(page - 1)}
                         disabled={page === 1}
                     >
-                        ⬅️ Prev
+                        ‹ Prev
                     </button>
 
                     <span>
@@ -343,7 +343,7 @@ export default function Home() {
                         onClick={() => setTimelinePage(page + 1)}
                         disabled={nextDisabled}
                     >
-                        Next ➡️
+                        Next ›
                     </button>
                 </div>
 
