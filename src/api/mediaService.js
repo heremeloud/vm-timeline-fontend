@@ -12,3 +12,8 @@ export const uploadMedia = (file, metadata, onUploadProgress) => {
 };
 
 export const deleteMediaObject = (url) => api.delete("/media/object", { data: { url } });
+
+export const getMediaDownloadUrl = (url) => {
+    const baseUrl = (api.defaults.baseURL || "").replace(/\/$/, "");
+    return `${baseUrl}/media/download?url=${encodeURIComponent(url)}`;
+};

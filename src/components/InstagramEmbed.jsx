@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { isVideo, isImage } from "../utils/media";
+import { getMediaDownloadUrl } from "../api/mediaService";
 import Avatar from "./Avatar";
 
 // -------------------------------------------------------
@@ -8,59 +9,37 @@ import Avatar from "./Avatar";
 function MediaItem({ url, caption }) {
     if (isVideo(url)) {
         return (
-            <div className="ig-media-video">
-                <video
-                    src={url}
-                    controls
-                    playsInline
-                    muted
-                    autoPlay
-                    preload="metadata"
-                    style={{
-                        width: "100%",
-                        height: "auto",
-                        borderRadius: 12,
-                        background: "black",
-                        display: "block",
-                    }}
-                />
-                <a
-                    className="ig-media-download"
-                    href={url}
-                    download
-                    target="_blank"
-                    rel="noopener noreferrer"
-                >
-                    Download media
-                </a>
-            </div>
+            <video
+                src={url}
+                controls
+                playsInline
+                muted
+                autoPlay
+                preload="metadata"
+                style={{
+                    width: "100%",
+                    height: "auto",
+                    borderRadius: 12,
+                    background: "black",
+                    display: "block",
+                }}
+            />
         );
     }
     if (isImage(url)) {
         return (
-            <div className="ig-media-image">
-                <img
-                    src={url}
-                    alt={caption || "Instagram media"}
-                    loading="lazy"
-                    style={{
-                        width: "100%",
-                        height: "auto",
-                        borderRadius: 12,
-                        objectFit: "contain",
-                        display: "block",
-                    }}
-                />
-                <a
-                    className="ig-media-download"
-                    href={url}
-                    download
-                    target="_blank"
-                    rel="noopener noreferrer"
-                >
-                    Download media
-                </a>
-            </div>
+            <img
+                src={url}
+                alt={caption || "Instagram media"}
+                loading="lazy"
+                style={{
+                    width: "100%",
+                    height: "auto",
+                    borderRadius: 12,
+                    objectFit: "contain",
+                    display: "block",
+                }}
+            />
         );
     }
     return null;
@@ -117,6 +96,10 @@ function MediaCarousel({ items, caption, idx, setIdx }) {
                     </>
                 )}
             </div>
+
+            <a className="ig-media-download" href={getMediaDownloadUrl(displayUrl)}>
+                Download media
+            </a>
 
             {/* Per-slide translation / note (no original text shown) */}
             {translation && (
