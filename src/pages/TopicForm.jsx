@@ -4,7 +4,7 @@ import { createPost, getAdminPosts } from "../api/postsService";
 import { ensureAuthor, getAuthors } from "../api/authorsService";
 import { createTopic, getAdminTopic, updateTopic } from "../api/topicsService";
 import { ROUTES } from "../routes";
-import { bangkokDateTimeToUtc, cleanPastedPostUrl, detectMediaAuthor, detectMediaDate, detectPostDateTime, normalizePostUrl } from "../utils/postUrls";
+import { bangkokDateTimeToUtc, cleanPastedPostUrl, detectMediaAuthor, detectMediaDate, detectPostDateTime, extractTikTokPostId, normalizePostUrl } from "../utils/postUrls";
 import { isImage, isVideo } from "../utils/media";
 import "../styles/EventForm.css";
 import "../styles/Topics.css";
@@ -60,7 +60,7 @@ function extractExternalId(url, platform) {
     if (!url) return "";
     if (platform === "ig") return url.split("/p/")?.[1]?.split("/")?.[0] || "";
     if (platform === "x") return url.split("/status/")?.[1]?.split("?")?.[0] || "";
-    if (platform === "tt") return url.match(/\/video\/(\d+)/)?.[1] || "";
+    if (platform === "tt") return extractTikTokPostId(url);
     return "";
 }
 

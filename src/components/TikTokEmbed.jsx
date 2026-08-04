@@ -1,12 +1,7 @@
 import { useMemo } from "react";
 import Avatar from "./Avatar";
 import { isVideo, isImage } from "../utils/media";
-
-function extractTikTokVideoId(url) {
-    if (!url) return "";
-    const m = url.match(/\/video\/(\d+)/);
-    return m?.[1] || "";
-}
+import { extractTikTokPostId } from "../utils/postUrls";
 
 export default function TikTokEmbed({
     external_url,
@@ -19,7 +14,7 @@ export default function TikTokEmbed({
     const ttUrl = (external_url || "").trim();
     const mediaUrl = (media_url || "").trim();
 
-    const videoId = useMemo(() => extractTikTokVideoId(ttUrl), [ttUrl]);
+    const videoId = useMemo(() => extractTikTokPostId(ttUrl), [ttUrl]);
     const hasTikTokEmbed = !!videoId;
     const hasMedia = mediaUrl.length > 0;
 

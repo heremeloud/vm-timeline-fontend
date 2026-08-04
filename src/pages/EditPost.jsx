@@ -11,7 +11,7 @@ import InstagramEmbed from "../components/InstagramEmbed";
 import TikTokEmbed from "../components/TikTokEmbed";
 import TweetEmbed from "../components/TweetEmbed";
 import { deleteMediaObject } from "../api/mediaService";
-import { bangkokDateTimeToUtc, cleanPastedPostUrl, detectMediaAuthor, detectMediaDate, detectPostDateTime, isInstagramChannelUrl, normalizePostUrl, utcToBangkokDateTime } from "../utils/postUrls";
+import { bangkokDateTimeToUtc, cleanPastedPostUrl, detectMediaAuthor, detectMediaDate, detectPostDateTime, extractTikTokPostId, isInstagramChannelUrl, normalizePostUrl, utcToBangkokDateTime } from "../utils/postUrls";
 import { isFromR2 } from "../utils/media";
 import "../styles/EventForm.css";
 
@@ -109,8 +109,7 @@ export default function EditPost() {
             return parts?.[1]?.split("?")[0] || "";
         }
         if (platform === "tt") {
-            const m = url.match(/\/video\/(\d+)/);
-            return m?.[1] || "";
+            return extractTikTokPostId(url);
         }
         return "";
     };

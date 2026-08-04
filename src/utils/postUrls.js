@@ -30,13 +30,17 @@ export function normalizePostUrl(value, platform) {
     return value.trim();
 }
 
+export function extractTikTokPostId(value) {
+    return value?.match(/\/(?:video|photo)\/(\d+)/i)?.[1] || "";
+}
+
 export function detectPostPlatform(value) {
     const url = value?.trim() || "";
     return /^(?:https?:\/\/)?(?:www\.|mobile\.)?(?:x\.com|twitter\.com)\/[^/?#]+\/status\/\d+/i.test(url)
         ? "x"
         : /^(?:https?:\/\/)?(?:www\.)?instagram\.com\/(?:p|reel|tv|channel)\//i.test(url)
             ? "ig"
-            : /^(?:https?:\/\/)?(?:www\.|m\.)?tiktok\.com\/@[^/?#]+\/video\/\d+/i.test(url)
+            : /^(?:https?:\/\/)?(?:www\.|m\.)?tiktok\.com\/@[^/?#]+\/(?:video|photo)\/\d+/i.test(url)
                 ? "tt"
                 : null;
 }
@@ -74,7 +78,7 @@ export function bangkokDateTimeToUtc(date, time) {
     return Number.isNaN(parsed.getTime()) ? null : parsed.toISOString();
 }
 
-// X Snowflake IDs contain milliseconds; TikTok video IDs contain Unix seconds.
+// X Snowflake IDs contain milliseconds; TikTok post IDs contain Unix seconds.
 export function detectPostDateTime(value) {
     const platform = detectPostPlatform(value);
     if (!platform) return null;
@@ -95,7 +99,9 @@ export function detectPostDateTime(value) {
             epochMs = (mediaId >> 23n) + 1314220021721n;
             estimated = true;
         } else {
-            const id = value?.match(platform === "x" ? /\/status\/(\d+)/i : /\/video\/(\d+)/i)?.[1];
+            const id = platform === "x"
+                ? value?.match(/\/status\/(\d+)/i)?.[1]
+                : extractTikTokPostId(value);
             if (!id) return null;
             const numericId = BigInt(id);
             epochMs = platform === "x"

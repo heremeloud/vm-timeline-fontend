@@ -7,7 +7,7 @@ import AutoResizeTextarea from "../components/AutoResizeTextarea";
 import R2MediaUploader from "../components/R2MediaUploader";
 import MediaUrlField from "../components/MediaUrlField";
 import { deleteMediaObject } from "../api/mediaService";
-import { bangkokDateTimeToUtc, cleanPastedPostUrl, detectMediaAuthor, detectMediaDate, detectPostDateTime, isInstagramChannelUrl, normalizePostUrl } from "../utils/postUrls";
+import { bangkokDateTimeToUtc, cleanPastedPostUrl, detectMediaAuthor, detectMediaDate, detectPostDateTime, extractTikTokPostId, isInstagramChannelUrl, normalizePostUrl } from "../utils/postUrls";
 import { isFromR2 } from "../utils/media";
 import "../styles/EventForm.css";
 
@@ -115,12 +115,6 @@ export default function CreatePost() {
         return clean;
     };
 
-    const extractTikTokVideoId = (url) => {
-        if (!url) return "";
-        const m = url.match(/\/video\/(\d+)/);
-        return m?.[1] || "";
-    };
-
     /** Extract tweet ID or IG shortcode **/
 
     const extractExternalId = (url, platform) => {
@@ -141,7 +135,7 @@ export default function CreatePost() {
         }
 
         if (platform === "tt") {
-            return extractTikTokVideoId(url);
+            return extractTikTokPostId(url);
         }
 
         return "";
