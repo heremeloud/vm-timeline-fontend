@@ -7,7 +7,7 @@ import AutoResizeTextarea from "../components/AutoResizeTextarea";
 import R2MediaUploader from "../components/R2MediaUploader";
 import MediaUrlField from "../components/MediaUrlField";
 import { deleteMediaObject } from "../api/mediaService";
-import { bangkokDateTimeToUtc, cleanPastedPostUrl, detectMediaAuthor, detectMediaDate, detectPostDateTime, extractTikTokPostId, isInstagramChannelUrl, normalizePostUrl } from "../utils/postUrls";
+import { bangkokDateTimeToUtc, cleanPastedPostUrl, detectMediaAuthor, detectMediaDate, detectPostDateTime, extractTikTokPostId, isInstagramChannelUrl, isInstagramPostUrl, normalizePostUrl } from "../utils/postUrls";
 import { isFromR2 } from "../utils/media";
 import { appendUploadedUrls, nextMediaSequence } from "../utils/mediaItemOrder";
 import "../styles/EventForm.css";
@@ -190,6 +190,7 @@ export default function CreatePost() {
                 (detectedAuthor) => setAuthor(detectedAuthor.name),
             );
             if (isInstagramChannelUrl(pastedUrl)) setContentType("broadcast");
+            else if (isInstagramPostUrl(pastedUrl)) setContentType("post");
             const detectedDateTime = detectPostDateTime(pastedUrl);
             if (detectedDateTime) {
                 setPostedAt(detectedDateTime.date);

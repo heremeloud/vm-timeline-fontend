@@ -126,6 +126,10 @@ export function isInstagramChannelUrl(value) {
     return /^(?:https?:\/\/)?(?:www\.)?instagram\.com\/channel\/[^/?#]+(?:\/[^/?#]+)?/i.test(value?.trim() || "");
 }
 
+export function isInstagramPostUrl(value) {
+    return /^(?:https?:\/\/)?(?:www\.)?instagram\.com\/(?:p|reel|tv)\/[^/?#]+/i.test(value?.trim() || "");
+}
+
 function extractHandle(value, platform, isProfileUrl = false) {
     const url = value?.trim();
     if (!url) return null;

@@ -11,7 +11,7 @@ import InstagramEmbed from "../components/InstagramEmbed";
 import TikTokEmbed from "../components/TikTokEmbed";
 import TweetEmbed from "../components/TweetEmbed";
 import { deleteMediaObject } from "../api/mediaService";
-import { bangkokDateTimeToUtc, cleanPastedPostUrl, detectMediaAuthor, detectMediaDate, detectPostDateTime, extractTikTokPostId, isInstagramChannelUrl, normalizePostUrl, utcToBangkokDateTime } from "../utils/postUrls";
+import { bangkokDateTimeToUtc, cleanPastedPostUrl, detectMediaAuthor, detectMediaDate, detectPostDateTime, extractTikTokPostId, isInstagramChannelUrl, isInstagramPostUrl, normalizePostUrl, utcToBangkokDateTime } from "../utils/postUrls";
 import { isFromR2 } from "../utils/media";
 import { appendUploadedUrls, nextMediaSequence } from "../utils/mediaItemOrder";
 import "../styles/EventForm.css";
@@ -219,6 +219,7 @@ export default function EditPost() {
                 (detectedAuthor) => setAuthorId(detectedAuthor.id),
             );
             if (isInstagramChannelUrl(pastedUrl)) setContentType("broadcast");
+            else if (isInstagramPostUrl(pastedUrl)) setContentType("post");
             const detectedDateTime = detectPostDateTime(pastedUrl);
             if (detectedDateTime) {
                 setPostedAt(detectedDateTime.date);
