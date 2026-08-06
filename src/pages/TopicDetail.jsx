@@ -164,15 +164,17 @@ export default function TopicDetail() {
 
             <div className="topic-timeline">
                 {items.map((item) => (
-                    <div className="topic-timeline-item" key={item.id}>
+                    <div
+                        className={`topic-timeline-item${editingTimeId === item.id ? " topic-timeline-item-time-editing" : ""}`}
+                        key={item.id}
+                    >
                         <div className="topic-timeline-time">
                             {isAdmin && editingTimeId === item.id ? (
-                                <div style={{ display: "grid", gap: 6 }}>
+                                <div className="topic-time-editor">
                                     <input
                                         type="datetime-local"
                                         value={timeDraft}
                                         onChange={(e) => setTimeDraft(e.target.value)}
-                                        style={{ width: "100%", boxSizing: "border-box" }}
                                     />
                                     <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                                         <button

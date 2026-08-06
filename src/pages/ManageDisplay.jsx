@@ -548,6 +548,7 @@ export default function ManageDisplay() {
                                 {authors.map((author) => (
                                     <option key={author.id} value={author.id}>{author.name}</option>
                                 ))}
+                                <option value="temp">Temporary authors</option>
                             </select>
                         </div>
                         <div className="manage-display-date-range">
@@ -569,7 +570,7 @@ export default function ManageDisplay() {
                                 type="search"
                                 value={postSearch}
                                 onChange={(e) => setPostSearch(e.target.value)}
-                                placeholder="Search captions, translations, replies, notes"
+                                placeholder="Search authors, captions, translations, replies, notes"
                             />
                             <button type="submit">Search</button>
                             {submittedPostSearch && (

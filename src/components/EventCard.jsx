@@ -165,7 +165,13 @@ export default function EventCard({ event }) {
         }
     }
 
-    const liveUrls = (event.live_urls || []).map(safeUrl).filter(Boolean);
+    const liveMediaItems = (event.live_media_items?.length
+        ? event.live_media_items
+        : (event.live_urls || []).map((url) => ({ url })))
+        .map((item) => ({ ...item, url: safeUrl(item.url) }))
+        .filter((item) => item.url);
+    const liveUrls = liveMediaItems.map((item) => item.url);
+    const currentLiveMedia = liveMediaItems[liveIdx] || {};
 
     return (
         <div className="eventcard-wrapper">
@@ -362,6 +368,29 @@ export default function EventCard({ event }) {
                                 </a>
                             );
                         })()}
+
+                        {(currentLiveMedia.keyword || currentLiveMedia.hashtag) && (
+                            <div className="eventcard-badges" style={{ marginTop: 10 }}>
+                                {currentLiveMedia.keyword && (
+                                    <button
+                                        type="button"
+                                        className="eventcard-badge eventcard-badge-click"
+                                        onClick={() => handleCopyTerm(currentLiveMedia.keyword)}
+                                    >
+                                        {currentLiveMedia.keyword}
+                                    </button>
+                                )}
+                                {currentLiveMedia.hashtag && (
+                                    <button
+                                        type="button"
+                                        className="eventcard-badge eventcard-badge-click"
+                                        onClick={() => handleCopyTerm(`#${currentLiveMedia.hashtag.replace(/^#/, "")}`)}
+                                    >
+                                        #{currentLiveMedia.hashtag.replace(/^#/, "")}
+                                    </button>
+                                )}
+                            </div>
+                        )}
 
                         {liveUrls.length > 1 && (
                             <div className="eventcard-live-nav">

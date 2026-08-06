@@ -75,6 +75,8 @@ export default function CreatePost() {
     // Author list from backend
     const [authors, setAuthors] = useState([]);
     const [author, setAuthor] = useState("");
+    const [tempAuthorName, setTempAuthorName] = useState("");
+    const [tempAuthorPfpUrl, setTempAuthorPfpUrl] = useState("");
     const [newAuthorName, setNewAuthorName] = useState("");
     const [newAuthorPhoto, setNewAuthorPhoto] = useState("");
     const [newAuthorInstagramURL, setNewAuthorInstagramURL] = useState("");
@@ -220,8 +222,14 @@ export default function CreatePost() {
         e.preventDefault();
         try {
             let finalAuthor = author;
+            const hasTempAuthor = Boolean(tempAuthorName.trim());
 
-            if (author === "__new__") {
+            if (!hasTempAuthor && !author) {
+                alert("Select an author or enter a post-specific author.");
+                return;
+            }
+
+            if (!hasTempAuthor && author === "__new__") {
                 if (!newAuthorName.trim()) {
                     alert("Please enter the new author's name.");
                     return;
@@ -241,22 +249,25 @@ export default function CreatePost() {
                 ? appendUploadedUrls(mediaItems, newlyUploadedUrls, emptyStoryItem)
                 : mediaItems;
 
-            const authorRes = await ensureAuthor({
-                name: finalAuthor,
-                profile_photo_url:
-                    author === "__new__" ? newAuthorPhoto || null : null,
-                ig_pfp_url:
-                    author === "__new__" ? newAuthorInstagramPhoto || null : null,
-                instagram_url:
-                    author === "__new__" ? newAuthorInstagramURL || null : null,
-                twitter_pfp_url:
-                    author === "__new__" ? newAuthorTwitterPhoto || null : null,
-                twitter_url:
-                    author === "__new__" ? newAuthorTwitterURL || null : null,
-                tiktok_pfp_url:
-                    author === "__new__" ? newAuthorTikTokPhoto || null : null,
-            });
-            const authorId = authorRes.data.id;
+            let authorId = null;
+            if (!hasTempAuthor) {
+                const authorRes = await ensureAuthor({
+                    name: finalAuthor,
+                    profile_photo_url:
+                        author === "__new__" ? newAuthorPhoto || null : null,
+                    ig_pfp_url:
+                        author === "__new__" ? newAuthorInstagramPhoto || null : null,
+                    instagram_url:
+                        author === "__new__" ? newAuthorInstagramURL || null : null,
+                    twitter_pfp_url:
+                        author === "__new__" ? newAuthorTwitterPhoto || null : null,
+                    twitter_url:
+                        author === "__new__" ? newAuthorTwitterURL || null : null,
+                    tiktok_pfp_url:
+                        author === "__new__" ? newAuthorTikTokPhoto || null : null,
+                });
+                authorId = authorRes.data.id;
+            }
 
             let cleanURL = external_url;
             if (platform === "x") cleanURL = normalizePostUrl(cleanURL, platform);
@@ -285,6 +296,8 @@ export default function CreatePost() {
                 external_url: cleanURL,
                 external_id,
                 author_id: authorId,
+                temp_author_name: tempAuthorName.trim() || null,
+                temp_author_pfp_url: tempAuthorName.trim() ? tempAuthorPfpUrl.trim() || null : null,
                 caption,
                 caption_translation: captionTranslation,
                 caption_translation_note: captionTranslationNote.trim() || null,
@@ -350,7 +363,7 @@ export default function CreatePost() {
 
                 <div className="eventform-section eventform-author-date-row">
                     <div>
-                        <label>Author <span className="form-required">*</span></label>
+                        <label>Saved Author {!tempAuthorName.trim() && <span className="form-required">*</span>}</label>
                         <select value={author} onChange={(e) => setAuthor(e.target.value)}>
                             <option value="">-- Select Author --</option>
                             {authors.map((a) => (
@@ -462,7 +475,31 @@ export default function CreatePost() {
                 )}
 
                 <div className="eventform-section">
-                    <label>Post URL</label>
+                    <label>Post-specific Author <span className="form-optional">(optional)</span></label>
+                    <input
+                        type="text"
+                        value={tempAuthorName}
+                        onChange={(e) => setTempAuthorName(e.target.value)}
+                        placeholder="Display a different author on this post only"
+                    />
+                    <div className="eventform-field-note">This overrides the displayed name without adding an author to the directory.</div>
+                </div>
+
+                {tempAuthorName.trim() && (
+                    <div className="eventform-section">
+                        <label>Post-specific PFP URL <span className="form-optional">(optional)</span></label>
+                        <input
+                            type="url"
+                            value={tempAuthorPfpUrl}
+                            onChange={(e) => setTempAuthorPfpUrl(e.target.value)}
+                            placeholder="https://..."
+                        />
+                        <div className="eventform-field-note">Leave blank to use the selected author's existing profile photo.</div>
+                    </div>
+                )}
+
+                <div className="eventform-section">
+                    <label>External Post URL</label>
                     <input
                         value={external_url}
                         onChange={(e) => setExternalURL(e.target.value)}

@@ -207,6 +207,10 @@
     align-items: start;
 }
 
+.topic-timeline-item-time-editing {
+    grid-template-columns: minmax(220px, 260px) minmax(0, 1fr);
+}
+
 .topic-timeline-item .post-wrapper {
     width: 100%;
     min-width: 0;
@@ -218,6 +222,25 @@
     top: 12px;
     font-size: 0.9rem;
     line-height: 1.4;
+    min-width: 0;
+}
+
+.topic-time-editor {
+    position: relative;
+    z-index: 2;
+    display: grid;
+    gap: 6px;
+    padding: 8px;
+    border-radius: 8px;
+    background: var(--card-bg, #fff);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.1);
+}
+
+.topic-time-editor input[type="datetime-local"] {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
 }
 
 .topic-timeline-time strong {
@@ -248,6 +271,10 @@
 
     .topic-timeline-item {
         grid-template-columns: 1fr;
+    }
+
+    .topic-timeline-item-time-editing {
+        grid-template-columns: minmax(0, 1fr);
     }
 
     .topic-timeline-time {

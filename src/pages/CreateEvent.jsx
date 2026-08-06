@@ -9,6 +9,7 @@ import "../styles/EventForm.css";
 import { EVENT_CATEGORIES, EVENT_SUBCATEGORIES, formatEventSubcategory } from "../constants/eventCategories";
 import { cleanPastedSocialUrls, normalizeSocialPostUrl } from "../utils/postUrls";
 import { formatEventDateRange } from "../utils/eventDateRange";
+import EventMediaFields, { cleanEventMediaItems, normalizeEventMediaItems } from "../components/EventMediaFields";
 
 const DEFAULT_TAG_OPTIONS = [
     { key: "viewmim", label: "ViewMim", value: "ViewMim", defaultChecked: true, row: "couple" },
@@ -52,7 +53,7 @@ export default function CreateEvent() {
     const [endDate, setEndDate] = useState("");
     const [announcementURLsInput, setAnnouncementURLsInput] = useState("");
     const [privateNotes, setPrivateNotes] = useState("");
-    const [liveURLsInput, setLiveURLsInput] = useState("");
+    const [liveMediaItems, setLiveMediaItems] = useState(() => normalizeEventMediaItems());
     const [projectId, setProjectId] = useState("");
     const [projects, setProjects] = useState([]);
     const [parentEventId, setParentEventId] = useState("");
@@ -149,7 +150,7 @@ export default function CreateEvent() {
                 end_date: endDate || null,
                 announcement_urls: announcementURLsInput.split("\n").map(normalizeSocialPostUrl).filter(Boolean),
                 private_notes: privateNotes.trim() || null,
-                live_urls: liveURLsInput.split("\n").map(u => u.trim()).filter(Boolean),
+                live_media_items: cleanEventMediaItems(liveMediaItems),
                 author_ids: selectedAuthorIds,
                 project_id: projectId ? Number(projectId) : null,
                 parent_event_id: parentEventId ? Number(parentEventId) : null,
@@ -313,15 +314,7 @@ export default function CreateEvent() {
                     />
                 </div>
 
-                <div className="eventform-section">
-                    <label>Live URLs <span className="form-optional">(optional, one per line)</span></label>
-                    <textarea
-                        value={liveURLsInput}
-                        onChange={(e) => setLiveURLsInput(e.target.value)}
-                        placeholder={"https://youtube.com/...\nhttps://..."}
-                        style={{ minHeight: 80 }}
-                    />
-                </div>
+                <EventMediaFields items={liveMediaItems} onChange={setLiveMediaItems} />
 
                 <div className="eventform-section">
                     <label>Part of Press Tour <span className="form-optional">(optional)</span></label>

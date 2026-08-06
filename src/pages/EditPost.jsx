@@ -54,6 +54,8 @@ export default function EditPost() {
     const [platform, setPlatform] = useState("ig");
     const [contentType, setContentType] = useState("story");
     const [authorId, setAuthorId] = useState("");
+    const [tempAuthorName, setTempAuthorName] = useState("");
+    const [tempAuthorPfpUrl, setTempAuthorPfpUrl] = useState("");
     const [externalURL, setExternalURL] = useState("");
     const [externalId, setExternalId] = useState("");
     const [caption, setCaption] = useState("");
@@ -120,6 +122,8 @@ export default function EditPost() {
             setPlatform(p.platform);
             setContentType(p.content_type || (p.platform === "ig" && !p.external_url ? "story" : "post"));
             setAuthorId(p.author_id || "");
+            setTempAuthorName(p.temp_author_name || "");
+            setTempAuthorPfpUrl(p.temp_author_pfp_url || "");
             setExternalURL(p.external_url || "");
             setExternalId(p.external_id || "");
             setCaption(p.caption || "");
@@ -247,6 +251,10 @@ export default function EditPost() {
 
     async function saveChanges(e) {
         e.preventDefault();
+        if (!tempAuthorName.trim() && !authorId) {
+            alert("Select an author or enter a post-specific author.");
+            return;
+        }
         let newURL = externalURL;
 
         if (platform === "ig") newURL = normalizeInstagramURL(newURL);
@@ -282,7 +290,9 @@ export default function EditPost() {
         await updatePost(postId, {
             platform,
             content_type: platform === "ig" ? contentType : "post",
-            author_id: authorId,
+            author_id: tempAuthorName.trim() ? null : authorId,
+            temp_author_name: tempAuthorName.trim() || null,
+            temp_author_pfp_url: tempAuthorName.trim() ? tempAuthorPfpUrl.trim() || null : null,
             external_url: newURL,
             external_id: newId,
             caption,
@@ -350,7 +360,7 @@ export default function EditPost() {
 
                 <div className="eventform-section eventform-author-date-row">
                     <div>
-                        <label>Author <span className="form-required">*</span></label>
+                        <label>Saved Author {!tempAuthorName.trim() && <span className="form-required">*</span>}</label>
                         <select value={authorId} onChange={(e) => setAuthorId(Number(e.target.value))}>
                             <option value="">-- Select Author --</option>
                             {authors.map((a) => (
@@ -387,7 +397,31 @@ export default function EditPost() {
                 </div>
 
                 <div className="eventform-section">
-                    <label>External URL</label>
+                    <label>Post-specific Author <span className="form-optional">(optional)</span></label>
+                    <input
+                        type="text"
+                        value={tempAuthorName}
+                        onChange={(e) => setTempAuthorName(e.target.value)}
+                        placeholder="Display a different author on this post only"
+                    />
+                    <div className="eventform-field-note">This overrides the displayed name without adding an author to the directory.</div>
+                </div>
+
+                {tempAuthorName.trim() && (
+                    <div className="eventform-section">
+                        <label>Post-specific PFP URL <span className="form-optional">(optional)</span></label>
+                        <input
+                            type="url"
+                            value={tempAuthorPfpUrl}
+                            onChange={(e) => setTempAuthorPfpUrl(e.target.value)}
+                            placeholder="https://..."
+                        />
+                        <div className="eventform-field-note">Leave blank to use the selected author's existing profile photo.</div>
+                    </div>
+                )}
+
+                <div className="eventform-section">
+                    <label>External Post URL</label>
                     <input
                         value={externalURL}
                         onChange={(e) => setExternalURL(e.target.value)}
