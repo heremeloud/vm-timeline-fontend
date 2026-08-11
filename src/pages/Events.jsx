@@ -306,12 +306,11 @@ export default function Events() {
             <div className="home-header">
                 <h1 style={{ marginBottom: "0.2rem" }}>ViewMim</h1>
                 <h1 style={{ marginTop: "0.2rem" }}>🤎Events🤍</h1>
-                <p>Event timeline (fanmeets, shows, lives, etc.)</p>
+                <p>Event timeline (fan meets, shows, lives, etc.)</p>
                 <p><strong>- solo events in 2025: work in progress - </strong></p>
                 <small style={{ opacity: 0.7 }}>
-                    ※ Click a keyword or hashtag to copy it.
-                    <br />
-                    Select 𝕏 to copy a date-filtered Twitter search. ※
+                    ※ Click a keyword or hashtag to copy it                    <br />
+                    Select 𝕏 to copy a date-filtered Twitter search ※
                     <br />
                     (⚠️ be aware of Twitter's search limit) 
                 </small>

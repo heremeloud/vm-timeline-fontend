@@ -261,7 +261,9 @@ export default function Home() {
                 <h1 style={{ marginTop: "0.2rem" }}>🤎Timeline🤍</h1>
                 <p>Collecting ViewMim social media interactions</p>
                 {lastUpdated && <p>Last update: {lastUpdated}</p>}
-                <p><strong>- 99% of 2024 IGS are included. 2025 IGS: work in progress - </strong></p>
+                <p><strong>99% of 2024 IGS are included
+                    <br /> 
+                    - 2025 IGS: work in progress -</strong></p>
                 <small style={{ opacity: 0.7 }}>
                     ※ IG stories are included starting 2026 ※
                 </small>
