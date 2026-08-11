@@ -4,7 +4,7 @@ import { getAdminProject, updateProject, getProjects } from "../api/projectsServ
 import { getAuthors } from "../api/authorsService";
 import { ROUTES } from "../routes";
 import { PROJECT_CATEGORIES } from "../constants/projectCategories";
-import { cleanPastedSocialUrls, normalizeSocialPostUrl } from "../utils/postUrls";
+import { cleanPastedSocialUrls, cleanPastedYouTubeUrl, normalizeSocialPostUrl, normalizeYouTubeVideoUrl } from "../utils/postUrls";
 import FocalPointPicker from "../components/FocalPointPicker";
 import SeriesMetadataFields from "../components/SeriesMetadataFields";
 import "../styles/EventForm.css";
@@ -144,7 +144,7 @@ export default function EditProject() {
                 announcement_url: normalizeSocialPostUrl(announcementUrl) || null,
                 tweet_url: tweetUrl || null,
                 tweet_label: tweetLabel,
-                youtube_url: youtubeUrl || null,
+                youtube_url: normalizeYouTubeVideoUrl(youtubeUrl) || null,
                 youtube_label: youtubeLabel,
                 mydramalist_url: mydramalistUrl || null,
                 gmmtv_url: gmmtvUrl || null,
@@ -373,7 +373,12 @@ export default function EditProject() {
 
                 <div className="eventform-section">
                     <label>YouTube Video URL <span style={{ fontWeight: 400, opacity: 0.6 }}>(optional - single video, no playlist)</span></label>
-                    <input value={youtubeUrl} onChange={(e) => setYoutubeUrl(e.target.value)} placeholder="https://www.youtube.com/watch?v=..." />
+                    <input
+                        value={youtubeUrl}
+                        onChange={(e) => setYoutubeUrl(e.target.value)}
+                        onPaste={(e) => cleanPastedYouTubeUrl(e, setYoutubeUrl)}
+                        placeholder="https://www.youtube.com/watch?v=..."
+                    />
                     <input value={youtubeLabel} onChange={(e) => setYoutubeLabel(e.target.value)} placeholder="Media name (defaults to Video)" style={{ marginTop: 6 }} />
                 </div>
 

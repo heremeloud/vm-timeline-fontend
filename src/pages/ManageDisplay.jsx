@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { getAuthors, updateAuthor } from "../api/authorsService";
-import { deletePost, getAdminPosts, reorderPost, searchAdminPosts, updatePost } from "../api/postsService";
-import { getAdminEvents, updateEvent } from "../api/eventsService";
-import { getAdminProjects, updateProject } from "../api/projectsService";
+import { countAdminPosts, countAdminPostSearch, deletePost, getAdminPosts, reorderPost, searchAdminPosts, updatePost } from "../api/postsService";
+import { countAdminEvents, getAdminEvents, updateEvent } from "../api/eventsService";
+import { countAdminProjects, getAdminProjects, updateProject } from "../api/projectsService";
 import { getAdminTopics, updateTopic } from "../api/topicsService";
 import { ROUTES } from "../routes";
 import { formatEventDateRange } from "../utils/eventDateRange";
@@ -39,7 +39,7 @@ function postPlatformLabel(item) {
     return platform || "Unknown";
 }
 
-function previewUrlForItem(tab, item, author) {
+function previewUrlForItem(tab, item) {
     if (tab === "posts") {
         const firstMedia = Array.isArray(item.media_urls) ? item.media_urls.find((media) => typeof media === "string" ? media : media?.url) : null;
         return (typeof firstMedia === "string" ? firstMedia : firstMedia?.url) || item.media_url || "";
@@ -244,32 +244,26 @@ export default function ManageDisplay() {
             let total = 0;
             if (activeTab === "posts") {
                 const searchTerm = submittedPostSearch.trim();
-                const res = searchTerm ? await searchAdminPosts({
+                const res = searchTerm ? await countAdminPostSearch({
                     q: searchTerm,
-                    limit: 100000,
-                    offset: 0,
-                    sort: sortOrder,
                     platform: platformFilter,
                     authorId: authorFilter,
                     dateFrom,
                     dateTo,
                     searchScopes,
-                }) : await getAdminPosts({
-                    limit: 100000,
-                    offset: 0,
-                    sort: sortOrder,
+                }) : await countAdminPosts({
                     platform: platformFilter,
                     authorId: authorFilter,
                     dateFrom,
                     dateTo,
                 });
-                total = (res.data || []).length;
+                total = res.data?.count || 0;
             } else if (activeTab === "events") {
-                const res = await getAdminEvents({ limit: 100000, offset: 0, sort: sortOrder });
-                total = (res.data || []).length;
+                const res = await countAdminEvents();
+                total = res.data?.count || 0;
             } else if (activeTab === "projects") {
-                const res = await getAdminProjects({ limit: 100000, offset: 0, sort: sortOrder });
-                total = (res.data || []).length;
+                const res = await countAdminProjects();
+                total = res.data?.count || 0;
             } else if (activeTab === "specials") {
                 const res = await getAdminTopics();
                 total = (res.data || []).length;
@@ -743,7 +737,7 @@ function DisplayRow({ tab, item, author, isSearchResult = false, saving, returnT
         meta = isVisible ? "allowed on timeline" : "hidden from timeline";
     }
 
-    const previewUrl = previewUrlForItem(tab, item, author);
+    const previewUrl = previewUrlForItem(tab, item);
 
     return (
         <div

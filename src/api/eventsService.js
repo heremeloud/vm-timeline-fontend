@@ -24,6 +24,13 @@ export const getAdminEvents = ({ limit = 50, offset = 0, sort = "newest", name, 
     return api.get(url);
 };
 
+export const countAdminEvents = ({ name, category } = {}) => {
+    const params = new URLSearchParams();
+    if (name) params.set("name", name);
+    if (category) params.set("category", category);
+    return api.get(`/events/admin/count?${params.toString()}`);
+};
+
 export const createEvent = (data) => api.post("/events", data);
 
 export const updateEvent = (id, data) => api.patch(`/events/${id}`, data);

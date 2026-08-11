@@ -1,3 +1,5 @@
+import { cleanPastedYouTubeUrl, normalizeYouTubeVideoUrl } from "../utils/postUrls";
+
 const emptyMediaItem = () => ({ url: "", keyword: "", hashtag: "" });
 
 export function normalizeEventMediaItems(items = []) {
@@ -13,7 +15,7 @@ export function normalizeEventMediaItems(items = []) {
 export function cleanEventMediaItems(items = []) {
     return items
         .map((item) => ({
-            url: item.url.trim(),
+            url: normalizeYouTubeVideoUrl(item.url),
             keyword: item.keyword.trim() || null,
             hashtag: item.hashtag.trim().replace(/^#+/, "") || null,
         }))
@@ -37,7 +39,12 @@ export default function EventMediaFields({ items, onChange }) {
                 {items.map((item, index) => (
                     <div key={index} style={{ display: "grid", gap: 8, padding: 12, border: "1px solid #ddd", borderRadius: 8 }}>
                         <strong>Media {index + 1}</strong>
-                        <input value={item.url} onChange={(e) => update(index, "url", e.target.value)} placeholder="https://youtube.com/..." />
+                        <input
+                            value={item.url}
+                            onChange={(e) => update(index, "url", e.target.value)}
+                            onPaste={(e) => cleanPastedYouTubeUrl(e, (value) => update(index, "url", value))}
+                            placeholder="https://youtube.com/..."
+                        />
                         <input value={item.keyword} onChange={(e) => update(index, "keyword", e.target.value)} placeholder="Keyword (optional)" />
                         <input value={item.hashtag} onChange={(e) => update(index, "hashtag", e.target.value)} placeholder="Hashtag without # (optional)" />
                         <button type="button" onClick={() => remove(index)}>Remove media</button>

@@ -11,6 +11,45 @@ export function normalizeXStatusUrl(value) {
     return `https://x.com/${match[1]}/status/${match[2]}`;
 }
 
+export function normalizeYouTubeVideoUrl(value) {
+    const url = value?.trim();
+    if (!url) return "";
+
+    const withProtocol = /^https?:\/\//i.test(url) ? url : `https://${url}`;
+
+    try {
+        const parsed = new URL(withProtocol);
+        const hostname = parsed.hostname.toLowerCase().replace(/^www\./, "");
+        let videoId = "";
+
+        if (hostname === "youtu.be") {
+            videoId = parsed.pathname.split("/").filter(Boolean)[0] || "";
+        } else if (hostname === "youtube.com" || hostname === "m.youtube.com") {
+            const parts = parsed.pathname.split("/").filter(Boolean);
+            if (parts[0] === "watch") {
+                videoId = parsed.searchParams.get("v") || "";
+            } else if (["shorts", "live", "embed"].includes(parts[0])) {
+                videoId = parts[1] || "";
+            }
+        }
+
+        return videoId
+            ? `https://www.youtube.com/watch?v=${encodeURIComponent(videoId)}`
+            : url;
+    } catch {
+        return url;
+    }
+}
+
+export function cleanPastedYouTubeUrl(event, setValue) {
+    const pastedValue = event.clipboardData.getData("text");
+    const cleanValue = normalizeYouTubeVideoUrl(pastedValue);
+    if (cleanValue === pastedValue) return;
+
+    event.preventDefault();
+    setValue(cleanValue);
+}
+
 export function normalizePostUrl(value, platform) {
     if (!value) return "";
     if (platform === "x") return normalizeXStatusUrl(value);

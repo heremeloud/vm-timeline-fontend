@@ -25,6 +25,15 @@ export const getAdminPosts = ({ limit = 100, offset = 0, sort = "newest", platfo
     return api.get(url);
 };
 
+export const countAdminPosts = ({ platform, authorId, dateFrom, dateTo } = {}) => {
+    const params = new URLSearchParams();
+    if (platform && platform !== "all") params.set("platform", platform);
+    if (authorId && authorId !== "all") params.set("author_id", authorId);
+    if (dateFrom) params.set("date_from", dateFrom);
+    if (dateTo) params.set("date_to", dateTo);
+    return api.get(`/posts/admin/count?${params.toString()}`);
+};
+
 export const searchAdminPosts = ({ q, limit = 50, offset = 0, sort = "newest", platform, authorId, dateFrom, dateTo, searchScopes } = {}) => {
     const params = new URLSearchParams({
         q: q || "",
@@ -44,6 +53,22 @@ export const searchAdminPosts = ({ q, limit = 50, offset = 0, sort = "newest", p
         params.set("include_replies", String(searchScopes.replies));
     }
     return api.get(`/posts/admin/search?${params.toString()}`);
+};
+
+export const countAdminPostSearch = ({ q, platform, authorId, dateFrom, dateTo, searchScopes } = {}) => {
+    const params = new URLSearchParams({ q: q || "" });
+    if (platform && platform !== "all") params.set("platform", platform);
+    if (authorId && authorId !== "all") params.set("author_id", authorId);
+    if (dateFrom) params.set("date_from", dateFrom);
+    if (dateTo) params.set("date_to", dateTo);
+    if (searchScopes) {
+        params.set("include_text", String(searchScopes.text));
+        params.set("include_translations", String(searchScopes.translations));
+        params.set("include_notes", String(searchScopes.notes));
+        params.set("include_urls", String(searchScopes.urls));
+        params.set("include_replies", String(searchScopes.replies));
+    }
+    return api.get(`/posts/admin/search/count?${params.toString()}`);
 };
 
 export const getThread = (id) => api.get(`/posts/${id}/thread`);

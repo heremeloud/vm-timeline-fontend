@@ -16,6 +16,12 @@ export const getAdminProjects = ({ limit = 50, offset = 0, sort = "newest", cate
     return api.get(url);
 };
 
+export const countAdminProjects = ({ category } = {}) => {
+    const params = new URLSearchParams();
+    if (category) params.set("category", category);
+    return api.get(`/projects/admin/count?${params.toString()}`);
+};
+
 export const createProject = (data) => api.post("/projects", data);
 
 export const updateProject = (id, data) => api.patch(`/projects/${id}`, data);
