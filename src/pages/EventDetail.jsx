@@ -41,9 +41,9 @@ export default function EventDetail() {
             <button
                 type="button"
                 onClick={goBack}
-                style={{ display: "inline-block", fontSize: "0.85rem", color: "#888", background: "none", border: "none", padding: 0, cursor: "pointer", marginBottom: 20 }}
+                className="detail-back-control"
             >
-                ← Back
+                ← Back to Events
             </button>
             <EventCard event={event} />
         </div>

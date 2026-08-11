@@ -117,18 +117,6 @@
     padding: 20px;
 }
 
-.topic-detail-back {
-    display: inline-block;
-    font-size: 0.85rem;
-    color: #888;
-    text-decoration: none;
-    margin-bottom: 20px;
-}
-
-.topic-detail-back:hover {
-    color: #333;
-}
-
 .topic-detail-header {
     display: grid;
     grid-template-columns: minmax(0, 180px) 1fr;

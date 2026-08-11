@@ -48,6 +48,33 @@ function buildTwitterQuery(term, startDate, endDate) {
     return start ? `${t} since:${start} until:${until}` : `${t} until:${until}`;
 }
 
+function CopyBadge({ term, startDate, endDate, onCopy }) {
+    const query = buildTwitterQuery(term, startDate, endDate);
+
+    return (
+        <span className="eventcard-badge">
+            <button
+                type="button"
+                className="eventcard-badge-text"
+                onClick={() => onCopy(term)}
+                title={`Copy ${term}`}
+                aria-label={`Copy raw text ${term}`}
+            >
+                {term}
+            </button>
+            <button
+                type="button"
+                className="eventcard-badge-query"
+                onClick={() => onCopy(query)}
+                title={`Copy X search query: ${query}`}
+                aria-label={`Copy X search query for ${term}`}
+            >
+                𝕏
+            </button>
+        </span>
+    );
+}
+
 const PROJECT_CATEGORY_EMOJI = {
     series: "📺",
     concert: "🎤",
@@ -139,14 +166,13 @@ export default function EventCard({ event }) {
     const eventStartDate = getEventStartDate(event);
     const displayName = event.name;
 
-    async function handleCopyTerm(term) {
-        const query = buildTwitterQuery(term, eventStartDate, event.end_date);
-        const ok = await copyToClipboard(query);
+    async function handleCopy(text) {
+        const ok = await copyToClipboard(text);
         if (!ok) return;
 
         setCopied(true);
-        window.clearTimeout(handleCopyTerm._t);
-        handleCopyTerm._t = window.setTimeout(() => setCopied(false), 1200);
+        window.clearTimeout(handleCopy._t);
+        handleCopy._t = window.setTimeout(() => setCopied(false), 1200);
     }
 
     async function togglePublicVisibility() {
@@ -285,41 +311,32 @@ export default function EventCard({ event }) {
 
                 {(event.keyword || tags.length > 0) && (
                     <div className="eventcard-badges-area">
-                        <div className="eventcard-badges">
-                            {event.keyword && (
-                                <button
-                                    type="button"
-                                    className="eventcard-badge eventcard-badge-click"
-                                    onClick={() => handleCopyTerm(event.keyword)}
-                                    title={buildTwitterQuery(
-                                        event.keyword,
-                                        eventStartDate,
-                                        event.end_date
-                                    )}
-                                >
-                                    {event.keyword}
-                                </button>
-                            )}
-
+                        {event.keyword && (
+                            <div className="eventcard-badges">
+                                <CopyBadge
+                                    term={event.keyword}
+                                    startDate={eventStartDate}
+                                    endDate={event.end_date}
+                                    onCopy={handleCopy}
+                                />
+                            </div>
+                        )}
+                        {tags.length > 0 && (
+                            <div className="eventcard-badges">
                             {tags.map((t) => {
                                 const term = `#${t}`;
                                 return (
-                                    <button
+                                    <CopyBadge
                                         key={t}
-                                        type="button"
-                                        className="eventcard-badge eventcard-badge-click"
-                                        onClick={() => handleCopyTerm(term)}
-                                        title={buildTwitterQuery(
-                                            term,
-                                            eventStartDate,
-                                            event.end_date
-                                        )}
-                                    >
-                                        {term}
-                                    </button>
+                                        term={term}
+                                        startDate={eventStartDate}
+                                        endDate={event.end_date}
+                                        onCopy={handleCopy}
+                                    />
                                 );
                             })}
-                        </div>
+                            </div>
+                        )}
                     </div>
                 )}
 
@@ -370,24 +387,26 @@ export default function EventCard({ event }) {
                         })()}
 
                         {(currentLiveMedia.keyword || currentLiveMedia.hashtag) && (
-                            <div className="eventcard-badges" style={{ marginTop: 10 }}>
+                            <div className="eventcard-live-badge-groups">
                                 {currentLiveMedia.keyword && (
-                                    <button
-                                        type="button"
-                                        className="eventcard-badge eventcard-badge-click"
-                                        onClick={() => handleCopyTerm(currentLiveMedia.keyword)}
-                                    >
-                                        {currentLiveMedia.keyword}
-                                    </button>
+                                    <div className="eventcard-badges">
+                                        <CopyBadge
+                                            term={currentLiveMedia.keyword}
+                                            startDate={eventStartDate}
+                                            endDate={event.end_date}
+                                            onCopy={handleCopy}
+                                        />
+                                    </div>
                                 )}
                                 {currentLiveMedia.hashtag && (
-                                    <button
-                                        type="button"
-                                        className="eventcard-badge eventcard-badge-click"
-                                        onClick={() => handleCopyTerm(`#${currentLiveMedia.hashtag.replace(/^#/, "")}`)}
-                                    >
-                                        #{currentLiveMedia.hashtag.replace(/^#/, "")}
-                                    </button>
+                                    <div className="eventcard-badges">
+                                        <CopyBadge
+                                            term={`#${currentLiveMedia.hashtag.replace(/^#/, "")}`}
+                                            startDate={eventStartDate}
+                                            endDate={event.end_date}
+                                            onCopy={handleCopy}
+                                        />
+                                    </div>
                                 )}
                             </div>
                         )}

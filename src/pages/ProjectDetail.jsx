@@ -109,7 +109,7 @@ export default function ProjectDetail() {
     return (
         <div className="project-detail-container">
             {/* Back link */}
-            <button type="button" onClick={goBack} className="project-detail-back">← Back to Projects</button>
+            <button type="button" onClick={goBack} className="detail-back-control">← Back to Projects</button>
 
             {/* Header */}
             <div className="project-detail-header">

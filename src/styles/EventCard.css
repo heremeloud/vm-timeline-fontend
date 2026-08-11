@@ -220,52 +220,82 @@
 /* ============================= */
 
 .eventcard-badges {
-    font-size: 0.9rem;
+    font-size: 0.82rem;
     margin-top: 8px;
     display: flex;
-    gap: 8px;
+    gap: 6px;
     flex-wrap: wrap;
+}
+
+.eventcard-badges-area .eventcard-badges + .eventcard-badges,
+.eventcard-live-badge-groups .eventcard-badges + .eventcard-badges {
+    margin-top: 6px;
+}
+
+.eventcard-live-badge-groups {
+    margin-top: 10px;
 }
 
 /* base badge style */
 .eventcard-badge {
-    font-size: 0.95rem;
-    padding: 6px 12px;
-    border-radius: 999px;
-    border: 1px solid rgba(149, 88, 3, 0.24);
-    background: #ffffff;
-    color: #4f2f05;
-    opacity: 0.9;
-    transition: background 0.15s, border-color 0.15s, color 0.15s, opacity 0.15s, transform 0.15s;
+    font-size: 0.82rem;
+    display: inline-flex;
+    align-items: stretch;
+    overflow: hidden;
+    border-radius: 10px;
+    border: 1px solid rgba(183, 135, 72, 0.18);
+    background: linear-gradient(180deg, #ffffff 0%, #fffcf8 100%);
+    color: #765a37;
+    box-shadow: 0 1px 4px rgba(80, 47, 5, 0.05);
+    transition: border-color 0.15s, box-shadow 0.15s;
 }
 
-/* when badge is a button */
-button.eventcard-badge {
-    font-size: 0.2rem;
+.eventcard-badge:hover {
+    border-color: rgba(183, 135, 72, 0.34);
+    box-shadow: 0 3px 8px rgba(80, 47, 5, 0.09);
+}
+
+.eventcard-badge button {
     appearance: none;
     -webkit-appearance: none;
+    border: 0;
+    border-radius: 0;
+    padding: 5px 9px;
     font: inherit;
     line-height: 1.4;
     cursor: pointer;
-    background: #ffffff;
-    color: #4f2f05;
+    background: transparent;
+    color: #765a37;
+    transition: background 0.15s, color 0.15s;
 }
 
-.eventcard-badge-click:hover {
-    background: linear-gradient(135deg, #955803 0%, #fff8ef 100%);
-    border-color: rgba(149, 88, 3, 0.45);
-    color: #3c2303;
-    opacity: 1;
-    transform: translateY(-1px);
+.eventcard-badge button:hover {
+    background: linear-gradient(135deg, #c79a62 0%, #e1c49f 100%);
+    color: #ffffff;
 }
 
-.eventcard-badge-click:active {
-    transform: translateY(0px);
+.eventcard-badge-query {
+    min-width: 30px;
+    padding-right: 7px !important;
+    padding-left: 7px !important;
+    border-left: 1px solid rgba(183, 135, 72, 0.14) !important;
+    background: rgba(183, 135, 72, 0.04) !important;
+    color: #8a6840 !important;
+    font-weight: 600 !important;
 }
 
-button.eventcard-badge:focus-visible {
-    outline: 2px solid rgba(0, 0, 0, 0.35);
-    outline-offset: 2px;
+.eventcard-badge-query:hover {
+    background: linear-gradient(135deg, #c79a62 0%, #e1c49f 100%) !important;
+    color: #ffffff !important;
+}
+
+.eventcard-badge button:focus {
+    outline: none;
+}
+
+.eventcard-badge button:focus-visible {
+    outline: 2px solid rgba(183, 135, 72, 0.45);
+    outline-offset: -2px;
 }
 
 

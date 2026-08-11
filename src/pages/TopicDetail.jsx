@@ -125,7 +125,7 @@ export default function TopicDetail() {
 
     return (
         <div className="topic-detail-container">
-            <Link to={ROUTES.topics} className="topic-detail-back">← Back to Specials</Link>
+            <Link to={ROUTES.topics} className="detail-back-control">← Back to Specials</Link>
 
             <div className="topic-detail-header">
                 {topic.cover_url && (

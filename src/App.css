@@ -52,6 +52,26 @@ body {
   overflow-x: hidden;
 }
 
+.detail-back-control {
+  display: inline-block;
+  margin-bottom: 20px;
+  padding: 0;
+  border: none;
+  background: none;
+  color: #888;
+  font: inherit;
+  font-size: 0.85rem;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.detail-back-control:hover,
+.detail-back-control:focus-visible {
+  border-color: transparent;
+  background: transparent;
+  color: #333;
+}
+
 .scroll-to-top {
   position: fixed;
   right: max(20px, env(safe-area-inset-right));
