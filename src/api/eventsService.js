@@ -17,10 +17,14 @@ export const getEvent = (id) => api.get(`/events/${id}`);
 
 export const getAdminEvent = (id) => api.get(`/events/admin/${id}`);
 
-export const getAdminEvents = ({ limit = 50, offset = 0, sort = "newest", name, category } = {}) => {
+export const getAdminEvents = ({ limit = 50, offset = 0, sort = "newest", name, category, subcategory, author, visibleStart, visibleEnd } = {}) => {
     let url = `/events/admin?limit=${limit}&offset=${offset}&sort=${sort}`;
     if (name) url += `&name=${encodeURIComponent(name)}`;
     if (category) url += `&category=${encodeURIComponent(category)}`;
+    if (subcategory) url += `&subcategory=${encodeURIComponent(subcategory)}`;
+    if (author) url += `&author=${encodeURIComponent(author)}`;
+    if (visibleStart) url += `&visible_start=${encodeURIComponent(visibleStart)}`;
+    if (visibleEnd) url += `&visible_end=${encodeURIComponent(visibleEnd)}`;
     return api.get(url);
 };
 

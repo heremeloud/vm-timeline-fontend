@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { getEvents } from "../api/eventsService";
+import { getAdminEvents, getEvents } from "../api/eventsService";
 import { Link, useSearchParams } from "react-router-dom";
 import { ROUTES } from "../routes";
 import EventCard from "../components/EventCard";
@@ -81,6 +81,7 @@ function eventOverlapsDay(event, dayKey) {
 
 export default function Events() {
     const [searchParams, setSearchParams] = useSearchParams();
+    const isAdmin = !!localStorage.getItem("jwt");
 
     const [events, setEvents] = useState([]);
 
@@ -137,7 +138,8 @@ export default function Events() {
     });
 
     const fetchBaseEvents = useCallback(async (targetPage) => {
-        const res = await getEvents({
+        const request = isAdmin ? getAdminEvents : getEvents;
+        const res = await request({
             // Fetch one extra row so an exact 10-result page does not falsely
             // imply that another page exists.
             limit: LIMIT + 1,
@@ -149,7 +151,7 @@ export default function Events() {
             author: authorFilter || undefined,
         });
         return res.data || [];
-    }, [sortOrder, nameFilter, categoryFilter, subcategoryFilter, authorFilter]);
+    }, [sortOrder, nameFilter, categoryFilter, subcategoryFilter, authorFilter, isAdmin]);
 
     const fetchCalendarEvents = useCallback(async () => {
         const rangeEnd = addMonths(calendarStart, 1);
@@ -157,7 +159,8 @@ export default function Events() {
         // adjacent months that fill out the first/last weeks), not just the
         // exact month window, so events on those visible padding days show up.
         const { first, last } = calendarGridBounds(calendarStart, rangeEnd);
-        const res = await getEvents({
+        const request = isAdmin ? getAdminEvents : getEvents;
+        const res = await request({
             limit: CALENDAR_LIMIT,
             offset: 0,
             sort: "oldest",
@@ -169,7 +172,7 @@ export default function Events() {
             visibleEnd: formatDateKey(last),
         });
         return res.data || [];
-    }, [calendarStart, nameFilter, categoryFilter, subcategoryFilter, authorFilter]);
+    }, [calendarStart, nameFilter, categoryFilter, subcategoryFilter, authorFilter, isAdmin]);
 
     const pageHasData = useCallback(async (targetPage) => {
         const base = await fetchBaseEvents(targetPage);
@@ -362,6 +365,7 @@ export default function Events() {
                             <option value="viewmim">ViewMim</option>
                             <option value="view">View</option>
                             <option value="mim">Mim</option>
+                            <option value="vimmy">Vimmy</option>
                         </select>
                     </div>
                 </div>
