@@ -112,6 +112,7 @@ export default function EditProject() {
         return input.trim();
     }
 
+
     function toggleAuthor(id) {
         setSelectedAuthorIds((prev) =>
             prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
@@ -157,7 +158,8 @@ export default function EditProject() {
             navigate(ROUTES.projectDetail(slug || projectId));
         } catch (err) {
             console.error(err);
-            alert("Error saving project.");
+            const detail = err.response?.data?.detail;
+            alert(Array.isArray(detail) ? detail.map((item) => `${item.loc.join(" → ")}: ${item.msg}`).join("\n") : detail || "Error saving project.");
         }
     }
 
@@ -264,6 +266,7 @@ export default function EditProject() {
                         inferOptionalFields
                     />
                 )}
+
 
                 <div className="eventform-section">
                     <label>Thumbnail URL</label>

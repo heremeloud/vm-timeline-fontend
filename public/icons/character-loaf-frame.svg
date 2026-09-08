@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 124">
+  <defs>
+    <linearGradient id="crust" x1="0" y1="0" x2="0" y2="1">
+      <stop stop-color="#f4d6a8"/>
+      <stop offset=".45" stop-color="#e3b478"/>
+      <stop offset="1" stop-color="#c07f3f"/>
+    </linearGradient>
+    <linearGradient id="bake" x1="0" y1="0" x2="0" y2="1">
+      <stop stop-color="#8a4a17" stop-opacity=".04"/>
+      <stop offset=".32" stop-color="#8a4a17" stop-opacity=".1"/>
+      <stop offset=".68" stop-color="#7f4212" stop-opacity=".3"/>
+      <stop offset="1" stop-color="#6b350c" stop-opacity=".6"/>
+    </linearGradient>
+    <linearGradient id="crumb" x1="0" y1="0" x2="0" y2="1">
+      <stop stop-color="#fffdf7"/>
+      <stop offset="1" stop-color="#fbeed6"/>
+    </linearGradient>
+  </defs>
+  <path d="M8 52C8 22 32 7 60 7S112 22 112 52V96C112 110 102 118 88 118H32C18 118 8 110 8 96Z" fill="url(#crust)"/>
+  <path d="M8 52C8 22 32 7 60 7S112 22 112 52V96C112 110 102 118 88 118H32C18 118 8 110 8 96Z" fill="url(#bake)"/>
+  <ellipse cx="24" cy="84" rx="6" ry="12" fill="#8a4a17" opacity=".16"/>
+  <ellipse cx="97" cy="78" rx="5.5" ry="11" fill="#8a4a17" opacity=".14"/>
+  <ellipse cx="42" cy="18" rx="12" ry="5" fill="#8a4a17" opacity=".1"/>
+  <path d="M8 52C8 22 32 7 60 7S112 22 112 52V96C112 110 102 118 88 118H32C18 118 8 110 8 96Z" fill="none" stroke="#a2661f" stroke-width="2"/>
+  <path d="M15 53C15 28 36 15 60 15S105 28 105 53V95C105 105 97 111 85 111H35C23 111 15 105 15 95Z" fill="url(#crumb)" stroke="#cf9a5c" stroke-width="1.2"/>
+  <path d="M14 47C17 24 37 12 60 12S103 24 106 47" fill="none" stroke="#fff3e0" stroke-width="2.2" stroke-linecap="round" opacity=".45"/>
+</svg>
