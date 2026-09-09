@@ -57,19 +57,24 @@ export function cardInset(canvas, card) {
     };
 }
 
-// `extents` carries each card's measured text overhang, which beats the static estimate.
-export function characterCardTextAllowance(character, scale = 1, extents = null) {
+// `extents` carries each card's measured box, which beats the static estimate: the cards grow with
+// the chart, so their real size is whatever CSS ended up giving them.
+export function characterCardBox(character, scale = 1, extents = null) {
+    const card = characterCardMetrics(character, scale);
     const measured = extents?.[character.id];
-    return Number.isFinite(measured) ? measured : characterCardMetrics(character, scale).textAllowance;
+    if (!measured) return card;
+    return {
+        width: measured.width || card.width,
+        height: measured.height || card.height,
+        textAllowance: Number.isFinite(measured.below) ? measured.below : card.textAllowance,
+        gap: card.gap,
+    };
 }
 
 export function characterCardInsets(characters, canvas, scale = 1, extents = null) {
     if (!canvas?.width || !canvas?.height) return null;
     const insets = {};
-    for (const character of characters) {
-        const card = characterCardMetrics(character, scale);
-        insets[character.id] = cardInset(canvas, { ...card, textAllowance: characterCardTextAllowance(character, scale, extents) });
-    }
+    for (const character of characters) insets[character.id] = cardInset(canvas, characterCardBox(character, scale, extents));
     return insets;
 }
 
@@ -253,12 +258,12 @@ export function characterMapEpisodeLabel(data, episode) {
 
 export function characterMapTexts(projectTitle) {
     return {
-        eyebrow: `${projectTitle} · CHARACTER MAP`, heading: 'A little love, a little tangled.',
-        introduction: 'Every connection has a story. Tap a character or a relationship to explore.',
+        eyebrow: 'CHARACTER MAP', heading: projectTitle,
+        introduction: 'Tap a character or a relationship to explore.',
         decoration: 'a recipe for connection', storyLabel: 'Story so far',
         playedBy: 'Played by',
         characterDetails: 'Character details', noEpisodes: 'No episodes added',
-        footer: 'Showing relationships through {episode}. Select an earlier entry to explore the story so far.',
+        footer: 'Showing relationships through {episode}. ',
     };
 }
 

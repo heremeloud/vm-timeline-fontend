@@ -17,7 +17,13 @@
 .character-map-toolbar select { box-sizing: border-box; appearance: none; -webkit-appearance: none; height: 32px; padding: 0 26px 0 10px; font-family: inherit; font-size: 0.85rem; line-height: 1.2; border: 1px solid #ddd; border-radius: 8px; background-color: #fff; color: #333; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23999' d='M6 8L1 3h10z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 8px center; cursor: pointer; outline: none; transition: border-color .15s; }
 .character-map-toolbar select:focus { border-color: #955803; }
 .character-map-edit-hint { color: #806348; font-style: italic; }
-.character-map-canvas { --card-scale: 1; position: relative; height: 490px; background-image: radial-gradient(#e6d7c9 0.7px, transparent 0.7px); background-size: 18px 18px; }
+.character-map-viewport { overflow: auto; overscroll-behavior-x: contain; container-type: inline-size; }
+/* A wider chart — expanded, or the 1600px export sheet — draws bigger cards and bigger type,
+   instead of leaving the same small cards adrift in more space. */
+@container (min-width: 820px) { .character-map .character-map-canvas { --card-scale: 1.15; } }
+@container (min-width: 1080px) { .character-map .character-map-canvas { --card-scale: 1.3; } }
+@container (min-width: 1400px) { .character-map .character-map-canvas { --card-scale: 1.5; } }
+.character-map-canvas { min-width: 620px; --card-scale: 1; position: relative; height: calc(var(--canvas-height, 490px) * var(--card-scale, 1)); background-image: radial-gradient(#e6d7c9 0.7px, transparent 0.7px); background-size: 18px 18px; }
 .character-map-decoration { position: absolute; top: 18px; left: 0; right: 0; text-align: center; font: italic 15px Georgia, serif; color: #b79980; }
 .character-map-lines { position: absolute; width: 100%; height: 100%; inset: 0; pointer-events: none; }
 .character-map-lines > path { fill: none; stroke-width: 2; vector-effect: non-scaling-stroke; }
@@ -31,15 +37,18 @@
 .character-map-person.linking .character-map-frame { outline: 3px solid #977258; outline-offset: 3px; border-radius: 50%; }
 .character-map-portrait { width: 100%; height: 100%; color: #b76d79; }
 .character-map-person strong { font-family: inherit; font-weight: 600; font-size: max(14px, calc(var(--card-name) * var(--card-scale))); line-height: 1.25; text-shadow: 0 0 3px #fffcf6, 0 0 6px #fffcf6, 0 0 10px #fffcf6; }.character-map-person > span:last-child { font-size: max(12px, calc(var(--card-role) * var(--card-scale))); color: #897468; text-shadow: 0 0 3px #fffcf6, 0 0 6px #fffcf6, 0 0 10px #fffcf6; }
-.character-map.character-map .character-map-connection { position: absolute; transform: translate(-50%, -50%); box-sizing: border-box; width: 16px; height: 16px; padding: 0; border: 2px solid #fffcf6; border-radius: 50%; background: var(--connection-color, #a67c52); box-shadow: 0 1px 4px #38282033; cursor: pointer; transition: opacity .15s, transform .15s; }
+.character-map.character-map .character-map-connection { position: absolute; transform: translate(-50%, -50%); box-sizing: border-box; width: calc(16px * var(--card-scale, 1)); height: calc(16px * var(--card-scale, 1)); padding: 0; border: 2px solid #fffcf6; border-radius: 50%; background: var(--connection-color, #a67c52); box-shadow: 0 1px 4px #38282033; cursor: pointer; transition: opacity .15s, transform .15s; }
 .character-map.character-map .character-map-connection:hover, .character-map.character-map .character-map-connection.is-revealed { transform: translate(-50%, -50%) scale(1.3); }
-.character-map-connection-label { position: absolute; left: 50%; bottom: 100%; transform: translate(-50%, -8px); min-width: max-content; max-width: 200px; white-space: normal; overflow-wrap: anywhere; background: color-mix(in srgb, var(--connection-color, #a67c52) 16%, #fff); border: 1px solid color-mix(in srgb, var(--connection-color, #a67c52) 55%, transparent); color: color-mix(in srgb, var(--connection-color, #a67c52) 78%, #3a2620); border-radius: 12px; padding: 6px 10px; font-family: inherit; font-size: 13px; line-height: 1.35; opacity: 0; pointer-events: none; transition: opacity .12s; }
+.character-map-connection-label { position: absolute; left: 50%; bottom: 100%; transform: translate(-50%, -8px); min-width: max-content; max-width: 200px; white-space: normal; overflow-wrap: anywhere; background: color-mix(in srgb, var(--connection-color, #a67c52) 16%, #fff); border: 1px solid color-mix(in srgb, var(--connection-color, #a67c52) 55%, transparent); color: color-mix(in srgb, var(--connection-color, #a67c52) 78%, #3a2620); border-radius: 12px; padding: calc(6px * var(--card-scale, 1)) calc(10px * var(--card-scale, 1)); font-family: inherit; font-size: calc(13px * var(--card-scale, 1)); line-height: 1.35; opacity: 0; pointer-events: none; transition: opacity .12s; }
 .character-map.character-map .character-map-connection:hover .character-map-connection-label, .character-map.character-map .character-map-connection.is-revealed .character-map-connection-label, .character-map.character-map .character-map-connection:focus-visible .character-map-connection-label { opacity: 1; }
 .character-map-person, .character-map.character-map .character-map-connection { transition: opacity .15s; }
 .character-map-person.is-dimmed, .character-map.character-map .character-map-connection.is-dimmed { opacity: .3; }
 .character-map-lines > path, .character-map-lines > g { transition: opacity .15s; }
 .character-map-lines > path.is-dimmed, .character-map-lines > g.is-dimmed { opacity: .18; }
 .character-map button:focus-visible, .character-map select:focus-visible { outline: 3px solid #977258; outline-offset: 4px; }
+/* No tap flash or focus box around a card that was clicked; keyboard focus still shows. */
+.character-map.character-map .character-map-person { -webkit-tap-highlight-color: transparent; user-select: none; }
+.character-map.character-map .character-map-person:focus:not(:focus-visible), .character-map.character-map .character-map-connection:focus:not(:focus-visible) { outline: none; }
 .character-map-note { padding: 15px 28px; border-top: 1px solid #eddfd3; background: #faf5ec; }
 .character-map-dialog { box-sizing: border-box; width: min(420px, calc(100% - 32px)); max-height: 85dvh; padding: 32px; border: 1px solid #e1c9b8; border-radius: 20px; color: #614c45; background: #fffcf6; box-shadow: 0 20px 80px #38282033; }
 .character-map-dialog::backdrop { background: #34242166; backdrop-filter: blur(3px); }
@@ -83,11 +92,11 @@
 .eventform-form .visibility-toggle input[type="checkbox"] { width: 12px; height: 12px; min-height: 12px; margin: 0; }
 .character-map-group { position: absolute; box-sizing: border-box; border: 2px solid var(--group-color); border-radius: 16px; background: color-mix(in srgb, var(--group-color) 5%, transparent); pointer-events: none; }
 .character-map-group.circle { border-radius: 50%; }
-.character-map-group-label { position: absolute; left: 50%; transform: translateX(-50%); max-width: 90%; margin: 0; padding: 2px 10px; border: 0; background: #fffcf6; color: var(--group-color); border-radius: 10px; font: inherit; font-size: 12px; font-weight: 600; line-height: 1.4; text-align: center; overflow-wrap: anywhere; cursor: pointer; pointer-events: auto; }
+.character-map-group-label { overflow-wrap: break-word; position: absolute; left: 50%; transform: translateX(-50%); max-width: 90%; margin: 0; padding: 2px 10px; border: 0; background: #fffcf6; color: var(--group-color); border-radius: 10px; font: inherit; font-size: calc(12px * var(--card-scale, 1)); font-weight: 600; line-height: 1.4; text-align: center; cursor: pointer; pointer-events: auto; }
 .character-map-group-label.top { top: -12px; }
 .character-map-group-label.bottom { bottom: -12px; }
 .character-map-group-label:hover { text-decoration: none; }
-.character-map-group-handle { position: absolute; right: -8px; bottom: -8px; z-index: 3; box-sizing: border-box; width: 16px; height: 16px; padding: 0; border: 2px solid #fffcf6; border-radius: 50%; background: var(--group-color); box-shadow: 0 1px 3px #38282033; cursor: nwse-resize; pointer-events: auto; }
+.character-map-group-handle { position: absolute; right: -8px; bottom: -8px; z-index: 3; box-sizing: border-box; width: calc(16px * var(--card-scale, 1)); height: calc(16px * var(--card-scale, 1)); padding: 0; border: 2px solid #fffcf6; border-radius: 50%; background: var(--group-color); box-shadow: 0 1px 3px #38282033; cursor: nwse-resize; pointer-events: auto; }
 .character-map-canvas-resize { position: absolute; left: 50%; bottom: 4px; z-index: 4; transform: translateX(-50%); width: 64px; height: 16px; padding: 0; border: 0; background: transparent; cursor: ns-resize; }
 .character-map-canvas-resize::before { content: ""; display: block; margin: 6px auto 0; width: 100%; height: 4px; border-radius: 4px; background: #d8c4ad; }
 .character-map-canvas-resize:hover::before, .character-map-canvas-resize:focus-visible::before { background: #a67c52; }
@@ -110,7 +119,7 @@
 .character-map-label-measure { position: absolute; top: 0; left: 0; height: 0; overflow: hidden; visibility: hidden; pointer-events: none; }
 .character-map-label-measure .character-map-connection-label { position: static; box-sizing: border-box; min-width: 0; display: block; width: max-content; transform: none; white-space: normal; overflow-wrap: anywhere; opacity: 1; }
 .character-map.character-map .character-map-connection.has-inline-label { width: auto; height: auto; max-width: 190px; padding: 6px 10px; border-radius: 12px; border: 1px solid color-mix(in srgb, var(--connection-color, #a67c52) 48%, transparent); background: color-mix(in srgb, var(--connection-color, #a67c52) 13%, #fffcf6); box-shadow: 0 1px 3px #38282018; }
-.character-map-connection.has-inline-label .character-map-connection-label { position: static; min-width: 0; display: block; transform: none; opacity: 1; padding: 0; border: 0; background: transparent; max-width: none; white-space: normal; overflow-wrap: anywhere; text-align: center; font-size: 13px; color: color-mix(in srgb, var(--connection-color, #a67c52) 78%, #3a2620); }
+.character-map-connection.has-inline-label .character-map-connection-label { position: static; min-width: 0; display: block; transform: none; opacity: 1; padding: 0; border: 0; background: transparent; max-width: none; white-space: normal; overflow-wrap: anywhere; text-align: center; font-size: calc(13px * var(--card-scale, 1)); color: color-mix(in srgb, var(--connection-color, #a67c52) 78%, #3a2620); }
 .character-map.character-map .character-map-connection.has-inline-label:hover, .character-map.character-map .character-map-connection.has-inline-label.is-revealed { transform: translate(-50%, -50%) scale(1.06); }
 
 .character-map-popover label { font-family: inherit; font-size: 1rem; font-weight: 600; line-height: 1.35; }
@@ -140,7 +149,7 @@
     .character-map.has-side-editor { --expanded-width: min(1400px, calc(100vw - 64px)); display: grid; grid-template-columns: 420px minmax(0, 1fr); box-sizing: border-box; width: var(--expanded-width); margin-inline: calc((100% - var(--expanded-width)) / 2); overflow: visible; }
     .character-map.has-side-editor > .character-map-heading { grid-column: 1 / -1; grid-row: 1; }
     .character-map.has-side-editor > .character-map-toolbar { grid-column: 2; grid-row: 2; }
-    .character-map.has-side-editor > .character-map-canvas { grid-column: 2; grid-row: 3; min-width: 0; }
+    .character-map.has-side-editor > .character-map-viewport { grid-column: 2; grid-row: 3; min-width: 0; }
     .character-map.has-side-editor > .character-map-note { grid-column: 2; grid-row: 4; border-radius: 0 0 20px 0; }
     .character-map.has-side-editor > .character-map-side-panel { grid-column: 1; grid-row: 2 / 5; align-self: start; position: sticky; top: 16px; max-height: calc(100dvh - 32px); overflow-y: auto; border-right: 1px solid #eadbd2; border-top: 0; border-radius: 0 0 0 20px; }
 }
@@ -200,7 +209,12 @@
 }
 
 /* The downloaded image is the wide chart with just its title and the version it shows. */
+/* The export copy is laid out off-screen at a fixed width, so the visible chart never moves
+   and a phone produces the same wide image a desktop does. */
+.character-map-export-stage { position: fixed; left: -20000px; top: 0; z-index: -1; width: 1600px; pointer-events: none; }
+.character-map-export-stage .character-map { width: 1600px; max-width: none; margin: 0; }
 .character-map.is-exporting > .character-map-toolbar { display: none; }
+.character-map.is-exporting .character-map-viewport { overflow: visible; }
 .character-map.is-exporting > .character-map-heading { justify-content: center; text-align: center; padding-bottom: 10px; }
 .character-map.is-exporting > .character-map-heading > div { max-width: 900px; }
 .character-map.is-exporting .character-map-heading p { display: none; }

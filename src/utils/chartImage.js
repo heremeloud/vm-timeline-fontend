@@ -1,7 +1,7 @@
 import { toSvg } from "html-to-image";
 
 // Chrome and Safari both refuse very large canvases, so cap the pixels rather than fail late.
-const MAX_PIXELS = 16e6;
+const MAX_PIXELS = 12e6;
 const MAX_SCALE = 2;
 
 function loadImage(url) {
@@ -11,6 +11,34 @@ function loadImage(url) {
         image.onerror = () => reject(new Error("the drawing could not be rendered"));
         image.src = url;
     });
+}
+
+function whenLoaded(image) {
+    if (image.complete) return Promise.resolve();
+    return new Promise((resolve) => {
+        image.addEventListener("load", resolve, { once: true });
+        image.addEventListener("error", resolve, { once: true });
+        setTimeout(resolve, 3000);
+    });
+}
+
+// Bakes every already-loaded portrait into the node as a data URL. Doing it here, from images the
+// browser has, avoids html-to-image's own fetch path, which caches a failure for the whole page.
+export async function inlineImages(root) {
+    await Promise.all([...root.querySelectorAll("img")].map(async (image) => {
+        if (!image.src || image.src.startsWith("data:")) return;
+        await whenLoaded(image);
+        if (!image.naturalWidth) return;
+        try {
+            const canvas = document.createElement("canvas");
+            canvas.width = image.naturalWidth;
+            canvas.height = image.naturalHeight;
+            canvas.getContext("2d").drawImage(image, 0, 0);
+            image.src = canvas.toDataURL("image/png");
+        } catch {
+            // A portrait from a host without CORS taints the canvas; leave it for html-to-image to try.
+        }
+    }));
 }
 
 // html-to-image's own toPng waits on requestAnimationFrame, which never fires in a background tab,
