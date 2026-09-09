@@ -574,8 +574,8 @@ export default function CharacterMap({ data, onChange, projectTitle, episodeCoun
         try {
             if (!chart) throw new Error("the chart was not ready to draw");
             const { elementToPngBlob, inlineImages } = await import("../utils/chartImage");
-            await inlineImages(chart);
-            const blob = await elementToPngBlob(chart, options);
+            const portraits = await inlineImages(chart);
+            const blob = await elementToPngBlob(chart, { ...options, portraits });
             const link = document.createElement("a");
             link.href = URL.createObjectURL(blob);
             link.download = `${characterMapImageName(projectTitle, episode ? characterMapEpisodeLabel(data, episode) : "")}.png`;
