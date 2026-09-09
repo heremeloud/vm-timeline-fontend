@@ -11,17 +11,14 @@ export default function CharacterMapSection({ project, isAdmin, onSaved }) {
     const [draftVisible, setDraftVisible] = useState(true);
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState("");
-    const [status, setStatus] = useState("");
     const data = project.character_map || sampleCharacterMap();
 
     async function persist(patch) {
         setSaving(true);
         setError("");
-        setStatus("");
         try {
             const response = await updateProject(project.id, patch);
             onSaved({ character_map: response.data.character_map, show_character_map: response.data.show_character_map });
-            setStatus("Character map saved.");
             return true;
         } catch (err) {
             const detail = err.response?.data?.detail;
@@ -42,7 +39,6 @@ export default function CharacterMapSection({ project, isAdmin, onSaved }) {
                 setDraft(structuredClone(data));
                 setDraftVisible(isPublic);
                 setError("");
-                setStatus("");
             }}>Edit character map</button>
         </div>
         : null;
@@ -55,16 +51,15 @@ export default function CharacterMapSection({ project, isAdmin, onSaved }) {
                 <CharacterMapEditor data={draft} onChange={setDraft} visible={draftVisible} onVisibleChange={setDraftVisible} projectTitle={project.title} episodeCount={project.episode_count} />
                 <div className="character-map-editor-actions">
                     <button type="submit">{saving ? "Saving…" : "Save character map"}</button>
-                    <button type="button" onClick={() => { setDraft(null); setError(""); setStatus(""); }}>Cancel</button>
+                    <button type="button" onClick={() => { setDraft(null); setError(""); }}>Cancel</button>
                 </div>
             </fieldset>
-        </form> : (isAdmin || (isPublic && hasPublicEpisode)) && <CharacterMap data={data} preview={!!data.is_sample} projectTitle={project.title} episodeCount={project.episode_count} isAdmin={isAdmin} headerControls={adminControls} busy={saving}
+        </form> : (isAdmin || (isPublic && hasPublicEpisode)) && <CharacterMap data={data} projectTitle={project.title} episodeCount={project.episode_count} isAdmin={isAdmin} headerControls={adminControls} busy={saving}
             onEpisodePublicChange={isAdmin && !draft && project.character_map
                 ? (number, episodePublic) => persist({ character_map: setCharacterMapEpisodePublic(data, number, episodePublic) })
                 : null} />}
         {isAdmin && !draft && !isPublic && <p className="eventform-field-note">Only admins can see this — it's hidden from the public.</p>}
-        {isAdmin && !draft && isPublic && !hasPublicEpisode && <p className="eventform-field-note">Every entry is hidden from the public, so the chart only shows for admins. Mark an entry public under Episodes in the editor.</p>}
         {error && <p role="alert">{error}</p>}
-        {(saving || status) && <p role="status">{saving ? "Saving…" : status}</p>}
+        {saving && <p role="status">Saving…</p>}
     </div>;
 }

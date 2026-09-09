@@ -7,7 +7,6 @@ const sampleCharacters = [
 
 export function sampleCharacterMap() {
     return {
-        is_sample: true,
         characters: sampleCharacters.map((character) => ({ ...character, actor: "", photo: "" })),
         relationships: [
             { id: "ab", source: "a", target: "b", changes: [
@@ -58,10 +57,19 @@ export function cardInset(canvas, card) {
     };
 }
 
-export function characterCardInsets(characters, canvas, scale = 1) {
+// `extents` carries each card's measured text overhang, which beats the static estimate.
+export function characterCardTextAllowance(character, scale = 1, extents = null) {
+    const measured = extents?.[character.id];
+    return Number.isFinite(measured) ? measured : characterCardMetrics(character, scale).textAllowance;
+}
+
+export function characterCardInsets(characters, canvas, scale = 1, extents = null) {
     if (!canvas?.width || !canvas?.height) return null;
     const insets = {};
-    for (const character of characters) insets[character.id] = cardInset(canvas, characterCardMetrics(character, scale));
+    for (const character of characters) {
+        const card = characterCardMetrics(character, scale);
+        insets[character.id] = cardInset(canvas, { ...card, textAllowance: characterCardTextAllowance(character, scale, extents) });
+    }
     return insets;
 }
 
@@ -233,7 +241,7 @@ export function snapPosition(value, otherValues, min, max, step = POSITION_GRID)
     return snapToGrid(value, min, max, step);
 }
 
-export const LABEL_SYMBOLS = ["♡", "?", "★", "⚔"];
+export const LABEL_SYMBOLS = ["♡", "?", "!", "★", "⚔"];
 
 export function toggleLabelSymbol(label, symbol) {
     return label.startsWith(symbol) ? label.slice(symbol.length).trimStart() : `${symbol} ${label}`.trim();
@@ -247,10 +255,9 @@ export function characterMapTexts(projectTitle) {
     return {
         eyebrow: `${projectTitle} · CHARACTER MAP`, heading: 'A little love, a little tangled.',
         introduction: 'Every connection has a story. Tap a character or a relationship to explore.',
-        decoration: 'a recipe for connection', storyLabel: 'Story so far', previewBadge: 'Design preview',
+        decoration: 'a recipe for connection', storyLabel: 'Story so far',
         playedBy: 'Played by',
-        sampleLabel: 'sample', characterDetails: 'Character details', noEpisodes: 'No episodes added',
-        sampleNote: 'Sample characters and storylines only—not the show’s actual plot. Try switching episodes to see the central relationship change.',
+        characterDetails: 'Character details', noEpisodes: 'No episodes added',
         footer: 'Showing relationships through {episode}. Select an earlier entry to explore the story so far.',
     };
 }
@@ -266,6 +273,18 @@ export function characterMapArrow(connection) {
     if (connection.arrow_end) return "→";
     if (connection.arrow_start) return "←";
     return "";
+}
+
+// A one-way relationship always reads left to right, so a back-pointing arrow swaps the two names.
+export function characterMapDirection(connection) {
+    const arrow = characterMapArrow(connection);
+    if (arrow === "←") return { from: connection.target, to: connection.source, arrow: "→" };
+    return { from: connection.source, to: connection.target, arrow };
+}
+
+export function characterMapImageName(projectTitle, episodeLabel) {
+    const name = [projectTitle, "character map", episodeLabel].filter(Boolean).join(" - ");
+    return name.replace(/[\\/:*?"<>|]+/g, "").replace(/\s+/g, " ").trim() || "character map";
 }
 
 export const GROUP_PADDING_MIN = 4;
@@ -286,7 +305,7 @@ export function characterGroupBounds(group, characters) {
     const extent = characterGroupExtent(group, characters);
     if (!extent) return null;
     const paddingX = group.padding_x ?? 15, paddingY = group.padding_y ?? 22;
-    const left = extent.minX - paddingX, right = extent.maxX + paddingX;
-    const top = extent.minY - paddingY, bottom = extent.maxY + paddingY;
+    const left = extent.minX - (group.padding_left ?? paddingX), right = extent.maxX + (group.padding_right ?? paddingX);
+    const top = extent.minY - (group.padding_top ?? paddingY), bottom = extent.maxY + (group.padding_bottom ?? paddingY);
     return { left, top, width: right - left, height: bottom - top, extent, paddingX, paddingY };
 }

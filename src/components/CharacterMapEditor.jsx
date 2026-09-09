@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { characterMapEpisodes, removeCharacterMapEpisode, characterMapEpisodeLabel, characterMapTexts, isCharacterMapEpisodePublic, setCharacterMapEpisodePublic } from "../utils/characterMap";
+import { characterMapEpisodes, removeCharacterMapEpisode, characterMapEpisodeLabel, characterMapTexts, isCharacterMapEpisodePublic, setCharacterMapEpisodePublic, GROUP_PADDING_MIN, GROUP_PADDING_MAX } from "../utils/characterMap";
 import CharacterMap from "./CharacterMap";
 import VisibilityToggle from "./VisibilityToggle";
 
@@ -13,7 +13,6 @@ export default function CharacterMapEditor({ data, onChange, visible, onVisibleC
         <h3>Character map</h3>
         <label className="character-map-visibility"><input type="checkbox" checked={visible} onChange={(event) => onVisibleChange(event.target.checked)} /> Show character map on the project page</label>
         <p className="eventform-field-note">Hiding keeps all characters and relationships saved. Choose Save character map below to apply your edits, or Cancel to discard them.</p>
-        <label className="character-map-visibility"><input type="checkbox" checked={!!data.is_sample} onChange={(event) => onChange({ ...data, is_sample: event.target.checked })} /> Label this chart as a design preview</label>
         <details><summary>Chart text</summary>
             <p className="eventform-field-note">Edit the title, introduction, labels, and notes. Leave a field empty to hide its text. In the footer, {"{episode}"} inserts the selected episode or chapter label.</p>
             <div className="character-map-fields">{Object.entries(defaultTexts).map(([key, fallback]) => <label key={key}>{key.replace(/([A-Z])/g, ' $1').replace(/^./, (letter) => letter.toUpperCase())}<textarea maxLength={1000} value={data.texts?.[key] ?? fallback} onChange={(event) => onChange({ ...data, texts: { ...data.texts, [key]: event.target.value } })} /></label>)}</div>
@@ -32,6 +31,16 @@ export default function CharacterMapEditor({ data, onChange, visible, onVisibleC
                         <label>Title position<select value={group.label_position || "top"} onChange={(event) => updateGroup({ label_position: event.target.value })}><option value="top">Top edge</option><option value="bottom">Bottom edge</option></select></label>
                     </div>
                     <label>Description<textarea maxLength={5000} value={group.description || ""} onChange={(event) => updateGroup({ description: event.target.value })} /></label>
+                    <div className="character-map-fields">
+                        <label>Horizontal margin · {Math.round((group.padding_x ?? 15) * 10) / 10}%
+                            <input type="range" min={GROUP_PADDING_MIN} max={GROUP_PADDING_MAX} step="0.5" value={group.padding_x ?? 15} onChange={(event) => updateGroup({ padding_x: Number(event.target.value), padding_left: null, padding_right: null })} />
+                        </label>
+                        <label>Vertical margin · {Math.round((group.padding_y ?? 22) * 10) / 10}%
+                            <input type="range" min={GROUP_PADDING_MIN} max={GROUP_PADDING_MAX} step="0.5" value={group.padding_y ?? 22} onChange={(event) => updateGroup({ padding_y: Number(event.target.value), padding_top: null, padding_bottom: null })} />
+                        </label>
+                    </div>
+                    <p className="eventform-field-note">Adjust the space between the characters and the group outline. Drag the top, bottom, left, or right edge handle on the graph to adjust each side independently. These sliders reset both sides on their axis.</p>
+                    <button type="button" onClick={() => updateGroup({ padding_x: 15, padding_y: 22, padding_top: null, padding_bottom: null, padding_left: null, padding_right: null })}>Reset group margins</button>
                     <div className="character-map-fields">{data.characters.map((character) => <label key={character.id} className="character-map-visibility"><input type="checkbox" checked={group.character_ids.includes(character.id)} onChange={(event) => updateGroup({ character_ids: event.target.checked ? [...group.character_ids, character.id] : group.character_ids.filter((id) => id !== character.id) })} />{character.name}</label>)}</div>
                     {!group.character_ids.length && <p className="eventform-field-note">Select at least one character to show this group.</p>}
                     <button type="button" onClick={() => onChange({ ...data, groups: data.groups.filter((item) => item.id !== group.id) })}>Remove group</button>
@@ -66,7 +75,7 @@ export default function CharacterMapEditor({ data, onChange, visible, onVisibleC
         </details>
         <h4>Character map ({data.characters.length} character{data.characters.length === 1 ? "" : "s"}, {data.relationships.length} relationship{data.relationships.length === 1 ? "" : "s"})</h4>
         <p className="eventform-field-note">Use "+ Add character" on the map below, then drag to position and tap to edit. Tap two characters to connect them, then set the line's text, color, style, and arrows. Tap an existing connection to edit or remove it.</p>
-        <CharacterMap data={data} onChange={onChange} editable preview={!!data.is_sample} projectTitle={projectTitle} episodeCount={episodeCount}
+        <CharacterMap data={data} onChange={onChange} editable projectTitle={projectTitle} episodeCount={episodeCount}
             onEpisodePublicChange={(number, episodePublic) => onChange(setCharacterMapEpisodePublic({ ...data, episodes }, number, episodePublic))} />
     </section>;
 }

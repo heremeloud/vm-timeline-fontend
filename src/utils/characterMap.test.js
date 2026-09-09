@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { relationshipsAtEpisode, sampleCharacterMap, characterMapEpisodes, removeCharacterMapEpisode } from "./characterMap.js";
+import { relationshipsAtEpisode, sampleCharacterMap, characterMapEpisodes, removeCharacterMapEpisode, characterMapDirection } from "./characterMap.js";
 
 test("episode changes carry forward without leaking future relationships", () => {
     const data = sampleCharacterMap();
@@ -42,4 +42,16 @@ test("relationship history follows custom story order instead of numeric IDs", (
     assert.equal(relationshipsAtEpisode(data, 1)[0].label, "First encounter");
     assert.equal(relationshipsAtEpisode(data, 2)[0].label, "Growing closer");
     assert.equal(relationshipsAtEpisode(data, 3).some((item) => item.id === "ac"), false);
+});
+
+test("a one-way relationship reads left to right whichever end the arrow is on", () => {
+    const whale = { id: "w", name: '"Whale" Tarntara' }, noey = { id: "n", name: '"Noey" Naralak' };
+    const backwards = characterMapDirection({ source: whale, target: noey, arrow_start: true, arrow_end: false });
+    assert.deepEqual([backwards.from.name, backwards.arrow, backwards.to.name], ['"Noey" Naralak', "→", '"Whale" Tarntara']);
+    const forwards = characterMapDirection({ source: whale, target: noey, arrow_start: false, arrow_end: true });
+    assert.deepEqual([forwards.from.name, forwards.arrow, forwards.to.name], ['"Whale" Tarntara', "→", '"Noey" Naralak']);
+    const mutual = characterMapDirection({ source: whale, target: noey, arrow_start: true, arrow_end: true });
+    assert.deepEqual([mutual.from.name, mutual.arrow, mutual.to.name], ['"Whale" Tarntara', "↔", '"Noey" Naralak']);
+    const plain = characterMapDirection({ source: whale, target: noey, arrow_start: false, arrow_end: false });
+    assert.deepEqual([plain.from.name, plain.arrow, plain.to.name], ['"Whale" Tarntara', "", '"Noey" Naralak']);
 });
