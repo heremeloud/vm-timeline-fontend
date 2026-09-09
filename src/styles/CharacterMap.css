@@ -228,6 +228,13 @@
 /* Everything in the sheet grows with it, so a wider export is not just more empty space. */
 .character-map.is-exporting .character-map-eyebrow { font-size: calc(19px * var(--sheet-scale, 1)); letter-spacing: calc(3px * var(--sheet-scale, 1)); }
 .character-map.is-exporting .character-map-heading h2 { font-size: calc(64px * var(--sheet-scale, 1)); margin: calc(16px * var(--sheet-scale, 1)) 0 0; }
-.character-map.is-exporting > .character-map-note { font-size: calc(19px * var(--sheet-scale, 1)); padding: calc(18px * var(--sheet-scale, 1)) 28px; }
+.character-map.is-exporting > .character-map-note { font-size: calc(17px * var(--sheet-scale, 1)); padding: calc(8px * var(--sheet-scale, 1)) 28px; }
 .character-map.is-exporting .character-map-decoration { font-size: calc(20px * var(--sheet-scale, 1)); top: calc(20px * var(--sheet-scale, 1)); }
 .character-map.is-exporting .character-map-canvas { --card-scale: var(--export-card-scale, 1.7); height: var(--export-canvas-height, calc(var(--canvas-height, 490px) * var(--card-scale, 1))); }
+/* The sheet has horizontal room to spare, so captions run wider and wrap onto fewer lines.
+   Shorter captions leave more vertical room, which is what lets the cards grow. */
+.character-map.is-exporting .character-map-person strong,
+.character-map.is-exporting .character-map-person > span:last-child,
+.character-map.is-exporting .character-map-person .character-map-thai-name { width: max-content; max-width: calc((var(--card-w) + 130px) * var(--card-scale, 1)); }
+/* Air between the chart and the credit line. */
+.character-map.is-exporting .character-map-viewport { padding-bottom: calc(22px * var(--sheet-scale, 1)); }

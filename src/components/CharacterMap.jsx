@@ -3,7 +3,7 @@ import { createPortal } from "react-dom";
 import "../styles/CharacterMap.css";
 import { getAuthors } from "../api/authorsService";
 import VisibilityToggle from "./VisibilityToggle";
-import { relationshipsAtEpisode, connectionPointAt, isCharacterMapEpisodePublic, visibleCharacterMapEpisodes, characterCardInsets, characterCardBox, characterCardMetrics, characterCardSize, CARD_COMPACT_SCALE, CARD_SIZE_KEYS, CARD_SIZE_LABELS, characterMapEpisodes, characterMapEpisodeLabel, characterMapImageName, fitCharacterMapPositions, characterMapTexts, characterGroupBounds, characterMapLineDash, characterMapDirection, newRelationshipChange, nextRelationshipColor, arrowheadPoints, resolvePortraitColor, SWATCH_PRESETS, LABEL_SYMBOLS, toggleLabelSymbol, snapPosition, GROUP_PADDING_MIN, GROUP_PADDING_MAX, CANVAS_HEIGHT_MIN, CANVAS_HEIGHT_MAX } from "../utils/characterMap";
+import { relationshipsAtEpisode, connectionPointAt, isCharacterMapEpisodePublic, visibleCharacterMapEpisodes, characterCardInsets, characterCardBox, characterCardMetrics, characterCardSpans, characterCardSize, CARD_COMPACT_SCALE, CARD_SIZE_KEYS, CARD_SIZE_LABELS, characterMapEpisodes, characterMapEpisodeLabel, characterMapImageName, fitCharacterMapPositions, characterMapTexts, characterGroupBounds, characterMapLineDash, characterMapDirection, newRelationshipChange, nextRelationshipColor, arrowheadPoints, resolvePortraitColor, SWATCH_PRESETS, LABEL_SYMBOLS, toggleLabelSymbol, snapPosition, GROUP_PADDING_MIN, GROUP_PADDING_MAX, CANVAS_HEIGHT_MIN, CANVAS_HEIGHT_MAX } from "../utils/characterMap";
 
 const LINE_STYLES = ["solid", "dashed", "dotted"];
 const MIN_CANVAS_HEIGHT = 490;
@@ -16,6 +16,7 @@ function canvasHeightFor(characterCount) {
 
 const LABEL_SIDE_MARGIN = 12;
 const LABEL_MIN_WIDTH = 56;
+const LABEL_ROOMY_WIDTH = 150;
 const LABEL_MAX_WIDTH = 190;
 const LABEL_MAX_HEIGHT = 64;
 const LABEL_POSITIONS = [0.5, 0.38, 0.62, 0.28, 0.72];
@@ -23,20 +24,30 @@ const EXPORT_ASPECT = 4 / 3;
 const EXPORT_WIDTH = 2400;
 const EXPORT_CARD_SCALE_MAX = 2.4;
 const EXPORT_CARD_SCALE_MIN = 1;
+const EXPORT_EDGE_PADDING = 40;
 
 function useCanvasSize(ref) {
     const [size, setSize] = useState(null);
+    const apply = (width, height) => setSize((current) =>
+        current && Math.abs(current.width - width) < 0.5 && Math.abs(current.height - height) < 0.5 ? current : { width, height });
     useLayoutEffect(() => {
         const node = ref.current;
         if (!node || typeof ResizeObserver === "undefined") return;
         const observer = new ResizeObserver(([entry]) => {
             const { width, height } = entry.contentRect;
-            setSize((current) => current && current.width === width && current.height === height ? current : { width, height });
+            apply(width, height);
         });
         observer.observe(node);
         return () => observer.disconnect();
     }, [ref]);
-    return size;
+    // Reading straight from the node, for the moments a resize has not been reported yet.
+    const refresh = () => {
+        const node = ref.current;
+        if (!node) return;
+        const box = node.getBoundingClientRect();
+        apply(box.width, box.height);
+    };
+    return [size, refresh];
 }
 
 function useCompactCards() {
@@ -62,18 +73,21 @@ function labelSpan(connection, canvas) {
 }
 
 // How wide a label may grow before it must wrap: the room the line itself offers.
-function labelBudgets(connections, canvas, scale = 1) {
+function labelBudgets(connections, canvas, scale = 1, roomy = false) {
     const budgets = {};
     if (!canvas?.width || !canvas?.height) return budgets;
+    // On the printed sheet a name always shows, so give it room to stay on one or two lines
+    // rather than stacking into a narrow tower on a short line.
+    const floor = (roomy ? LABEL_ROOMY_WIDTH : LABEL_MIN_WIDTH) * scale;
     for (const connection of connections) {
-        budgets[connection.id] = Math.max(LABEL_MIN_WIDTH * scale,
+        budgets[connection.id] = Math.max(floor,
             Math.min(LABEL_MAX_WIDTH * scale, labelSpan(connection, canvas) - LABEL_SIDE_MARGIN * scale));
     }
     return budgets;
 }
 
 // Keeps every relationship name on its line where one will fit, sliding it along the line before giving up.
-function inlineLabelPositions(connections, characters, canvas, cardScale, labelSizes, cardExtents, scale = 1) {
+function inlineLabelPositions(connections, characters, canvas, cardScale, labelSizes, cardExtents, scale = 1, always = false) {
     const placed = new Map();
     if (!canvas?.width || !canvas?.height) return placed;
     const scaleX = canvas.width / 100, scaleY = canvas.height / 100;
@@ -86,17 +100,27 @@ function inlineLabelPositions(connections, characters, canvas, cardScale, labelS
     for (const connection of connections) {
         const size = labelSizes[connection.id];
         if (!size?.width || !connection.label.trim()) continue;
-        if (size.height > LABEL_MAX_HEIGHT * scale) continue;
-        if (size.width + LABEL_SIDE_MARGIN * scale > labelSpan(connection, canvas)) continue;
+        if (!always) {
+            if (size.height > LABEL_MAX_HEIGHT * scale) continue;
+            if (size.width + LABEL_SIDE_MARGIN * scale > labelSpan(connection, canvas)) continue;
+        }
+        let fallback = null;
         for (const t of LABEL_POSITIONS) {
             const spot = connectionPointAt(connection, t);
             const centerX = spot.x * scaleX, centerY = spot.y * scaleY;
             const box = { left: centerX - size.width / 2 - 3, right: centerX + size.width / 2 + 3, top: centerY - size.height / 2 - 2, bottom: centerY + size.height / 2 + 2 };
-            if (box.left < 0 || box.right > canvas.width || box.top < 0 || box.bottom > canvas.height) continue;
-            if (taken.some((item) => overlaps(box, item))) continue;
+            const insideCanvas = box.left >= 0 && box.right <= canvas.width && box.top >= 0 && box.bottom <= canvas.height;
+            if (insideCanvas && !fallback) fallback = { spot, box };
+            if (!insideCanvas || taken.some((item) => overlaps(box, item))) continue;
             taken.push(box);
             placed.set(connection.id, spot);
+            fallback = null;
             break;
+        }
+        // The printed sheet always names every relationship, even where the best spot is crowded.
+        if (always && fallback && !placed.has(connection.id)) {
+            taken.push(fallback.box);
+            placed.set(connection.id, fallback.spot);
         }
     }
     return placed;
@@ -229,15 +253,17 @@ function CharacterEditPopover({ data, onChange, character, authors, authorsLoadi
     </PopoverShell>;
 }
 
-export default function CharacterMap({ data, onChange, projectTitle, episodeCount = 0, editable = false, isAdmin = false, headerControls = null, onEpisodePublicChange = null, busy = false, exportView = false, forcedEpisode = null }) {
+export default function CharacterMap({ data, onChange, projectTitle, episodeCount = 0, editable = false, isAdmin = false, headerControls = null, onEpisodePublicChange = null, busy = false, exportView = false, forcedEpisode = null, measureNonce = 0 }) {
     const characters = data.characters;
     const texts = { ...characterMapTexts(projectTitle), ...data.texts };
     const [selectedEpisode, setEpisode] = useState(null);
     const [expanded, setExpanded] = useState(false);
     const [measureTick, setMeasureTick] = useState(0);
     const [exportStage, setExportStage] = useState(false);
+    const [exportNonce, setExportNonce] = useState(0);
     const stageRef = useRef(null);
-    const exportData = useMemo(() => fitCharacterMapPositions(data), [data]);
+    const [exportMargins, setExportMargins] = useState(null);
+    const exportData = useMemo(() => fitCharacterMapPositions(data, exportMargins ?? undefined), [data, exportMargins]);
     const [downloading, setDownloading] = useState(false);
     const [downloadError, setDownloadError] = useState("");
     const sectionRef = useRef(null);
@@ -263,10 +289,11 @@ export default function CharacterMap({ data, onChange, projectTitle, episodeCoun
     const [cardExtents, setCardExtents] = useState({});
     const [renderScale, setRenderScale] = useState(1);
     const [labelSizes, setLabelSizes] = useState({});
-    const canvasSize = useCanvasSize(canvasRef);
+    const [canvasSize, refreshCanvasSize] = useCanvasSize(canvasRef);
     const compact = useCompactCards();
     const cardScale = compact ? CARD_COMPACT_SCALE : 1;
     const insets = useMemo(() => characterCardInsets(characters, canvasSize, cardScale, cardExtents), [characters, canvasSize, cardScale, cardExtents]);
+    const cardSpans = useMemo(() => characterCardSpans(characters, canvasSize, cardScale, cardExtents), [characters, canvasSize, cardScale, cardExtents]);
     const connections = relationshipsAtEpisode(data, episode, insets);
     const pxPerUnit = canvasSize ? { x: canvasSize.width / 100, y: canvasSize.height / 100 } : null;
     const connectionSignature = connections.map((connection) => `${connection.id}:${connection.label}:${connection.start.x.toFixed(1)},${connection.start.y.toFixed(1)},${connection.end.x.toFixed(1)},${connection.end.y.toFixed(1)}`).join("|");
@@ -297,12 +324,15 @@ export default function CharacterMap({ data, onChange, projectTitle, episodeCoun
     }, []);
     const characterSignature = characters.map((character) => `${character.id}:${character.name}:${character.role}:${character.thai_name || ""}:${characterCardSize(character)}`).join("|");
     useLayoutEffect(() => {
+        refreshCanvasSize();
         const measured = {};
         for (const [id, node] of personRefs.current) {
             const box = node.getBoundingClientRect();
             const frame = node.querySelector(".character-map-frame")?.getBoundingClientRect() ?? box;
+            const parts = [...node.children].map((child) => child.getBoundingClientRect());
             measured[id] = { width: frame.width, height: frame.height,
-                below: Math.max(0, ...[...node.children].map((child) => child.getBoundingClientRect().bottom - box.bottom)) };
+                spanWidth: Math.max(frame.width, ...parts.map((part) => part.width)),
+                below: Math.max(0, ...parts.map((part) => part.bottom - box.bottom)) };
         }
         const applied = parseFloat(getComputedStyle(canvasRef.current ?? document.body).getPropertyValue("--card-scale"));
         if (Number.isFinite(applied) && applied > 0) setRenderScale((current) => Math.abs(current - applied) < 0.001 ? current : applied);
@@ -311,13 +341,15 @@ export default function CharacterMap({ data, onChange, projectTitle, episodeCoun
             const same = ids.length === Object.keys(current).length && ids.every((id) => current[id]
                 && Math.abs(current[id].width - measured[id].width) < 0.5
                 && Math.abs(current[id].height - measured[id].height) < 0.5
+                && Math.abs(current[id].spanWidth - measured[id].spanWidth) < 0.5
                 && Math.abs(current[id].below - measured[id].below) < 0.5);
             return same ? current : measured;
         });
-    }, [characterSignature, canvasSize, compact, measureTick]);
-    const budgets = useMemo(() => labelBudgets(connections, canvasSize, renderScale),
         // eslint-disable-next-line react-hooks/exhaustive-deps
-        [connectionSignature, canvasSize, renderScale]);
+    }, [characterSignature, canvasSize, compact, measureTick, measureNonce]);
+    const budgets = useMemo(() => labelBudgets(connections, canvasSize, renderScale, exportView),
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        [connectionSignature, canvasSize, renderScale, exportView]);
     useLayoutEffect(() => {
         const measured = {};
         for (const [id, node] of labelRefs.current) {
@@ -330,10 +362,10 @@ export default function CharacterMap({ data, onChange, projectTitle, episodeCoun
                 && ids.every((id) => current[id] && Math.abs(current[id].width - measured[id].width) < 0.5 && Math.abs(current[id].height - measured[id].height) < 0.5);
             return same ? current : measured;
         });
-    }, [connectionSignature, compact, canvasSize, measureTick]);
-    const inlineLabels = useMemo(() => inlineLabelPositions(connections, characters, canvasSize, cardScale, labelSizes, cardExtents, renderScale),
+    }, [connectionSignature, compact, canvasSize, measureTick, measureNonce]);
+    const inlineLabels = useMemo(() => inlineLabelPositions(connections, characters, canvasSize, cardScale, labelSizes, cardExtents, renderScale, exportView),
         // eslint-disable-next-line react-hooks/exhaustive-deps
-        [connectionSignature, characters, canvasSize, cardScale, labelSizes, cardExtents, renderScale]);
+        [connectionSignature, characters, canvasSize, cardScale, labelSizes, cardExtents, renderScale, exportView]);
 
     function openDetails(kind, id) {
         setSelected({ kind, id });
@@ -493,6 +525,42 @@ export default function CharacterMap({ data, onChange, projectTitle, episodeCoun
             stage.style.setProperty("--export-canvas-height", `${canvasPx}px`);
             stage.style.setProperty("--export-card-scale", Math.min(EXPORT_CARD_SCALE_MAX, Math.max(EXPORT_CARD_SCALE_MIN, fits)).toFixed(2));
             await new Promise((resolve) => setTimeout(resolve, 450));
+            // Cards changed size, so the copy re-measures before its enclosures and labels are drawn.
+            setExportNonce((value) => value + 1);
+            await new Promise((resolve) => setTimeout(resolve, 350));
+            // The same gap in pixels on all four sides. Each edge follows the card that sits on it,
+            // since a wide caption reaches further out than a narrow one.
+            const canvasBox = canvasNode.getBoundingClientRect();
+            const padding = EXPORT_EDGE_PADDING * (EXPORT_WIDTH / 1600);
+            const edges = [...chart.querySelectorAll(".character-map-person")].map((card, index) => {
+                const box = card.getBoundingClientRect();
+                const parts = [...card.children].map((child) => child.getBoundingClientRect());
+                const halfWidth = Math.max(...parts.map((part) => part.width), box.width) / 2;
+                const centerX = ((exportData.characters[index]?.x ?? 50) / 100) * canvasBox.width;
+                const centerY = ((exportData.characters[index]?.y ?? 50) / 100) * canvasBox.height;
+                return {
+                    halfWidth, halfHeight: box.height / 2,
+                    below: Math.max(...parts.map((part) => part.bottom)) - box.bottom,
+                    left: centerX - halfWidth, right: centerX + halfWidth,
+                    top: centerY - box.height / 2,
+                    bottom: centerY + box.height / 2 + (Math.max(...parts.map((part) => part.bottom)) - box.bottom),
+                };
+            });
+            if (edges.length) {
+                const onLeft = edges.reduce((a, b) => (b.left < a.left ? b : a));
+                const onRight = edges.reduce((a, b) => (b.right > a.right ? b : a));
+                const onTop = edges.reduce((a, b) => (b.top < a.top ? b : a));
+                const onBottom = edges.reduce((a, b) => (b.bottom > a.bottom ? b : a));
+                setExportMargins({
+                    marginLeft: ((padding + onLeft.halfWidth) / canvasBox.width) * 100,
+                    marginRight: ((padding + onRight.halfWidth) / canvasBox.width) * 100,
+                    marginTop: ((padding + onTop.halfHeight) / canvasBox.height) * 100,
+                    marginBottom: ((padding + onBottom.halfHeight + onBottom.below) / canvasBox.height) * 100,
+                });
+            }
+            await new Promise((resolve) => setTimeout(resolve, 450));
+            setExportNonce((value) => value + 1);
+            await new Promise((resolve) => setTimeout(resolve, 300));
         }
         const skipped = ["character-map-heading-controls", "character-map-edit-hint", "character-map-hidden-note",
             "character-map-canvas-resize", "character-map-group-handle", "character-map-label-measure",
@@ -517,6 +585,7 @@ export default function CharacterMap({ data, onChange, projectTitle, episodeCoun
             setDownloadError(`Could not save the image: ${error?.message || "unknown error"}.`);
         } finally {
             setExportStage(false);
+            setExportMargins(null);
             setDownloading(false);
         }
     }
@@ -559,7 +628,7 @@ export default function CharacterMap({ data, onChange, projectTitle, episodeCoun
         <div className="character-map-viewport">
         <div className="character-map-canvas" ref={canvasRef} style={{ "--canvas-height": `${canvasHeight}px` }}>
             {(data.groups || []).map((group) => {
-                const bounds = characterGroupBounds(group, characters);
+                const bounds = characterGroupBounds(group, characters, cardSpans);
                 if (!bounds) return null;
                 return <div key={group.id} className={`character-map-group ${group.shape}`} style={{ left: `${bounds.left}%`, top: `${bounds.top}%`, width: `${bounds.width}%`, height: `${bounds.height}%`, '--group-color': group.color }} role="group" aria-label={`${group.label}: ${characters.filter((character) => group.character_ids.includes(character.id)).map((character) => character.name).join(', ')}`}>
                     <button type="button" className={`character-map-group-label ${group.label_position === "bottom" ? "bottom" : "top"}`} onClick={() => openDetails("group", group.id)}>{group.label}</button>
@@ -633,7 +702,7 @@ export default function CharacterMap({ data, onChange, projectTitle, episodeCoun
         {exportStage && createPortal(
             // Outside the visible chart, so page-level rules for it cannot reach the copy.
             <div className="character-map-export-stage" ref={stageRef} aria-hidden="true">
-                <CharacterMap data={exportData} projectTitle={projectTitle} episodeCount={episodeCount} exportView forcedEpisode={episode} />
+                <CharacterMap data={exportData} projectTitle={projectTitle} episodeCount={episodeCount} exportView forcedEpisode={episode} measureNonce={exportNonce} />
             </div>, document.body)}
         <dialog ref={dialog} className="character-map-dialog" aria-labelledby="character-map-detail-title" onClick={(event) => { if (event.target === dialog.current) dialog.current.close(); }}>
             <button type="button" className="character-map-close" aria-label="Close details" onClick={() => dialog.current.close()}>×</button>

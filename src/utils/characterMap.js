@@ -62,9 +62,12 @@ export function cardInset(canvas, card) {
 export function characterCardBox(character, scale = 1, extents = null) {
     const card = characterCardMetrics(character, scale);
     const measured = extents?.[character.id];
-    if (!measured) return card;
+    if (!measured) return { ...card, spanWidth: card.width };
+    const width = measured.width || card.width;
     return {
-        width: measured.width || card.width,
+        width,
+        // A caption may run wider than the card it sits under; enclosures and margins follow that.
+        spanWidth: Math.max(width, measured.spanWidth || 0),
         height: measured.height || card.height,
         textAllowance: Number.isFinite(measured.below) ? measured.below : card.textAllowance,
         gap: card.gap,
@@ -289,7 +292,7 @@ export function characterMapDirection(connection) {
 
 // For the exported sheet: spread the cast across the whole canvas, keeping their relative spacing.
 // The on-page chart usually leaves wide empty margins, which would otherwise shrink the cards.
-export function fitCharacterMapPositions(data, { marginX = 11, marginTop = 15, marginBottom = 19 } = {}) {
+export function fitCharacterMapPositions(data, { marginX = 7, marginLeft = marginX, marginRight = marginX, marginTop = 14, marginBottom = 18 } = {}) {
     if (!data.characters?.length) return data;
     const xs = data.characters.map((character) => character.x), ys = data.characters.map((character) => character.y);
     const minX = Math.min(...xs), maxX = Math.max(...xs), minY = Math.min(...ys), maxY = Math.max(...ys);
@@ -297,7 +300,7 @@ export function fitCharacterMapPositions(data, { marginX = 11, marginTop = 15, m
     const remap = (value, min, span, start, end) => span < 1 ? (start + end) / 2 : start + ((value - min) * (end - start)) / span;
     return { ...data, characters: data.characters.map((character) => ({
         ...character,
-        x: remap(character.x, minX, maxX - minX, marginX, 100 - marginX),
+        x: remap(character.x, minX, maxX - minX, marginLeft, 100 - marginRight),
         y: remap(character.y, minY, maxY - minY, marginTop, 100 - marginBottom),
     })) };
 }
@@ -321,11 +324,51 @@ export function characterGroupExtent(group, characters) {
     };
 }
 
-export function characterGroupBounds(group, characters) {
+// Each member's card, in the 0-100 units the enclosure is drawn in.
+export function characterCardSpans(characters, canvas, scale = 1, extents = null) {
+    if (!canvas?.width || !canvas?.height) return null;
+    const spans = {};
+    for (const character of characters) {
+        const card = characterCardBox(character, scale, extents);
+        spans[character.id] = {
+            halfX: ((card.spanWidth / 2) / canvas.width) * 100,
+            top: ((card.height / 2) / canvas.height) * 100,
+            bottom: ((card.height / 2 + card.textAllowance) / canvas.height) * 100,
+        };
+    }
+    return spans;
+}
+
+const GROUP_CARD_MARGIN = 1.5;
+
+// The enclosure keeps whatever size it was dragged to, but never smaller than the cards inside it.
+export function characterGroupBounds(group, characters, spans = null) {
     const extent = characterGroupExtent(group, characters);
     if (!extent) return null;
     const paddingX = group.padding_x ?? 15, paddingY = group.padding_y ?? 22;
-    const left = extent.minX - (group.padding_left ?? paddingX), right = extent.maxX + (group.padding_right ?? paddingX);
-    const top = extent.minY - (group.padding_top ?? paddingY), bottom = extent.maxY + (group.padding_bottom ?? paddingY);
+    let left = extent.minX - (group.padding_left ?? paddingX), right = extent.maxX + (group.padding_right ?? paddingX);
+    let top = extent.minY - (group.padding_top ?? paddingY), bottom = extent.maxY + (group.padding_bottom ?? paddingY);
+    if (spans) {
+        for (const character of characters.filter((item) => group.character_ids.includes(item.id))) {
+            const span = spans[character.id];
+            if (!span) continue;
+            left = Math.min(left, character.x - span.halfX - GROUP_CARD_MARGIN);
+            right = Math.max(right, character.x + span.halfX + GROUP_CARD_MARGIN);
+            top = Math.min(top, character.y - span.top - GROUP_CARD_MARGIN);
+            bottom = Math.max(bottom, character.y + span.bottom + GROUP_CARD_MARGIN);
+        }
+    }
+    // Same gap either side of the cast, so the group looks centred on the characters it holds.
+    const members = characters.filter((item) => group.character_ids.includes(item.id));
+    if (members.length) {
+        const centerX = (Math.min(...members.map((item) => item.x - (spans?.[item.id]?.halfX ?? 0)))
+            + Math.max(...members.map((item) => item.x + (spans?.[item.id]?.halfX ?? 0)))) / 2;
+        const needed = Math.max(...members.map((item) => Math.abs(item.x - centerX) + (spans?.[item.id]?.halfX ?? 0) + GROUP_CARD_MARGIN));
+        const halfX = Math.max(needed, Math.min(Math.max(centerX - left, right - centerX), centerX - 0.4, 99.6 - centerX));
+        left = centerX - halfX;
+        right = centerX + halfX;
+    }
+    left = Math.max(0.4, left); right = Math.min(99.6, right);
+    top = Math.max(0.4, top); bottom = Math.min(99.6, bottom);
     return { left, top, width: right - left, height: bottom - top, extent, paddingX, paddingY };
 }

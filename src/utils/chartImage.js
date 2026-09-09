@@ -22,21 +22,47 @@ function whenLoaded(image) {
     });
 }
 
-// Bakes every already-loaded portrait into the node as a data URL. Doing it here, from images the
-// browser has, avoids html-to-image's own fetch path, which caches a failure for the whole page.
+function fromCanvas(image) {
+    const canvas = document.createElement("canvas");
+    canvas.width = image.naturalWidth;
+    canvas.height = image.naturalHeight;
+    canvas.getContext("2d").drawImage(image, 0, 0);
+    return canvas.toDataURL("image/png");
+}
+
+async function fromNetwork(url) {
+    const response = await fetch(url, { mode: "cors", credentials: "omit", cache: "reload" });
+    if (!response.ok) throw new Error(`status ${response.status}`);
+    const blob = await response.blob();
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onerror = () => reject(new Error("could not read the image"));
+        reader.onloadend = () => resolve(reader.result);
+        reader.readAsDataURL(blob);
+    });
+}
+
+// Bakes every portrait into the node as a data URL before drawing. html-to-image's own fetch path
+// caches a failure for the whole page, and Safari will not hand back a canvas-clean copy of an
+// image it already cached without CORS, so try the canvas first and the network second.
 export async function inlineImages(root) {
     await Promise.all([...root.querySelectorAll("img")].map(async (image) => {
-        if (!image.src || image.src.startsWith("data:")) return;
+        const source = image.src;
+        if (!source || source.startsWith("data:")) return;
         await whenLoaded(image);
-        if (!image.naturalWidth) return;
+        if (image.naturalWidth) {
+            try {
+                image.src = fromCanvas(image);
+                return;
+            } catch {
+                // Tainted canvas: the image was fetched without CORS. Fall through to the network.
+            }
+        }
         try {
-            const canvas = document.createElement("canvas");
-            canvas.width = image.naturalWidth;
-            canvas.height = image.naturalHeight;
-            canvas.getContext("2d").drawImage(image, 0, 0);
-            image.src = canvas.toDataURL("image/png");
+            image.src = await fromNetwork(source);
         } catch {
-            // A portrait from a host without CORS taints the canvas; leave it for html-to-image to try.
+            // Leave the original URL; html-to-image gets one more try at it.
+            image.src = source;
         }
     }));
 }
