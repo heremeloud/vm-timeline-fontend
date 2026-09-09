@@ -289,15 +289,16 @@ export function characterMapDirection(connection) {
 
 // For the exported sheet: spread the cast across the whole canvas, keeping their relative spacing.
 // The on-page chart usually leaves wide empty margins, which would otherwise shrink the cards.
-export function fitCharacterMapPositions(data, marginX = 10, marginY = 9) {
+export function fitCharacterMapPositions(data, { marginX = 11, marginTop = 15, marginBottom = 19 } = {}) {
     if (!data.characters?.length) return data;
     const xs = data.characters.map((character) => character.x), ys = data.characters.map((character) => character.y);
     const minX = Math.min(...xs), maxX = Math.max(...xs), minY = Math.min(...ys), maxY = Math.max(...ys);
-    const remap = (value, min, span, margin) => span < 1 ? 50 : margin + ((value - min) * (100 - 2 * margin)) / span;
+    // The captions hang below a card, so the bottom keeps more room than the top.
+    const remap = (value, min, span, start, end) => span < 1 ? (start + end) / 2 : start + ((value - min) * (end - start)) / span;
     return { ...data, characters: data.characters.map((character) => ({
         ...character,
-        x: remap(character.x, minX, maxX - minX, marginX),
-        y: remap(character.y, minY, maxY - minY, marginY),
+        x: remap(character.x, minX, maxX - minX, marginX, 100 - marginX),
+        y: remap(character.y, minY, maxY - minY, marginTop, 100 - marginBottom),
     })) };
 }
 

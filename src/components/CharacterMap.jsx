@@ -488,7 +488,8 @@ export default function CharacterMap({ data, onChange, projectTitle, episodeCoun
                 const card = characterCardMetrics(character, 1);
                 return card.height + card.textAllowance;
             }), 1);
-            const fits = 0.92 * (closestRows / 100) * canvasPx / block;
+            // A card plus its caption may fill the gap to the next row, less a small buffer.
+            const fits = 0.96 * (closestRows / 100) * canvasPx / block;
             stage.style.setProperty("--export-canvas-height", `${canvasPx}px`);
             stage.style.setProperty("--export-card-scale", Math.min(EXPORT_CARD_SCALE_MAX, Math.max(EXPORT_CARD_SCALE_MIN, fits)).toFixed(2));
             await new Promise((resolve) => setTimeout(resolve, 450));
