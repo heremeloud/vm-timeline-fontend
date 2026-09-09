@@ -509,6 +509,13 @@ export default function CharacterMap({ data, onChange, projectTitle, episodeCoun
         // The canvas takes whatever height is left over, and the cards grow to match the new spacing.
         const canvasNode = chart?.querySelector(".character-map-canvas");
         if (chart && canvasNode) {
+            // Measure only after fonts settle, and fit long titles without wrapping.
+            await document.fonts.ready;
+            const title = chart.querySelector(".character-map-heading h2");
+            if (title && title.scrollWidth > title.clientWidth) {
+                const fontSize = parseFloat(getComputedStyle(title).fontSize);
+                title.style.fontSize = `${fontSize * title.clientWidth / title.scrollWidth}px`;
+            }
             const chrome = chart.offsetHeight - canvasNode.offsetHeight;
             const canvasPx = Math.max(320, Math.round(EXPORT_WIDTH / EXPORT_ASPECT) - chrome);
             const rows = [...new Set(exportData.characters.map((character) => character.y))].sort((a, b) => a - b);

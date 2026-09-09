@@ -217,17 +217,17 @@
 /* The downloaded image is the wide chart with just its title and the version it shows. */
 /* The export copy is laid out off-screen at a fixed width, so the visible chart never moves
    and a phone produces the same wide image a desktop does. */
-.character-map-export-stage { --export-width: 2400px; --sheet-scale: 1.5; position: fixed; left: 0; top: 0; z-index: -1; width: var(--export-width); opacity: 0; pointer-events: none; }
+.character-map-export-stage { --export-width: 2400px; --sheet-scale: 1.5; position: fixed; left: 0; top: 0; z-index: -1; width: var(--export-width); opacity: 0; pointer-events: none; -webkit-text-size-adjust: none; text-size-adjust: none; }
 .character-map-export-stage .character-map { width: var(--export-width); max-width: none; margin: 0; }
 .character-map.is-exporting > .character-map-toolbar { display: none; }
 .character-map.is-exporting .character-map-viewport { overflow: visible; }
 .character-map.is-exporting > .character-map-heading { justify-content: center; text-align: center; padding-bottom: calc(24px * var(--sheet-scale, 1)); }
-.character-map.is-exporting > .character-map-heading > div { max-width: 900px; }
+.character-map.is-exporting > .character-map-heading > div { width: 100%; min-width: 0; max-width: none; }
 .character-map.is-exporting .character-map-heading p { display: none; }
 .character-map.is-exporting > .character-map-note { text-align: center; font-style: italic; }
 /* Everything in the sheet grows with it, so a wider export is not just more empty space. */
 .character-map.is-exporting .character-map-eyebrow { font-size: calc(22px * var(--sheet-scale, 1)); letter-spacing: calc(3px * var(--sheet-scale, 1)); }
-.character-map.is-exporting .character-map-heading h2 { font-size: calc(72px * var(--sheet-scale, 1)); margin: calc(4px * var(--sheet-scale, 1)) 0 0; }
+.character-map.is-exporting .character-map-heading h2 { font-size: calc(72px * var(--sheet-scale, 1)); margin: calc(4px * var(--sheet-scale, 1)) 0 0; white-space: nowrap; overflow-wrap: normal; }
 .character-map.is-exporting > .character-map-note { font-size: calc(20px * var(--sheet-scale, 1)); padding: calc(8px * var(--sheet-scale, 1)) 28px; }
 .character-map.is-exporting .character-map-decoration { font-size: calc(24px * var(--sheet-scale, 1)); top: calc(20px * var(--sheet-scale, 1)); }
 .character-map.is-exporting .character-map-canvas { --card-scale: var(--export-card-scale, 1.7); height: var(--export-canvas-height, calc(var(--canvas-height, 490px) * var(--card-scale, 1))); }
