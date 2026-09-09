@@ -3,7 +3,7 @@ import { createPortal } from "react-dom";
 import "../styles/CharacterMap.css";
 import { getAuthors } from "../api/authorsService";
 import VisibilityToggle from "./VisibilityToggle";
-import { relationshipsAtEpisode, connectionPointAt, isCharacterMapEpisodePublic, visibleCharacterMapEpisodes, characterCardInsets, characterCardBox, characterCardMetrics, characterCardSpans, characterCardSize, CARD_COMPACT_SCALE, CARD_SIZE_KEYS, CARD_SIZE_LABELS, characterMapEpisodes, characterMapEpisodeLabel, characterMapImageName, fitCharacterMapPositions, characterMapTexts, characterGroupBounds, characterMapLineDash, characterMapDirection, newRelationshipChange, nextRelationshipColor, arrowheadPoints, resolvePortraitColor, SWATCH_PRESETS, LABEL_SYMBOLS, toggleLabelSymbol, snapPosition, GROUP_PADDING_MIN, GROUP_PADDING_MAX, CANVAS_HEIGHT_MIN, CANVAS_HEIGHT_MAX } from "../utils/characterMap";
+import { relationshipsAtEpisode, connectionPointAt, isCharacterMapEpisodePublic, visibleCharacterMapEpisodes, characterCardInsets, characterCardBox, characterCardSpans, characterCardSize, CARD_COMPACT_SCALE, CARD_SIZE_KEYS, CARD_SIZE_LABELS, characterMapEpisodes, characterMapEpisodeLabel, characterMapImageName, fitCharacterMapPositions, characterMapTexts, characterGroupBounds, characterMapLineDash, characterMapDirection, newRelationshipChange, nextRelationshipColor, arrowheadPoints, resolvePortraitColor, SWATCH_PRESETS, LABEL_SYMBOLS, toggleLabelSymbol, snapPosition, GROUP_PADDING_MIN, GROUP_PADDING_MAX, CANVAS_HEIGHT_MIN, CANVAS_HEIGHT_MAX } from "../utils/characterMap";
 
 const LINE_STYLES = ["solid", "dashed", "dotted"];
 const MIN_CANVAS_HEIGHT = 490;
@@ -22,7 +22,7 @@ const LABEL_MAX_HEIGHT = 64;
 const LABEL_POSITIONS = [0.5, 0.38, 0.62, 0.28, 0.72];
 const EXPORT_ASPECT = 4 / 3;
 const EXPORT_WIDTH = 2400;
-const EXPORT_CARD_SCALE_MAX = 2.4;
+const EXPORT_CARD_SCALE_MAX = 3;
 const EXPORT_CARD_SCALE_MIN = 1;
 const EXPORT_EDGE_PADDING = 40;
 
@@ -159,8 +159,8 @@ function PopoverShell({ label, onClose, children }) {
         <button type="button" className="character-map-close" aria-label="Close editor" onClick={onClose}>×</button>
         {children}
         <div className="character-map-side-save">
-            <button type="submit">Save character map</button>
-            <button type="button" onClick={onClose}>Close panel</button>
+            <button type="submit" className="form-primary-submit">Save character map</button>
+            <button type="button" className="series-metadata-add" onClick={onClose}>Close panel</button>
         </div>
     </aside>;
 }
@@ -204,11 +204,11 @@ function ConnectionPopover({ data, onChange, connection, episode, episodes, onCl
         <label>Details<textarea maxLength={5000} value={connection.description} onChange={(event) => updateActive({ description: event.target.value })} /></label>
         <label className="character-map-visibility"><input type="checkbox" checked={connection.hidden} onChange={(event) => updateActive({ hidden: event.target.checked })} /> Hide this connection from here</label>
         {connection.episode !== episode
-            ? <p className="eventform-field-note">Showing the state carried over from {characterMapEpisodeLabel(data, connection.episode)}. Editing changes it from there onward.
-                {episodes.includes(episode) && <button type="button" onClick={forkHere}> Start a new state at {characterMapEpisodeLabel(data, episode)} instead</button>}</p>
+            ? <p className="eventform-field-note">State: {characterMapEpisodeLabel(data, connection.episode)}
+                {episodes.includes(episode) && <button type="button" onClick={forkHere}> New state at {characterMapEpisodeLabel(data, episode)}</button>}</p>
             : null}
         <div className="character-map-editor-actions">
-            <button type="button" onClick={deleteState}>{relationship.changes.length <= 1 ? "Delete relationship" : "Delete this state"}</button>
+            <button type="button" className="character-map-form-remove" onClick={deleteState}>{relationship.changes.length <= 1 ? "Delete relationship" : "Delete this state"}</button>
             {relationship.changes.length > 1 && <button type="button" onClick={() => { onChange({ ...data, relationships: data.relationships.filter((item) => item.id !== relationship.id) }); onClose(); }}>Delete whole relationship</button>}
         </div>
     </PopoverShell>;
@@ -247,8 +247,8 @@ function CharacterEditPopover({ data, onChange, character, authors, authorsLoadi
             {SWATCH_PRESETS.map((preset) => <button key={preset.label} type="button" className={resolvePortraitColor(character.tone) === preset.color ? "is-selected" : ""} style={{ '--swatch-color': preset.color }} title={preset.label} aria-label={preset.label} onClick={() => update({ tone: preset.color })} />)}
         </div>
         <div className="character-map-editor-actions">
-            <button type="button" onClick={onStartLink}>Connect to another character →</button>
-            <button type="button" onClick={onRemove}>Remove character</button>
+            <button type="button" className="series-metadata-add" onClick={onStartLink}>Connect to another character →</button>
+            <button type="button" className="character-map-form-remove" onClick={onRemove}>Remove character</button>
         </div>
     </PopoverShell>;
 }
@@ -514,12 +514,14 @@ export default function CharacterMap({ data, onChange, projectTitle, episodeCoun
             const rows = [...new Set(exportData.characters.map((character) => character.y))].sort((a, b) => a - b);
             const closestRows = rows.length > 1 ? Math.min(...rows.slice(1).map((y, index) => y - rows[index])) : 60;
             // Measured card + caption height, back at scale 1, so the cards never grow into each other.
-            const block = Math.max(...exportData.characters.map((character) => {
-                const measured = cardExtents[character.id];
-                if (measured?.height) return (measured.height + measured.below) / (renderScale || 1);
-                const card = characterCardMetrics(character, 1);
-                return card.height + card.textAllowance;
-            }), 1);
+            const exportCards = [...canvasNode.querySelectorAll(".character-map-person")];
+            const initialScale = parseFloat(getComputedStyle(canvasNode).getPropertyValue("--card-scale")) || 1.7;
+            // Measure the actual export captions: the wider sheet wraps them differently
+            // from the phone/desktop chart and usually leaves more room for portraits.
+            const block = Math.max(...exportCards.map((node) => {
+                const parts = [node, ...node.children].map((part) => part.getBoundingClientRect());
+                return (Math.max(...parts.map((part) => part.bottom)) - Math.min(...parts.map((part) => part.top))) / initialScale;
+            }), ...(!exportCards.length ? [1] : []));
             // A card plus its caption may fill the gap to the next row, less a small buffer.
             const fits = 0.96 * (closestRows / 100) * canvasPx / block;
             stage.style.setProperty("--export-canvas-height", `${canvasPx}px`);
@@ -599,6 +601,7 @@ export default function CharacterMap({ data, onChange, projectTitle, episodeCoun
             <div><span className="character-map-eyebrow">{texts.eyebrow}</span>
                 <h2 id="character-map-heading">{texts.heading}</h2>
                 <p>{texts.introduction}</p>
+                {exportView && texts.decoration && <span className="character-map-export-subtitle">{texts.decoration}</span>}
             </div>
             {!exportView && <div className="character-map-heading-controls">
                 <div className="character-map-header-actions">
@@ -648,7 +651,7 @@ export default function CharacterMap({ data, onChange, projectTitle, episodeCoun
                         onPointerUp={handleGroupResizeUp} onPointerCancel={handleGroupResizeUp} />}
                 </div>;
             })}
-            {!editable && <span className="character-map-decoration" aria-hidden="true">{texts.decoration}</span>}
+            {!editable && !exportView && <span className="character-map-decoration" aria-hidden="true">{texts.decoration}</span>}
             <svg className="character-map-lines" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
                 {connections.map((connection) => <path key={connection.id} d={connection.d} className={focusId && !touchesFocus(connection) ? "is-dimmed" : ""}
                     fill="none" strokeWidth={2} vectorEffect="non-scaling-stroke"

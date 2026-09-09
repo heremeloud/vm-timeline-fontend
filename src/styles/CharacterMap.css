@@ -221,15 +221,15 @@
 .character-map-export-stage .character-map { width: var(--export-width); max-width: none; margin: 0; }
 .character-map.is-exporting > .character-map-toolbar { display: none; }
 .character-map.is-exporting .character-map-viewport { overflow: visible; }
-.character-map.is-exporting > .character-map-heading { justify-content: center; text-align: center; padding-bottom: 10px; }
+.character-map.is-exporting > .character-map-heading { justify-content: center; text-align: center; padding-bottom: calc(24px * var(--sheet-scale, 1)); }
 .character-map.is-exporting > .character-map-heading > div { max-width: 900px; }
 .character-map.is-exporting .character-map-heading p { display: none; }
 .character-map.is-exporting > .character-map-note { text-align: center; font-style: italic; }
 /* Everything in the sheet grows with it, so a wider export is not just more empty space. */
-.character-map.is-exporting .character-map-eyebrow { font-size: calc(19px * var(--sheet-scale, 1)); letter-spacing: calc(3px * var(--sheet-scale, 1)); }
-.character-map.is-exporting .character-map-heading h2 { font-size: calc(64px * var(--sheet-scale, 1)); margin: calc(16px * var(--sheet-scale, 1)) 0 0; }
-.character-map.is-exporting > .character-map-note { font-size: calc(17px * var(--sheet-scale, 1)); padding: calc(8px * var(--sheet-scale, 1)) 28px; }
-.character-map.is-exporting .character-map-decoration { font-size: calc(20px * var(--sheet-scale, 1)); top: calc(20px * var(--sheet-scale, 1)); }
+.character-map.is-exporting .character-map-eyebrow { font-size: calc(22px * var(--sheet-scale, 1)); letter-spacing: calc(3px * var(--sheet-scale, 1)); }
+.character-map.is-exporting .character-map-heading h2 { font-size: calc(72px * var(--sheet-scale, 1)); margin: calc(4px * var(--sheet-scale, 1)) 0 0; }
+.character-map.is-exporting > .character-map-note { font-size: calc(20px * var(--sheet-scale, 1)); padding: calc(8px * var(--sheet-scale, 1)) 28px; }
+.character-map.is-exporting .character-map-decoration { font-size: calc(24px * var(--sheet-scale, 1)); top: calc(20px * var(--sheet-scale, 1)); }
 .character-map.is-exporting .character-map-canvas { --card-scale: var(--export-card-scale, 1.7); height: var(--export-canvas-height, calc(var(--canvas-height, 490px) * var(--card-scale, 1))); }
 /* The sheet has horizontal room to spare, so captions run wider and wrap onto fewer lines.
    Shorter captions leave more vertical room, which is what lets the cards grow. */
@@ -238,3 +238,59 @@
 .character-map.is-exporting .character-map-person .character-map-thai-name { width: max-content; max-width: calc((var(--card-w) + 130px) * var(--card-scale, 1)); }
 /* Air between the chart and the credit line. */
 .character-map.is-exporting .character-map-viewport { padding-bottom: calc(22px * var(--sheet-scale, 1)); }
+
+/* Export typography remains readable when the 4:3 image is viewed on a phone. */
+.character-map.is-exporting .character-map-person strong { font-size: calc(var(--card-name) * var(--card-scale) * 1.15); }
+.character-map.is-exporting .character-map-person > span:last-child,
+.character-map.is-exporting .character-map-person .character-map-thai-name { font-size: calc(var(--card-role) * var(--card-scale) * 1.2); }
+.character-map.is-exporting .character-map-group-label { font-size: calc(17px * var(--sheet-scale, 1)); padding: 4px 14px; }
+.character-map.is-exporting .character-map-connection-label,
+.character-map.is-exporting .character-map-connection.has-inline-label .character-map-connection-label { font-size: calc(15px * var(--card-scale)); }
+
+.character-map-export-subtitle { display: block; margin-top: calc(12px * var(--sheet-scale, 1)); font: italic calc(24px * var(--sheet-scale, 1)) / 1.4 Georgia, serif; color: #b79980; white-space: pre-wrap; overflow-wrap: anywhere; }
+/* Editing uses the same form treatment as project episodes and special items. */
+.eventform-form.character-map-inline-editor { background: transparent; border: 0; border-radius: 0; padding: 0; }
+.character-map-editor > details.series-metadata-section { margin-top: 24px; padding: 9px; border: 1px solid rgba(166, 124, 82, .3); border-radius: 12px; background: rgba(166, 124, 82, .07); }
+.character-map-editor > details > summary { color: #3f352d; font-size: 1.05rem; font-weight: 600; line-height: 1.35; }
+.character-map-editor > details > .eventform-field-note { margin: 6px 0 12px; font-size: .85rem; line-height: 1.4; }
+.character-map-editor > details > fieldset { padding: 12px; border: 1px solid rgba(0, 0, 0, .15); border-radius: 8px; background: transparent; }
+.character-map-editor > details > fieldset > legend { color: #3f352d; font-size: 1rem; font-weight: 600; }
+.character-map-editor .character-map-episode-row.series-metadata-row { display: grid; grid-template-columns: minmax(0, 1fr) auto 38px 38px 38px; gap: 6px; align-items: end; padding: 7px 0; border-top: 1px solid rgba(166, 124, 82, .22); }
+.character-map-episode-row.series-metadata-row > button { height: 40px; padding: 0; }
+.character-map-episode-row.series-metadata-row .visibility-toggle { align-self: center; }
+.character-map-editor > details .character-map-fields { margin-top: 12px; align-items: start; }
+.character-map-editor > details label:not(.visibility-toggle):not(.character-map-visibility) { margin-bottom: 6px; }
+.character-map .character-map-side-panel { color: #2f2924; background: #fffaf4; padding: 16px; }
+.character-map-side-panel .character-map-popover-title { font-size: 1.05rem; line-height: 1.35; margin-bottom: 16px; color: #3f352d; }
+.character-map-side-panel .character-map-fields { gap: 12px; margin-bottom: 12px; }
+.character-map-side-panel > label { margin-bottom: 16px; }
+.character-map-side-panel .character-map-editor-actions { gap: 8px; }
+.character-map-side-save { background: #fffaf4; bottom: -16px; padding-bottom: 8px; }
+.eventform-form .character-map-form-remove { color: #a21d31; border: 1px solid currentColor; background: transparent; border-radius: 8px; }
+.eventform-form .character-map-side-save .form-primary-submit { font-size: 1.05rem; }
+@media (max-width: 520px) {
+    .character-map-editor .character-map-episode-row.series-metadata-row { grid-template-columns: minmax(0, 1fr) 38px 38px 38px; }
+    .character-map-episode-row.series-metadata-row > label:first-child { grid-column: 1 / -1; }
+}
+
+.character-map-outline-swatches { flex-wrap: wrap; margin: 8px 0 0; }
+.character-map-outline-swatches button { flex-shrink: 0; }
+
+/* Keep field labels aligned even when one control has a palette beneath it. */
+.character-map-editor > details .character-map-fields > button {
+    align-self: end;
+    min-height: 46px;
+    margin-bottom: 6px;
+}
+.character-map-editor .character-map-episode-row.series-metadata-row > label:not(.visibility-toggle) {
+    grid-template-rows: 20px 46px;
+    gap: 0;
+    margin-bottom: 0;
+}
+.character-map-editor .character-map-episode-row.series-metadata-row > button {
+    height: 46px;
+}
+.character-map-editor .character-map-episode-row.series-metadata-row > .visibility-toggle {
+    align-self: end;
+    margin: 0 0 13px;
+}

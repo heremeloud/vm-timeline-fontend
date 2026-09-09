@@ -1,12 +1,15 @@
-.visibility-toggle {
+.visibility-toggle,
+.eventform-form label.visibility-toggle {
     display: inline-flex;
+    margin: 0;
+    width: auto;
     align-items: center;
     gap: 4px;
     flex-shrink: 0;
     padding: 3px 6px;
     border: 1px solid #d8d2cc;
     border-radius: 6px;
-    background: rgba(255, 255, 255, 0.95);
+    background: rgba(255, 255, 255, 0.94);
     color: #4b4039;
     font-size: 0.68rem;
     font-weight: 600;
@@ -15,7 +18,16 @@
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
 }
 
-.visibility-toggle input {
+.visibility-toggle input,
+.eventform-form .visibility-toggle input[type="checkbox"] {
+    appearance: auto;
+    color-scheme: light;
+    padding: 0;
+    border: initial;
+    border-radius: 0;
+    background: initial;
+    box-shadow: none;
+    flex: 0 0 12px;
     width: 12px;
     height: 12px;
     min-height: 12px;

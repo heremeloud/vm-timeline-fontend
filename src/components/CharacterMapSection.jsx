@@ -39,7 +39,7 @@ export default function CharacterMapSection({ project, isAdmin, onSaved }) {
                 setDraft(structuredClone(data));
                 setDraftVisible(isPublic);
                 setError("");
-            }}>Edit character map</button>
+            }}>Edit</button>
         </div>
         : null;
     return <div className="character-map-section">
@@ -50,8 +50,8 @@ export default function CharacterMapSection({ project, isAdmin, onSaved }) {
             <fieldset className="character-map-edit-fields" disabled={saving}>
                 <CharacterMapEditor data={draft} onChange={setDraft} visible={draftVisible} onVisibleChange={setDraftVisible} projectTitle={project.title} episodeCount={project.episode_count} />
                 <div className="character-map-editor-actions">
-                    <button type="submit">{saving ? "Saving…" : "Save character map"}</button>
-                    <button type="button" onClick={() => { setDraft(null); setError(""); }}>Cancel</button>
+                    <button type="submit" className="form-primary-submit">{saving ? "Saving…" : "Save character map"}</button>
+                    <button type="button" className="series-metadata-add" onClick={() => { setDraft(null); setError(""); }}>Cancel</button>
                 </div>
             </fieldset>
         </form> : (isAdmin || (isPublic && hasPublicEpisode)) && <CharacterMap data={data} projectTitle={project.title} episodeCount={project.episode_count} isAdmin={isAdmin} headerControls={adminControls} busy={saving}
