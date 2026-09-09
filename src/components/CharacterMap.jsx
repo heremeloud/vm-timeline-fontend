@@ -1,8 +1,9 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import "../styles/CharacterMap.css";
 import { getAuthors } from "../api/authorsService";
 import VisibilityToggle from "./VisibilityToggle";
-import { relationshipsAtEpisode, connectionPointAt, isCharacterMapEpisodePublic, visibleCharacterMapEpisodes, characterCardInsets, characterCardBox, characterCardSize, CARD_COMPACT_SCALE, CARD_SIZE_KEYS, CARD_SIZE_LABELS, characterMapEpisodes, characterMapEpisodeLabel, characterMapImageName, characterMapTexts, characterGroupBounds, characterMapLineDash, characterMapDirection, newRelationshipChange, nextRelationshipColor, arrowheadPoints, resolvePortraitColor, SWATCH_PRESETS, LABEL_SYMBOLS, toggleLabelSymbol, snapPosition, GROUP_PADDING_MIN, GROUP_PADDING_MAX, CANVAS_HEIGHT_MIN, CANVAS_HEIGHT_MAX } from "../utils/characterMap";
+import { relationshipsAtEpisode, connectionPointAt, isCharacterMapEpisodePublic, visibleCharacterMapEpisodes, characterCardInsets, characterCardBox, characterCardMetrics, characterCardSize, CARD_COMPACT_SCALE, CARD_SIZE_KEYS, CARD_SIZE_LABELS, characterMapEpisodes, characterMapEpisodeLabel, characterMapImageName, fitCharacterMapPositions, characterMapTexts, characterGroupBounds, characterMapLineDash, characterMapDirection, newRelationshipChange, nextRelationshipColor, arrowheadPoints, resolvePortraitColor, SWATCH_PRESETS, LABEL_SYMBOLS, toggleLabelSymbol, snapPosition, GROUP_PADDING_MIN, GROUP_PADDING_MAX, CANVAS_HEIGHT_MIN, CANVAS_HEIGHT_MAX } from "../utils/characterMap";
 
 const LINE_STYLES = ["solid", "dashed", "dotted"];
 const MIN_CANVAS_HEIGHT = 490;
@@ -18,6 +19,10 @@ const LABEL_MIN_WIDTH = 56;
 const LABEL_MAX_WIDTH = 190;
 const LABEL_MAX_HEIGHT = 64;
 const LABEL_POSITIONS = [0.5, 0.38, 0.62, 0.28, 0.72];
+const EXPORT_ASPECT = 4 / 3;
+const EXPORT_WIDTH = 2400;
+const EXPORT_CARD_SCALE_MAX = 2.4;
+const EXPORT_CARD_SCALE_MIN = 1;
 
 function useCanvasSize(ref) {
     const [size, setSize] = useState(null);
@@ -113,6 +118,17 @@ function Portrait({ tone }) {
         <path d="M32 39c1-18 11-24 20-22 13 1 20 11 18 23-11-3-16-10-19-15-3 8-9 12-19 14Z" fill="currentColor" />
     </svg>;
 }
+
+function ChartIcon({ paths }) {
+    return <svg className="character-map-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9"
+        strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false">
+        {paths.map((d) => <path key={d} d={d} />)}
+    </svg>;
+}
+
+const ICON_EXPAND = ["M3 12h18", "M7 8l-4 4 4 4", "M17 8l4 4-4 4"];
+const ICON_COLLAPSE = ["M3 12h18", "M8 8l4 4-4 4", "M16 8l-4 4 4 4"];
+const ICON_DOWNLOAD = ["M12 3v11", "M7.5 10.5L12 15l4.5-4.5", "M4 20h16"];
 
 function PopoverShell({ label, onClose, children }) {
     return <aside className="character-map-popover character-map-side-panel" aria-label={label}>
@@ -221,6 +237,7 @@ export default function CharacterMap({ data, onChange, projectTitle, episodeCoun
     const [measureTick, setMeasureTick] = useState(0);
     const [exportStage, setExportStage] = useState(false);
     const stageRef = useRef(null);
+    const exportData = useMemo(() => fitCharacterMapPositions(data), [data]);
     const [downloading, setDownloading] = useState(false);
     const [downloadError, setDownloadError] = useState("");
     const sectionRef = useRef(null);
@@ -454,11 +471,33 @@ export default function CharacterMap({ data, onChange, projectTitle, episodeCoun
         setDownloadError("");
         setExportStage(true);
         await new Promise((resolve) => setTimeout(resolve, 600));
-        const chart = stageRef.current?.firstElementChild;
+        const stage = stageRef.current;
+        const chart = stage?.firstElementChild;
+        // The sheet itself is 4:3 — title, chart and footer fill it, with no bars down the sides.
+        // The canvas takes whatever height is left over, and the cards grow to match the new spacing.
+        const canvasNode = chart?.querySelector(".character-map-canvas");
+        if (chart && canvasNode) {
+            const chrome = chart.offsetHeight - canvasNode.offsetHeight;
+            const canvasPx = Math.max(320, Math.round(EXPORT_WIDTH / EXPORT_ASPECT) - chrome);
+            const rows = [...new Set(exportData.characters.map((character) => character.y))].sort((a, b) => a - b);
+            const closestRows = rows.length > 1 ? Math.min(...rows.slice(1).map((y, index) => y - rows[index])) : 60;
+            // Measured card + caption height, back at scale 1, so the cards never grow into each other.
+            const block = Math.max(...exportData.characters.map((character) => {
+                const measured = cardExtents[character.id];
+                if (measured?.height) return (measured.height + measured.below) / (renderScale || 1);
+                const card = characterCardMetrics(character, 1);
+                return card.height + card.textAllowance;
+            }), 1);
+            const fits = 0.92 * (closestRows / 100) * canvasPx / block;
+            stage.style.setProperty("--export-canvas-height", `${canvasPx}px`);
+            stage.style.setProperty("--export-card-scale", Math.min(EXPORT_CARD_SCALE_MAX, Math.max(EXPORT_CARD_SCALE_MIN, fits)).toFixed(2));
+            await new Promise((resolve) => setTimeout(resolve, 450));
+        }
         const skipped = ["character-map-heading-controls", "character-map-edit-hint", "character-map-hidden-note",
             "character-map-canvas-resize", "character-map-group-handle", "character-map-label-measure",
             "character-map-side-panel", "visibility-toggle"];
         const options = { pixelRatio: 2, backgroundColor: "#fffcf6",
+            aspectRatio: EXPORT_ASPECT,
             style: { margin: "0" },
             // One portrait that will not embed should not lose the whole image.
             onImageErrorHandler: () => {},
@@ -493,9 +532,9 @@ export default function CharacterMap({ data, onChange, projectTitle, episodeCoun
             </div>
             {!exportView && <div className="character-map-heading-controls">
                 <div className="character-map-header-actions">
-                <button type="button" className="character-map-expand" aria-label={expanded ? "Restore chart width" : "Expand chart width"} aria-pressed={expanded} title={expanded ? "Restore chart width" : "Expand chart width"} onClick={() => setExpanded((value) => !value)}>{expanded ? "→←" : "↔"}</button>
+                <button type="button" className="character-map-expand" aria-label={expanded ? "Restore chart width" : "Expand chart width"} aria-pressed={expanded} title={expanded ? "Restore chart width" : "Expand chart width"} onClick={() => setExpanded((value) => !value)}><ChartIcon paths={expanded ? ICON_COLLAPSE : ICON_EXPAND} /></button>
                 <button type="button" className="character-map-expand character-map-download" disabled={downloading}
-                    aria-label="Download the chart as an image" title="Download the chart as an image" onClick={downloadImage}>{downloading ? "…" : "⤓"}</button>
+                    aria-label="Download the chart as an image" title="Download the chart as an image" onClick={downloadImage}>{downloading ? <span className="character-map-spinner" aria-hidden="true" /> : <ChartIcon paths={ICON_DOWNLOAD} />}</button>
                 </div>
                 {downloadError && <p className="character-map-download-error" role="alert">{downloadError}</p>}
                 {headerControls}
@@ -590,9 +629,11 @@ export default function CharacterMap({ data, onChange, projectTitle, episodeCoun
                 onStartLink={() => startLinking(editingCharacter.id)} onRemove={() => removeCharacter(editingCharacter)} onClose={() => setEditingCharacterId(null)} />}
         <p className="character-map-note">{exportView ? [episode && `version ${characterMapEpisodeLabel(data, episode)}`, "© viewmim.info"].filter(Boolean).join(" · ")
             : episode ? texts.footer.replaceAll('{episode}', characterMapEpisodeLabel(data, episode)) : texts.noEpisodes}</p>
-        {exportStage && <div className="character-map-export-stage" ref={stageRef} aria-hidden="true">
-            <CharacterMap data={data} projectTitle={projectTitle} episodeCount={episodeCount} exportView forcedEpisode={episode} />
-        </div>}
+        {exportStage && createPortal(
+            // Outside the visible chart, so page-level rules for it cannot reach the copy.
+            <div className="character-map-export-stage" ref={stageRef} aria-hidden="true">
+                <CharacterMap data={exportData} projectTitle={projectTitle} episodeCount={episodeCount} exportView forcedEpisode={episode} />
+            </div>, document.body)}
         <dialog ref={dialog} className="character-map-dialog" aria-labelledby="character-map-detail-title" onClick={(event) => { if (event.target === dialog.current) dialog.current.close(); }}>
             <button type="button" className="character-map-close" aria-label="Close details" onClick={() => dialog.current.close()}>×</button>
             {active && <>

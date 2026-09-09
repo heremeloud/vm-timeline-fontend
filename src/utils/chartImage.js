@@ -44,7 +44,7 @@ export async function inlineImages(root) {
 // html-to-image's own toPng waits on requestAnimationFrame, which never fires in a background tab,
 // so this drives the canvas step directly and reports which stage failed.
 export async function elementToPngBlob(element, options = {}) {
-    const { backgroundColor = "#ffffff", ...rest } = options;
+    const { backgroundColor = "#ffffff", aspectRatio = null, ...rest } = options;
     let svgUrl;
     try {
         svgUrl = await toSvg(element, { backgroundColor, ...rest });
@@ -57,14 +57,21 @@ export async function elementToPngBlob(element, options = {}) {
     }
     const image = await loadImage(svgUrl);
     const width = element.offsetWidth || image.width, height = element.offsetHeight || image.height;
-    const scale = Math.min(MAX_SCALE, Math.sqrt(MAX_PIXELS / Math.max(1, width * height)));
+    // Pad the drawing out to the asked-for frame so every export comes back the same shape.
+    let frameWidth = width, frameHeight = height;
+    if (aspectRatio) {
+        if (width / height >= aspectRatio) frameHeight = width / aspectRatio;
+        else frameWidth = height * aspectRatio;
+    }
+    const scale = Math.min(MAX_SCALE, Math.sqrt(MAX_PIXELS / Math.max(1, frameWidth * frameHeight)));
     const canvas = document.createElement("canvas");
-    canvas.width = Math.max(1, Math.round(width * scale));
-    canvas.height = Math.max(1, Math.round(height * scale));
+    canvas.width = Math.max(1, Math.round(frameWidth * scale));
+    canvas.height = Math.max(1, Math.round(frameHeight * scale));
     const context = canvas.getContext("2d");
     context.fillStyle = backgroundColor;
     context.fillRect(0, 0, canvas.width, canvas.height);
-    context.drawImage(image, 0, 0, canvas.width, canvas.height);
+    context.drawImage(image, Math.round((frameWidth - width) / 2 * scale), Math.round((frameHeight - height) / 2 * scale),
+        Math.round(width * scale), Math.round(height * scale));
     return new Promise((resolve, reject) => {
         try {
             canvas.toBlob((blob) => blob ? resolve(blob) : reject(new Error("the image came out empty")), "image/png");
