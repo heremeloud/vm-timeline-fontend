@@ -3,7 +3,7 @@ import { createPortal } from "react-dom";
 import "../styles/CharacterMap.css";
 import { getAuthors } from "../api/authorsService";
 import VisibilityToggle from "./VisibilityToggle";
-import { relationshipsAtEpisode, connectionPointAt, isCharacterMapEpisodePublic, visibleCharacterMapEpisodes, characterCardInsets, characterCardBox, characterCardSpans, characterCardSize, CARD_COMPACT_SCALE, CARD_SIZE_KEYS, CARD_SIZE_LABELS, characterMapEpisodes, characterMapEpisodeLabel, characterMapImageName, fitCharacterMapPositions, characterMapTexts, characterGroupBounds, characterMapLineDash, characterMapDirection, newRelationshipChange, nextRelationshipColor, arrowheadPoints, resolvePortraitColor, SWATCH_PRESETS, LABEL_SYMBOLS, toggleLabelSymbol, snapPosition, GROUP_PADDING_MIN, GROUP_PADDING_MAX, CANVAS_HEIGHT_MIN, CANVAS_HEIGHT_MAX } from "../utils/characterMap";
+import { relationshipsAtEpisode, charactersAtEpisode, characterDebutEpisode, setCharacterDebut, setCharacterEpisodeHidden, connectionPointAt, isCharacterMapEpisodePublic, visibleCharacterMapEpisodes, characterCardInsets, characterCardBox, characterCardSpans, characterCardSize, CARD_COMPACT_SCALE, CARD_SIZE_KEYS, CARD_SIZE_LABELS, characterMapEpisodes, characterMapEpisodeLabel, characterMapImageName, fitCharacterMapPositions, characterMapTexts, characterGroupBounds, characterMapLineDash, characterMapDirection, newRelationshipChange, nextRelationshipColor, arrowheadPoints, resolvePortraitColor, SWATCH_PRESETS, LABEL_SYMBOLS, toggleLabelSymbol, snapPosition, GROUP_PADDING_MIN, GROUP_PADDING_MAX, CANVAS_HEIGHT_MIN, CANVAS_HEIGHT_MAX } from "../utils/characterMap";
 
 const LINE_STYLES = ["solid", "dashed", "dotted"];
 const MIN_CANVAS_HEIGHT = 490;
@@ -214,7 +214,7 @@ function ConnectionPopover({ data, onChange, connection, episode, episodes, onCl
     </PopoverShell>;
 }
 
-function CharacterEditPopover({ data, onChange, character, authors, authorsLoading, onStartLink, onRemove, onClose }) {
+function CharacterEditPopover({ data, onChange, character, authors, authorsLoading, episode, episodes, onStartLink, onRemove, onClose }) {
     function update(patch) {
         onChange({ ...data, characters: data.characters.map((item) => item.id === character.id ? { ...item, ...patch } : item) });
     }
@@ -242,6 +242,20 @@ function CharacterEditPopover({ data, onChange, character, authors, authorsLoadi
         </select></label>
         <label>Portrait URL<input placeholder="https://…" value={character.photo || ""} onChange={(event) => update({ photo: event.target.value.trim() })} /></label>
         <label>Introduction<textarea maxLength={5000} value={character.description} onChange={(event) => update({ description: event.target.value })} /></label>
+        {!!episodes.length && <>
+            <div className="character-map-fields">
+                <label>First appears in<select value={characterDebutEpisode(data, character) ?? ""}
+                    onChange={(event) => onChange(setCharacterDebut(data, character.id, event.target.value === "" ? null : Number(event.target.value)))}>
+                    <option value="">Every entry</option>
+                    {episodes.map((number) => <option key={number} value={number}>{characterMapEpisodeLabel(data, number)}</option>)}
+                </select></label>
+            </div>
+            {episode !== undefined && <label className="character-map-visibility">
+                <input type="checkbox" checked={!!(character.changes || []).find((change) => change.episode === episode)?.hidden}
+                    onChange={(event) => onChange(setCharacterEpisodeHidden(data, character.id, episode, event.target.checked))} />
+                Written out from {characterMapEpisodeLabel(data, episode)} onward
+            </label>}
+        </>}
         <p className="eventform-field-note">Portrait color</p>
         <div className="character-map-swatches" role="group" aria-label="Portrait color">
             {SWATCH_PRESETS.map((preset) => <button key={preset.label} type="button" className={resolvePortraitColor(character.tone) === preset.color ? "is-selected" : ""} style={{ '--swatch-color': preset.color }} title={preset.label} aria-label={preset.label} onClick={() => update({ tone: preset.color })} />)}
@@ -254,7 +268,6 @@ function CharacterEditPopover({ data, onChange, character, authors, authorsLoadi
 }
 
 export default function CharacterMap({ data, onChange, projectTitle, episodeCount = 0, editable = false, isAdmin = false, headerControls = null, onEpisodePublicChange = null, busy = false, exportView = false, forcedEpisode = null, measureNonce = 0 }) {
-    const characters = data.characters;
     const texts = { ...characterMapTexts(projectTitle), ...data.texts };
     const [selectedEpisode, setEpisode] = useState(null);
     const [expanded, setExpanded] = useState(false);
@@ -263,7 +276,6 @@ export default function CharacterMap({ data, onChange, projectTitle, episodeCoun
     const [exportNonce, setExportNonce] = useState(0);
     const stageRef = useRef(null);
     const [exportMargins, setExportMargins] = useState(null);
-    const exportData = useMemo(() => fitCharacterMapPositions(data, exportMargins ?? undefined), [data, exportMargins]);
     const [downloading, setDownloading] = useState(false);
     const [downloadError, setDownloadError] = useState("");
     const sectionRef = useRef(null);
@@ -271,6 +283,9 @@ export default function CharacterMap({ data, onChange, projectTitle, episodeCoun
     const episodes = visibleCharacterMapEpisodes(data, characterMapEpisodes(data, episodeCount), seesEveryEpisode);
     const episode = exportView ? forcedEpisode : episodes.includes(selectedEpisode) ? selectedEpisode : episodes[0];
     const episodeHidden = episode !== undefined && !isCharacterMapEpisodePublic(data, episode);
+    // Only the cast present in the entry being viewed.
+    const characters = useMemo(() => charactersAtEpisode(data, episode), [data, episode]);
+    const exportData = useMemo(() => fitCharacterMapPositions({ ...data, characters }, exportMargins ?? undefined), [data, characters, exportMargins]);
     const [selected, setSelected] = useState(null);
     const [linkingId, setLinkingId] = useState(null);
     const [editingConnectionId, setEditingConnectionId] = useState(null);
@@ -297,7 +312,7 @@ export default function CharacterMap({ data, onChange, projectTitle, episodeCoun
     const connections = relationshipsAtEpisode(data, episode, insets);
     const pxPerUnit = canvasSize ? { x: canvasSize.width / 100, y: canvasSize.height / 100 } : null;
     const connectionSignature = connections.map((connection) => `${connection.id}:${connection.label}:${connection.start.x.toFixed(1)},${connection.start.y.toFixed(1)},${connection.end.x.toFixed(1)},${connection.end.y.toFixed(1)}`).join("|");
-    const canvasHeight = data.canvas_height ?? canvasHeightFor(characters.length);
+    const canvasHeight = data.canvas_height ?? canvasHeightFor(data.characters.length);
     const active = selected?.kind === "character" ? characters.find((item) => item.id === selected.id)
         : selected?.kind === "group" ? (data.groups || []).find((item) => item.id === selected.id)
         : connections.find((item) => item.id === selected?.id);
@@ -481,8 +496,9 @@ export default function CharacterMap({ data, onChange, projectTitle, episodeCoun
 
     function addCharacter() {
         const newId = crypto.randomUUID();
-        const tone = SWATCH_PRESETS[characters.length % SWATCH_PRESETS.length].color;
-        onChange({ ...data, characters: [...data.characters, { id: newId, name: "New character", role: "", actor: "", photo: "", description: "", tone, size: "medium", x: 50, y: 50 }] });
+        const tone = SWATCH_PRESETS[data.characters.length % SWATCH_PRESETS.length].color;
+        onChange({ ...data, characters: [...data.characters, { id: newId, name: "New character", role: "", actor: "", photo: "", description: "", tone, size: "medium", x: 50, y: 50,
+            changes: episodes.length && episode !== undefined ? [{ episode, hidden: false }] : [] }] });
         setEditingCharacterId(newId);
     }
 
@@ -631,9 +647,9 @@ export default function CharacterMap({ data, onChange, projectTitle, episodeCoun
                 title={episodeHidden ? "Hidden from the public — admins still see this entry" : "Visible to the public"}
                 ariaLabel={`Show ${characterMapEpisodeLabel(data, episode)} to the public`}
                 onChange={(event) => onEpisodePublicChange(episode, event.target.checked)} />}
-            {seesEveryEpisode && episodeHidden && <span className="character-map-hidden-note">Hidden from the public — only admins see this entry.</span>}
+            {seesEveryEpisode && episodeHidden}
             </div>
-            {editable && <button type="button" disabled={characters.length >= 40} onClick={addCharacter}>+ Add character</button>}
+            {editable && <button type="button" disabled={data.characters.length >= 40} onClick={addCharacter}>+ Add character</button>}
         </div>
         <div className="character-map-viewport">
         <div className="character-map-canvas" ref={canvasRef} style={{ "--canvas-height": `${canvasHeight}px` }}>
@@ -705,9 +721,9 @@ export default function CharacterMap({ data, onChange, projectTitle, episodeCoun
         </div>
         </div>
             {editingConnection && <ConnectionPopover data={data} onChange={onChange} connection={editingConnection} episode={episode} episodes={episodes} onClose={() => setEditingConnectionId(null)} />}
-            {editingCharacter && <CharacterEditPopover data={data} onChange={onChange} character={editingCharacter} authors={authors} authorsLoading={authorsLoading}
+            {editingCharacter && <CharacterEditPopover data={data} onChange={onChange} character={editingCharacter} authors={authors} authorsLoading={authorsLoading} episode={episode} episodes={episodes}
                 onStartLink={() => startLinking(editingCharacter.id)} onRemove={() => removeCharacter(editingCharacter)} onClose={() => setEditingCharacterId(null)} />}
-        <p className="character-map-note">{exportView ? [episode && `version ${characterMapEpisodeLabel(data, episode)}`, "© viewmim.info"].filter(Boolean).join(" · ")
+        <p className="character-map-note">{exportView ? [episode && `version based on ${characterMapEpisodeLabel(data, episode)}`, "© viewmim.info"].filter(Boolean).join(" · ")
             : episode ? texts.footer.replaceAll('{episode}', characterMapEpisodeLabel(data, episode)) : texts.noEpisodes}</p>
         {exportStage && createPortal(
             // Outside the visible chart, so page-level rules for it cannot reach the copy.

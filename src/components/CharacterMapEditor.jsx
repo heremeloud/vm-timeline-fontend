@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { characterMapEpisodes, removeCharacterMapEpisode, characterMapEpisodeLabel, characterMapTexts, isCharacterMapEpisodePublic, setCharacterMapEpisodePublic, GROUP_PADDING_MIN, GROUP_PADDING_MAX, SWATCH_PRESETS } from "../utils/characterMap";
+import { characterMapEpisodes, addCharacterMapEpisode, removeCharacterMapEpisode, characterMapEpisodeLabel, characterMapTexts, isCharacterMapEpisodePublic, setCharacterMapEpisodePublic, GROUP_PADDING_MIN, GROUP_PADDING_MAX, SWATCH_PRESETS } from "../utils/characterMap";
 import CharacterMap from "./CharacterMap";
 import VisibilityToggle from "./VisibilityToggle";
 
@@ -7,6 +7,8 @@ export default function CharacterMapEditor({ data, onChange, visible, onVisibleC
     const defaultTexts = characterMapTexts(projectTitle);
     const episodes = characterMapEpisodes(data, episodeCount);
     const [episodeInput, setEpisodeInput] = useState("");
+    const [baseEpisode, setBaseEpisode] = useState("");
+    const selectedBase = episodes.includes(Number(baseEpisode)) ? Number(baseEpisode) : episodes.at(-1);
     const nextEpisode = Array.from({ length: 1000 }, (_, index) => index + 1).find((number) => !episodes.includes(number));
     const canAddEpisode = Number.isInteger(nextEpisode) && nextEpisode >= 1 && nextEpisode <= 1000 && !episodes.includes(nextEpisode);
     return <section className="eventform-section character-map-editor" id="character-map-editor">
@@ -69,7 +71,8 @@ export default function CharacterMapEditor({ data, onChange, visible, onVisibleC
                 </div>)}
             </div>
             <div className="character-map-fields"><label>New episode or chapter label<input maxLength={120} value={episodeInput} placeholder="Episode 4, Novel chapter 5…" onChange={(event) => setEpisodeInput(event.target.value)} /></label>
-                <button type="button" className="series-metadata-add" disabled={!canAddEpisode} onClick={() => { onChange({ ...data, episodes: [...episodes, nextEpisode], episode_labels: { ...data.episode_labels, [nextEpisode]: episodeInput.trim() || `Episode ${nextEpisode}` } }); setEpisodeInput(""); }}>+ Add episode / chapter</button>
+                {episodes.length > 0 && <label>Build on<select value={selectedBase} onChange={(event) => setBaseEpisode(event.target.value)}>{episodes.map((number) => <option key={number} value={number}>{characterMapEpisodeLabel(data, number)}</option>)}</select></label>}
+                <button type="button" className="series-metadata-add" disabled={!canAddEpisode} onClick={() => { onChange(addCharacterMapEpisode(data, episodes, nextEpisode, episodeInput.trim() || `Episode ${nextEpisode}`, selectedBase)); setEpisodeInput(""); setBaseEpisode(""); }}>+ Add episode / chapter</button>
             </div>
         </details>
         <h4>Character map ({data.characters.length} character{data.characters.length === 1 ? "" : "s"}, {data.relationships.length} relationship{data.relationships.length === 1 ? "" : "s"})</h4>

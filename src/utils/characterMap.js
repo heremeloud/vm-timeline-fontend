@@ -160,17 +160,82 @@ export function arrowheadPoints(tipX, tipY, dir, pxPerUnit = { x: 1, y: 1 }) {
     return `${point(tipPxX, tipPxY)} ${point(baseX + nx, baseY + ny)} ${point(baseX - nx, baseY - ny)}`;
 }
 
-export function relationshipsAtEpisode(data, episode, insets = null) {
+// Entries can be reordered, so "before" means earlier in the story order, not a smaller number.
+export function episodeOrder(data) {
     const order = Array.isArray(data.episodes) ? data.episodes : null;
-    const position = (number) => order ? order.indexOf(number) : number;
+    return (number) => order ? order.indexOf(number) : number;
+}
+
+function stateAt(changes, position, selected) {
+    return changes.filter((item) => position(item.episode) >= 0 && position(item.episode) <= selected)
+        .sort((a, b) => position(b.episode) - position(a.episode))[0];
+}
+
+// A character with no changes has always been in the story; otherwise they join at their first
+// change and carry that state forward, the same way a relationship does.
+export function characterStateAtEpisode(data, character, episode) {
+    const changes = character.changes || [];
+    if (!changes.length) return { hidden: false };
+    const position = episodeOrder(data);
+    const selected = position(episode);
+    if (selected === undefined || selected < 0) return null;
+    const change = stateAt(changes, position, selected);
+    if (change) return change;
+    // Before the first change: someone written out later was there all along, while someone whose
+    // first change introduces them has not appeared yet.
+    return firstChange(changes, position).hidden ? { hidden: false } : null;
+}
+
+function firstChange(changes, position) {
+    return [...changes].sort((a, b) => position(a.episode) - position(b.episode))[0];
+}
+
+export function charactersAtEpisode(data, episode) {
+    return data.characters.filter((character) => {
+        const state = characterStateAtEpisode(data, character, episode);
+        return !!state && !state.hidden;
+    });
+}
+
+// The entry a character joins the story in, or null when they are in every entry.
+export function characterDebutEpisode(data, character) {
+    const changes = character.changes || [];
+    if (!changes.length) return null;
+    const earliest = firstChange(changes, episodeOrder(data));
+    return earliest.hidden ? null : earliest.episode;
+}
+
+export function setCharacterDebut(data, characterId, episode) {
+    const position = episodeOrder(data);
+    return { ...data, characters: data.characters.map((character) => {
+        if (character.id !== characterId) return character;
+        if (episode === null) return { ...character, changes: [] };
+        const later = (character.changes || []).filter((change) => position(change.episode) > position(episode));
+        return { ...character, changes: [{ episode, hidden: false }, ...later] };
+    }) };
+}
+
+export function setCharacterEpisodeHidden(data, characterId, episode, hidden) {
+    return { ...data, characters: data.characters.map((character) => {
+        if (character.id !== characterId) return character;
+        const changes = character.changes || [];
+        const existing = changes.find((change) => change.episode === episode);
+        return { ...character, changes: existing
+            ? changes.map((change) => change.episode === episode ? { ...change, hidden } : change)
+            : [...changes, { episode, hidden }] };
+    }) };
+}
+
+export function relationshipsAtEpisode(data, episode, insets = null) {
+    const position = episodeOrder(data);
     const selected = position(episode);
     if (selected === undefined || selected < 0) return [];
+    const present = charactersAtEpisode(data, episode);
     return data.relationships.flatMap((relationship) => {
-        const change = relationship.changes.filter((item) => position(item.episode) >= 0 && position(item.episode) <= selected)
-            .sort((a, b) => position(b.episode) - position(a.episode))[0];
+        const change = stateAt(relationship.changes, position, selected);
         if (!change || change.hidden) return [];
-        const source = data.characters.find((item) => item.id === relationship.source);
-        const target = data.characters.find((item) => item.id === relationship.target);
+        const source = present.find((item) => item.id === relationship.source);
+        const target = present.find((item) => item.id === relationship.target);
         if (!source || !target) return [];
         return [{ ...relationship, ...change, source, target, ...connectionGeometry(source, target, change.curved, insets?.[source.id], insets?.[target.id]) }];
     });
@@ -179,7 +244,8 @@ export function relationshipsAtEpisode(data, episode, insets = null) {
 export function characterMapEpisodes(data, episodeCount = 0) {
     if (Array.isArray(data.episodes)) return [...data.episodes];
     const last = Math.min(1000, Math.max(1, Number(episodeCount) || 0,
-        ...data.relationships.flatMap((relationship) => relationship.changes.map((change) => Number(change.episode) || 1))));
+        ...data.relationships.flatMap((relationship) => relationship.changes.map((change) => Number(change.episode) || 1)),
+        ...data.characters.flatMap((character) => (character.changes || []).map((change) => Number(change.episode) || 1))));
     return Array.from({ length: last }, (_, index) => index + 1);
 }
 
@@ -200,6 +266,8 @@ export function visibleCharacterMapEpisodes(data, episodes, isAdmin = false) {
 export function removeCharacterMapEpisode(data, episodes, episode) {
     return { ...data, episodes: episodes.filter((number) => number !== episode),
         hidden_episodes: (data.hidden_episodes || []).filter((number) => number !== episode),
+        characters: data.characters.map((character) => character.changes?.length
+            ? { ...character, changes: character.changes.filter((change) => change.episode !== episode) } : character),
         relationships: data.relationships.map((relationship) => ({ ...relationship,
             changes: relationship.changes.filter((change) => change.episode !== episode),
         })).filter((relationship) => relationship.changes.length > 0) };
@@ -371,4 +439,20 @@ export function characterGroupBounds(group, characters, spans = null) {
     left = Math.max(0.4, left); right = Math.min(99.6, right);
     top = Math.max(0.4, top); bottom = Math.min(99.6, bottom);
     return { left, top, width: right - left, height: bottom - top, extent, paddingX, paddingY };
+}
+
+// Snapshot the selected version, including absent connections so later states cannot leak in.
+export function addCharacterMapEpisode(data, episodes, episode, label, baseEpisode) {
+    const baseIndex = episodes.indexOf(baseEpisode);
+    return { ...data, episodes: [...episodes, episode],
+        episode_labels: { ...data.episode_labels, [episode]: label },
+        relationships: data.relationships.map((relationship) => {
+            const previous = relationship.changes.filter((change) => {
+                const index = episodes.indexOf(change.episode);
+                return index >= 0 && index <= baseIndex;
+            }).sort((a, b) => episodes.indexOf(b.episode) - episodes.indexOf(a.episode))[0];
+            const snapshot = previous ? { ...previous, episode } : newRelationshipChange(episode, { hidden: true });
+            return { ...relationship, changes: [...relationship.changes, snapshot] };
+        }),
+    };
 }

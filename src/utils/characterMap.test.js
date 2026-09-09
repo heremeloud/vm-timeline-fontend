@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { relationshipsAtEpisode, sampleCharacterMap, characterMapEpisodes, removeCharacterMapEpisode, characterMapDirection } from "./characterMap.js";
+import { addCharacterMapEpisode, relationshipsAtEpisode, sampleCharacterMap, characterMapEpisodes, removeCharacterMapEpisode, characterMapDirection, charactersAtEpisode, characterDebutEpisode, setCharacterDebut } from "./characterMap.js";
 
 test("episode changes carry forward without leaking future relationships", () => {
     const data = sampleCharacterMap();
@@ -54,4 +54,45 @@ test("a one-way relationship reads left to right whichever end the arrow is on",
     assert.deepEqual([mutual.from.name, mutual.arrow, mutual.to.name], ['"Whale" Tarntara', "↔", '"Noey" Naralak']);
     const plain = characterMapDirection({ source: whale, target: noey, arrow_start: false, arrow_end: false });
     assert.deepEqual([plain.from.name, plain.arrow, plain.to.name], ['"Whale" Tarntara', "", '"Noey" Naralak']);
+});
+
+test("new episodes snapshot the chosen version and exclude later connections", () => {
+    const data = sampleCharacterMap();
+    data.relationships[1].changes[0].episode = 2;
+    const result = addCharacterMapEpisode(data, [1, 2, 3], 4, "New chapter", 1);
+    assert.deepEqual(relationshipsAtEpisode(result, 4).map(r => r.label), relationshipsAtEpisode(data, 1).map(r => r.label));
+    result.relationships[0].changes.at(-1).label = "Changed";
+    assert.equal(data.relationships[0].changes[0].label, "First encounter");
+    assert.deepEqual(result.episodes, [1, 2, 3, 4]);
+});
+
+test("a character joins the story at their first entry and can be written out later", () => {
+    const data = {
+        episodes: [3, 1, 2],
+        episode_labels: { 3: "Novel" },
+        characters: [
+            { id: "always", name: "Always here", x: 20, y: 20 },
+            { id: "late", name: "Joins later", x: 40, y: 20, changes: [{ episode: 1, hidden: false }] },
+            { id: "gone", name: "Written out", x: 60, y: 20, changes: [{ episode: 3, hidden: false }, { episode: 2, hidden: true }] },
+        ],
+        relationships: [{ id: "r", source: "always", target: "late", changes: [{ episode: 3, label: "Pair", hidden: false }] }],
+    };
+    const names = (episode) => charactersAtEpisode(data, episode).map((character) => character.id);
+    assert.deepEqual(names(3), ["always", "gone"]);
+    // Written out from the second entry, so still present in the first.
+    const leaves = { ...data, characters: data.characters.map((character) =>
+        character.id === "always" ? { ...character, changes: [{ episode: 2, hidden: true }] } : character) };
+    assert.deepEqual(charactersAtEpisode(leaves, 3).map((character) => character.id), ["always", "gone"]);
+    assert.deepEqual(charactersAtEpisode(leaves, 1).map((character) => character.id), ["always", "late", "gone"]);
+    assert.deepEqual(charactersAtEpisode(leaves, 2).map((character) => character.id), ["late"]);
+    assert.equal(characterDebutEpisode(leaves, leaves.characters[0]), null);
+    assert.deepEqual(names(1), ["always", "late", "gone"]);
+    assert.deepEqual(names(2), ["always", "late"]);
+    // A relationship needs both ends present in the entry.
+    assert.equal(relationshipsAtEpisode(data, 3).length, 0);
+    assert.equal(relationshipsAtEpisode(data, 1).length, 1);
+    assert.equal(characterDebutEpisode(data, data.characters[2]), 3);
+    assert.equal(characterDebutEpisode(data, data.characters[0]), null);
+    const written = setCharacterDebut(data, "late", 2);
+    assert.deepEqual(charactersAtEpisode(written, 1).map((character) => character.id), ["always", "gone"]);
 });
