@@ -1,3 +1,4 @@
+import { normalizeEventPhotos } from "../utils/eventPhotos";
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import Avatar from "./Avatar";
@@ -160,6 +161,10 @@ export default function EventCard({ event }) {
 
     const [copied, setCopied] = useState(false);
     const [liveIdx, setLiveIdx] = useState(0);
+    const [photoIdx, setPhotoIdx] = useState(0);
+    const photos = normalizeEventPhotos(event);
+    const activePhotoIdx = photos.length ? photoIdx % photos.length : 0;
+    const activePhoto = photos[activePhotoIdx];
     const [isPublic, setIsPublic] = useState(event.is_visible !== false);
     const [savingVisibility, setSavingVisibility] = useState(false);
     const eventDateLabel = formatEventDateRange(event);
@@ -340,13 +345,30 @@ export default function EventCard({ event }) {
                     </div>
                 )}
 
-                {event.media_url && (
-                    <div className="eventcard-media">
-                        <img
-                            src={event.media_url}
-                            alt={displayName}
-                            className="eventcard-img"
-                        />
+                {activePhoto && (
+                    <div className="eventcard-media" role="region" aria-label="Event photos">
+                        <img src={activePhoto.url} alt={`${displayName} — photo ${activePhotoIdx + 1}`}
+                            className="eventcard-img" loading="lazy" />
+                        {photos.length > 1 && (
+                            <>
+                                {activePhotoIdx > 0 && (
+                                    <button type="button" className="eventcard-photo-arrow eventcard-photo-arrow--left"
+                                        aria-label="Previous photo" onClick={() => setPhotoIdx(activePhotoIdx - 1)}>‹</button>
+                                )}
+                                {activePhotoIdx < photos.length - 1 && (
+                                    <button type="button" className="eventcard-photo-arrow eventcard-photo-arrow--right"
+                                        aria-label="Next photo" onClick={() => setPhotoIdx(activePhotoIdx + 1)}>›</button>
+                                )}
+                                <div className="eventcard-photo-dots">
+                                    {photos.map((photo, index) => (
+                                        <button type="button" key={`${index}-${photo.url}`}
+                                            className={`eventcard-photo-dot${index === activePhotoIdx ? " active" : ""}`}
+                                            aria-label={`Photo ${index + 1}`} aria-current={index === activePhotoIdx ? "true" : undefined}
+                                            onClick={() => setPhotoIdx(index)} />
+                                    ))}
+                                </div>
+                            </>
+                        )}
                     </div>
                 )}
 

@@ -338,6 +338,21 @@ export default function CharacterMap({ data, onChange, projectTitle, episodeCoun
         return () => document.removeEventListener("visibilitychange", remeasure);
     }, []);
     const characterSignature = characters.map((character) => `${character.id}:${character.name}:${character.role}:${character.thai_name || ""}:${characterCardSize(character)}`).join("|");
+    // Container queries resize cards after the canvas changes. Observe the cards and
+    // their text as well, so enclosure geometry never retains the previous scale.
+    useLayoutEffect(() => {
+        if (typeof ResizeObserver === "undefined") return;
+        let frame;
+        const observer = new ResizeObserver(() => {
+            cancelAnimationFrame(frame);
+            frame = requestAnimationFrame(() => setMeasureTick(value => value + 1));
+        });
+        for (const node of personRefs.current.values()) {
+            observer.observe(node);
+            for (const child of node.children) observer.observe(child);
+        }
+        return () => { observer.disconnect(); cancelAnimationFrame(frame); };
+    }, [characterSignature]);
     useLayoutEffect(() => {
         refreshCanvasSize();
         const measured = {};
@@ -361,7 +376,7 @@ export default function CharacterMap({ data, onChange, projectTitle, episodeCoun
             return same ? current : measured;
         });
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [characterSignature, canvasSize, compact, measureTick, measureNonce]);
+    }, [characterSignature, canvasSize, compact, measureTick, measureNonce, expanded, editingCharacterId, editingConnectionId]);
     const budgets = useMemo(() => labelBudgets(connections, canvasSize, renderScale, exportView),
         // eslint-disable-next-line react-hooks/exhaustive-deps
         [connectionSignature, canvasSize, renderScale, exportView]);
@@ -651,6 +666,7 @@ export default function CharacterMap({ data, onChange, projectTitle, episodeCoun
             </div>
             {editable && <button type="button" disabled={data.characters.length >= 40} onClick={addCharacter}>+ Add character</button>}
         </div>
+        <div className="character-map-workspace">
         <div className="character-map-viewport">
         <div className="character-map-canvas" ref={canvasRef} style={{ "--canvas-height": `${canvasHeight}px` }}>
             {(data.groups || []).map((group) => {
@@ -723,6 +739,7 @@ export default function CharacterMap({ data, onChange, projectTitle, episodeCoun
             {editingConnection && <ConnectionPopover data={data} onChange={onChange} connection={editingConnection} episode={episode} episodes={episodes} onClose={() => setEditingConnectionId(null)} />}
             {editingCharacter && <CharacterEditPopover data={data} onChange={onChange} character={editingCharacter} authors={authors} authorsLoading={authorsLoading} episode={episode} episodes={episodes}
                 onStartLink={() => startLinking(editingCharacter.id)} onRemove={() => removeCharacter(editingCharacter)} onClose={() => setEditingCharacterId(null)} />}
+        </div>
         <p className="character-map-note">{exportView ? [episode && `version based on ${characterMapEpisodeLabel(data, episode)}`, "© viewmim.info"].filter(Boolean).join(" · ")
             : episode ? texts.footer.replaceAll('{episode}', characterMapEpisodeLabel(data, episode)) : texts.noEpisodes}</p>
         {exportStage && createPortal(

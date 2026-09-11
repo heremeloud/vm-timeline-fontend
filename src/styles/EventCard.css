@@ -310,6 +310,7 @@
 .eventcard-img {
     width: 100%;
     height: auto;
+    display: block;
     border-radius: 12px;
     object-fit: contain;
 }
@@ -497,3 +498,27 @@
     background: red;
     color: white;
 }
+
+.eventcard-media { position: relative; }
+.eventcard-photo-arrow {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(0, 0, 0, 0.45);
+    color: #fff;
+    border: none;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    font-size: 20px;
+    line-height: 30px;
+    cursor: pointer;
+    padding: 0;
+    z-index: 2;
+}
+.eventcard-photo-arrow--left { left: 8px; }
+.eventcard-photo-arrow--right { right: 8px; }
+.eventcard-photo-dots { display: flex; justify-content: center; gap: 6px; margin-top: 8px; }
+.eventcard-photo-dot { width: 8px; height: 8px; border-radius: 50%; background: #ccc; border: none; padding: 0; cursor: pointer; }
+.eventcard-photo-dot.active { background: #888; }
+.eventcard-photo-arrow:focus-visible, .eventcard-photo-dot:focus-visible { outline: 2px solid #888; outline-offset: 2px; }

@@ -58,7 +58,7 @@ export default function CharacterMapSection({ project, isAdmin, onSaved }) {
             onEpisodePublicChange={isAdmin && !draft && project.character_map
                 ? (number, episodePublic) => persist({ character_map: setCharacterMapEpisodePublic(data, number, episodePublic) })
                 : null} />}
-        {isAdmin && !draft && !isPublic && <p className="eventform-field-note">Only admins can see this — it's hidden from the public.</p>}
+        {/* {isAdmin && !draft && !isPublic && <p className="eventform-field-note"></p>} */}
         {error && <p role="alert">{error}</p>}
         {saving && <p role="status">Saving…</p>}
     </div>;

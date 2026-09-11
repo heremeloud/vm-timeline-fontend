@@ -1,3 +1,4 @@
+import { getEventPhotoForDate } from "../utils/eventPhotos";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { getAdminEvents, getEvents } from "../api/eventsService";
 import { Link, useSearchParams } from "react-router-dom";
@@ -74,6 +75,7 @@ function buildCalendarDays(startDate, endDate) {
 }
 
 function eventOverlapsDay(event, dayKey) {
+    if (event?.dates?.length) return event.dates.includes(dayKey);
     const start = getEventStartDate(event);
     const end = event?.end_date || start;
     return start && start <= dayKey && end >= dayKey;
@@ -452,7 +454,9 @@ export default function Events() {
                                         <span className="events-calendar-date-full">{formatDayLabel(day)}</span>
                                     </div>
                                     <div className="events-calendar-items">
-                                        {dayEvents.slice(0, 3).map((ev) => (
+                                        {dayEvents.slice(0, 3).map((ev) => {
+                                            const photo = getEventPhotoForDate(ev, dayKey);
+                                            return (
                                             <Link
                                                 key={`${dayKey}-${ev.id}`}
                                                 to={ROUTES.eventDetail(ev.id)}
@@ -463,21 +467,22 @@ export default function Events() {
                                                         {[ev.category, ev.subcategory].filter(Boolean).join(" · ").toUpperCase()}
                                                     </span>
                                                 )}
-                                                {(ev.media_url || ev.project_thumbnail_url) && (
+                                                {(photo?.url || ev.project_thumbnail_url) && (
                                                     <img
-                                                        src={ev.media_url || ev.project_thumbnail_url}
+                                                        src={photo?.url || ev.project_thumbnail_url}
                                                         alt=""
                                                         className="events-calendar-thumb"
                                                         style={{
-                                                            objectPosition: ev.media_url
-                                                                ? `${ev.media_focal_x ?? 50}% ${ev.media_focal_y ?? 50}%`
+                                                            objectPosition: photo
+                                                                ? `${photo.focal_x ?? 50}% ${photo.focal_y ?? 50}%`
                                                                 : `${ev.project_thumbnail_focal_x ?? 50}% ${ev.project_thumbnail_focal_y ?? 50}%`,
                                                         }}
                                                     />
                                                 )}
                                                 <span className="events-calendar-event-title">{ev.english_name || ev.name}</span>
                                             </Link>
-                                        ))}
+                                            );
+                                        })}
                                         {dayEvents.length > 3 && (
                                             <div className="events-calendar-more">
                                                 +{dayEvents.length - 3} more

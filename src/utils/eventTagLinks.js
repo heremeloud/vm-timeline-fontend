@@ -29,6 +29,9 @@ function parseDate(value) {
 
 function distanceFromPost(event, postDate) {
     const post = parseDate(postDate);
+    if (post && event.dates?.length) {
+        return Math.min(...event.dates.map(parseDate).filter(Boolean).map(date => Math.abs(date - post)));
+    }
     const start = parseDate(event.start_date || event.event_date);
     const end = parseDate(event.end_date) || start;
 

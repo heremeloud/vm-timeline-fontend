@@ -1201,3 +1201,10 @@
         gap: 10px;
     }
 }
+
+.eventform-date-row { display: flex; gap: 8px; align-items: center; margin: 8px 0; }
+.eventform-date-row input { flex: 1; }
+
+.eventform-photo { margin: 12px 0 20px; padding: 12px; border: 1px solid #ddd; border-radius: 10px; }
+
+.eventform-form .eventform-photo .focal-point-preview { aspect-ratio: 4 / 3; }

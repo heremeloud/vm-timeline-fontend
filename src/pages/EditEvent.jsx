@@ -4,7 +4,8 @@ import { getAdminEvent, updateEvent, getEvents } from "../api/eventsService";
 import { getAuthors } from "../api/authorsService";
 import { getProjects } from "../api/projectsService";
 import { ROUTES } from "../routes";
-import FocalPointPicker from "../components/FocalPointPicker";
+import EventPhotoFields from "../components/EventPhotoFields";
+import { cleanEventPhotos, normalizeEventPhotos } from "../utils/eventPhotos";
 import "../styles/EventForm.css";
 import { EVENT_CATEGORIES, EVENT_SUBCATEGORIES, formatEventSubcategory } from "../constants/eventCategories";
 import { cleanPastedSocialUrls, normalizeSocialPostUrl } from "../utils/postUrls";
@@ -53,11 +54,11 @@ export default function EditEvent() {
     const [defaultTags, setDefaultTags] = useState(() =>
         Object.fromEntries(DEFAULT_TAG_OPTIONS.map((tag) => [tag.key, tag.defaultChecked]))
     );
-    const [mediaURL, setMediaURL] = useState("");
-    const [mediaFocalX, setMediaFocalX] = useState(50);
-    const [mediaFocalY, setMediaFocalY] = useState(50);
+    const [photos, setPhotos] = useState([{ url: "", focal_x: 50, focal_y: 50 }]);
     const [startDate, setStartDate] = useState("");
     const [endDate, setEndDate] = useState("");
+    const [dateMode, setDateMode] = useState("dates");
+    const [dates, setDates] = useState([""]);
     const [announcementURLsInput, setAnnouncementURLsInput] = useState("");
     const [privateNotes, setPrivateNotes] = useState("");
     const [liveMediaItems, setLiveMediaItems] = useState(() => normalizeEventMediaItems());
@@ -94,9 +95,10 @@ export default function EditEvent() {
                 setSubcategory(ev.subcategory || "");
                 setLocation(ev.location || "");
                 setKeyword(ev.keyword || "");
-                setMediaURL(ev.media_url || "");
-                setMediaFocalX(ev.media_focal_x ?? 50);
-                setMediaFocalY(ev.media_focal_y ?? 50);
+                const loadedPhotos = normalizeEventPhotos(ev);
+                setPhotos(loadedPhotos.length ? loadedPhotos : [{ url: "", focal_x: 50, focal_y: 50 }]);
+                setDateMode(ev.dates?.length || !ev.end_date || ev.end_date === getEventStartDate(ev) ? "dates" : "range");
+                setDates(ev.dates?.length ? ev.dates : [getEventStartDate(ev)]);
                 setStartDate(getEventStartDate(ev));
                 setEndDate(ev.end_date || "");
                 setAnnouncementURLsInput((ev.announcement_urls || []).join("\n"));
@@ -185,6 +187,15 @@ export default function EditEvent() {
             return;
         }
 
+        const invalidPhotoDate = photos.some(photo => photo.url.trim() && photo.date && (
+            dateMode === "dates" ? !dates.includes(photo.date)
+                : !startDate || photo.date < startDate || photo.date > (endDate || startDate)
+        ));
+        if (invalidPhotoDate) {
+            alert("Each photo’s calendar date must be one of the event dates. Update or clear the photo date before saving.");
+            return;
+        }
+
         try {
             await updateEvent(eventId, {
                 name: name.trim(),
@@ -194,11 +205,10 @@ export default function EditEvent() {
                 location: location.trim() || null,
                 keyword: keyword.trim() || null,
                 tags,
-                media_url: mediaURL.trim() || null,
-                media_focal_x: mediaURL.trim() ? mediaFocalX : null,
-                media_focal_y: mediaURL.trim() ? mediaFocalY : null,
-                start_date: startDate || null,
-                end_date: endDate || null,
+                photo_items: cleanEventPhotos(photos),
+                dates: dateMode === "dates" ? dates.filter(Boolean) : [],
+                start_date: dateMode === "range" ? startDate || null : null,
+                end_date: dateMode === "range" ? endDate || null : null,
                 announcement_urls: announcementURLsInput.split("\n").map(normalizeSocialPostUrl).filter(Boolean),
                 private_notes: privateNotes.trim() || null,
                 live_media_items: cleanEventMediaItems(liveMediaItems),
@@ -239,6 +249,23 @@ export default function EditEvent() {
                 </div>
 
                 <div className="eventform-section">
+                    <label>Date selection</label>
+                    <select value={dateMode} onChange={e => setDateMode(e.target.value)}>
+                        <option value="range">Single date or date range</option>
+                        <option value="dates">Separate dates</option>
+                    </select>
+                    {dateMode === "dates" ? (
+                        <div>
+                            {dates.map((value, index) => (
+                                <div className="eventform-date-row" key={index}>
+                                    <input type="date" aria-label={`Event date ${index + 1}`} value={value}
+                                        onChange={e => setDates(dates.map((d, i) => i === index ? e.target.value : d))} />
+                                    <button type="button" onClick={() => setDates(dates.filter((_, i) => i !== index))}>Remove</button>
+                                </div>
+                            ))}
+                            <button type="button" onClick={() => setDates([...dates, ""])}>Add date</button>
+                        </div>
+                    ) : (
                     <div className="eventform-event-date-fields">
                         <div>
                             <label>Start Date <span className="form-optional">(optional)</span></label>
@@ -265,6 +292,7 @@ export default function EditEvent() {
                             Today
                         </label>
                     </div>
+                    )}
                 </div>
 
                 <div className="eventform-section">
@@ -326,23 +354,7 @@ export default function EditEvent() {
                     {renderDefaultTagRow("mim")}
                 </div>
 
-                <div className="eventform-section">
-                    <label>Event Photo URL <span className="form-optional">(optional)</span></label>
-                    <input
-                        value={mediaURL}
-                        onChange={(e) => setMediaURL(e.target.value)}
-                        placeholder="https://..."
-                    />
-                    <FocalPointPicker
-                        imageUrl={mediaURL.trim()}
-                        x={mediaFocalX}
-                        y={mediaFocalY}
-                        onChange={(nx, ny) => {
-                            setMediaFocalX(nx);
-                            setMediaFocalY(ny);
-                        }}
-                    />
-                </div>
+                <EventPhotoFields photos={photos} onChange={setPhotos} dates={dates} dateMode={dateMode} startDate={startDate} endDate={endDate} />
 
                 <div className="eventform-section">
                     <label>Announcement URLs <span className="form-optional">(optional, private, one per line)</span></label>
