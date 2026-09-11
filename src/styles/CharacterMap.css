@@ -1,4 +1,6 @@
-.character-map { margin: 30px 0; border: 1px solid #eadbd2; border-radius: 20px; overflow: hidden; background: #fffcf6; color: #614c45; }
+/* overflow:clip (not hidden) - hidden would make this the sticky-positioning "scroll
+   container" for the side editor panel below, which stops it from tracking page scroll. */
+.character-map { margin: 30px 0; border: 1px solid #eadbd2; border-radius: 20px; overflow: clip; background: #fffcf6; color: #614c45; }
 .character-map-heading { display: flex; align-items: start; justify-content: space-between; gap: 16px; padding: 28px 28px 20px; }
 .character-map-heading-controls { display: flex; flex-direction: column; align-items: end; gap: 8px; flex-shrink: 0; }
 .character-map-header-actions { display: flex; align-items: center; gap: 8px; }
@@ -59,6 +61,14 @@
 .character-map-dialog > .character-map-portrait { display: block; width: 90px; height: 90px; margin: 20px auto; }
 .character-map-dialog h3 { font-family: inherit; font-size: 1.1rem; font-weight: 600; margin: 20px 0 8px; }.character-map-dialog p { font-size: 14px; line-height: 1.7; }.character-map-detail-subtitle { color: #a46e67; }
 .character-map-detail-links { border-top: 1px solid #eddfd3; margin-top: 22px; }.character-map-detail-links h4 { font-size: 12px; }.character-map-detail-links button { display: flex; justify-content: space-between; gap: 12px; width: 100%; border: 0; background: #f7eee4; border-radius: 8px; padding: 12px; margin-top: 8px; color: #614c45; cursor: pointer; }.character-map-detail-links button span { color: #88766d; }
+.character-map-actor-wrap { position: relative; display: inline-block; }
+.character-map.character-map .character-map-actor-link { padding: 0; border: 0; background: transparent; color: inherit; font: inherit; text-decoration: underline dotted; text-underline-offset: 3px; cursor: pointer; }
+.character-map.character-map .character-map-actor-link:hover,
+.character-map.character-map .character-map-actor-link[aria-expanded="true"] { background: transparent; color: #a67c52; }
+.character-map-actor-popover { position: absolute; z-index: 5; top: calc(100% + 6px); left: 50%; transform: translateX(-50%); display: flex; gap: 8px; padding: 6px 8px; border: 1px solid #e1c9b8; border-radius: 12px; background: #fffcf6; box-shadow: 0 8px 20px #38282033; white-space: nowrap; }
+.character-map-actor-popover a { display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 50%; background: #f7eee4; }
+.character-map-actor-popover a:hover { background: #eadbd2; }
+.character-map-actor-popover img { width: 15px; height: 15px; }
 @media (max-width: 520px) { .character-map:not(.is-exporting) .character-map-heading { padding: 20px 16px 16px; flex-direction: column; gap: 8px; }.character-map:not(.is-exporting) .character-map-toolbar { margin: 0 16px; }.character-map:not(.is-exporting) .character-map-canvas { --card-scale: .82; }.character-map:not(.is-exporting) .character-map-connection-label { font-size: 12px; padding: 5px 9px; }.character-map:not(.is-exporting) .character-map-decoration { display: none; }.character-map:not(.is-exporting) .character-map-note { padding: 14px 16px; } }
 
 .character-map-portrait { object-fit: cover; border-radius: inherit; }
@@ -161,7 +171,7 @@
     .has-side-editor > .character-map-workspace { grid-template-columns: clamp(280px, 26cqw, 380px) minmax(0, 1fr); }
     .has-side-editor > .character-map-workspace > .character-map-viewport { grid-column: 2; grid-row: 1; }
     .has-side-editor > .character-map-workspace > .character-map-side-panel { grid-column: 1; grid-row: 1; }
-    .character-map-workspace > .character-map-side-panel { position: sticky; top: 16px; max-height: calc(100dvh - 32px); border-top: 0; border-right: 1px solid #eadbd2; }
+    .character-map-workspace > .character-map-side-panel { border-top: 0; border-right: 1px solid #eadbd2; }
 }
 @media (max-width: 600px) {
     .character-map.is-expanded { --expanded-width: calc(100vw - 24px); }

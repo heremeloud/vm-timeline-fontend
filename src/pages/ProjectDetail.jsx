@@ -293,7 +293,7 @@ export default function ProjectDetail() {
                 </div>
             </div>
 
-            {(project.character_map || isAdmin) &&
+            {(project.character_map || (isAdmin && project.category === "series")) &&
                 <CharacterMapSection key={project.id} project={project} isAdmin={isAdmin} onSaved={(patch) => setProject((current) => ({ ...current, ...patch }))} />}
 
 

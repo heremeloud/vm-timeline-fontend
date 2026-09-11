@@ -214,6 +214,10 @@ function ConnectionPopover({ data, onChange, connection, episode, episodes, onCl
     </PopoverShell>;
 }
 
+function authorDisplayName(author) {
+    return [author.nickname, author.full_name].filter(Boolean).join(" ") || author.name;
+}
+
 function CharacterEditPopover({ data, onChange, character, authors, authorsLoading, episode, episodes, onStartLink, onRemove, onClose }) {
     function update(patch) {
         onChange({ ...data, characters: data.characters.map((item) => item.id === character.id ? { ...item, ...patch } : item) });
@@ -228,7 +232,7 @@ function CharacterEditPopover({ data, onChange, character, authors, authorsLoadi
             <label>Short role<input maxLength={200} value={character.role} onChange={(event) => update({ role: event.target.value })} /></label>
             <label>Played by<select value={character.author_id ?? "manual"} onChange={(event) => {
                 const author = authors.find((item) => String(item.id) === event.target.value);
-                update(author ? { author_id: author.id, actor: author.name } : { author_id: null });
+                update(author ? { author_id: author.id, actor: authorDisplayName(author) } : { author_id: null });
             }}>
                 <option value="manual">Enter name manually</option>
                 {authorsLoading && <option disabled>Loading authors…</option>}
@@ -267,6 +271,46 @@ function CharacterEditPopover({ data, onChange, character, authors, authorsLoadi
     </PopoverShell>;
 }
 
+function GroupEditPopover({ data, onChange, group, onRemove, onClose }) {
+    function update(patch) {
+        onChange({ ...data, groups: data.groups.map((item) => item.id === group.id ? { ...item, ...patch } : item) });
+    }
+    return <PopoverShell label={`Edit ${group.label || "group"}`} onClose={onClose}>
+        <p className="character-map-popover-title">{group.label || "New group"}</p>
+        <div className="character-map-fields">
+            <label>Group name<input maxLength={120} value={group.label} onChange={(event) => update({ label: event.target.value })} /></label>
+            <label>Thai name<input lang="th" maxLength={120} value={group.thai_name || ""} onChange={(event) => update({ thai_name: event.target.value })} /></label>
+            <label>Outline shape<select value={group.shape} onChange={(event) => update({ shape: event.target.value })}><option value="rectangle">Rectangle</option><option value="circle">Circle / oval</option></select></label>
+            <label>Title position<select value={group.label_position || "top"} onChange={(event) => update({ label_position: event.target.value })}><option value="top">Top edge</option><option value="bottom">Bottom edge</option></select></label>
+        </div>
+        <label>Outline color<input type="color" value={group.color} onChange={(event) => update({ color: event.target.value })} /></label>
+        <div className="character-map-swatches character-map-outline-swatches" role="group" aria-label="Outline color presets">
+            {SWATCH_PRESETS.map((preset) => <button key={preset.label} type="button" className={group.color?.toLowerCase() === preset.color.toLowerCase() ? "is-selected" : ""} style={{ '--swatch-color': preset.color }} title={preset.label} aria-label={preset.label} aria-pressed={group.color?.toLowerCase() === preset.color.toLowerCase()} onClick={() => update({ color: preset.color })} />)}
+        </div>
+        <label>Description<textarea maxLength={5000} value={group.description || ""} onChange={(event) => update({ description: event.target.value })} /></label>
+        <div className="character-map-fields">
+            <label>Horizontal margin · {Math.round((group.padding_x ?? 15) * 10) / 10}%
+                <input type="range" min={GROUP_PADDING_MIN} max={GROUP_PADDING_MAX} step="0.5" value={group.padding_x ?? 15} onChange={(event) => update({ padding_x: Number(event.target.value), padding_left: null, padding_right: null })} />
+            </label>
+            <label>Vertical margin · {Math.round((group.padding_y ?? 22) * 10) / 10}%
+                <input type="range" min={GROUP_PADDING_MIN} max={GROUP_PADDING_MAX} step="0.5" value={group.padding_y ?? 22} onChange={(event) => update({ padding_y: Number(event.target.value), padding_top: null, padding_bottom: null })} />
+            </label>
+        </div>
+        <button type="button" className="series-metadata-add" onClick={() => update({ padding_x: 15, padding_y: 22, padding_top: null, padding_bottom: null, padding_left: null, padding_right: null })}>Reset group margins</button>
+        <p className="eventform-field-note">Members</p>
+        <div className="character-map-fields">
+            {data.characters.map((character) => <label key={character.id} className="character-map-visibility">
+                <input type="checkbox" checked={group.character_ids.includes(character.id)}
+                    onChange={(event) => update({ character_ids: event.target.checked ? [...group.character_ids, character.id] : group.character_ids.filter((id) => id !== character.id) })} />
+                {character.name}
+            </label>)}
+        </div>
+        <div className="character-map-editor-actions">
+            <button type="button" className="character-map-form-remove" onClick={onRemove}>Remove group</button>
+        </div>
+    </PopoverShell>;
+}
+
 export default function CharacterMap({ data, onChange, projectTitle, episodeCount = 0, editable = false, isAdmin = false, headerControls = null, onEpisodePublicChange = null, busy = false, exportView = false, forcedEpisode = null, measureNonce = 0 }) {
     const texts = { ...characterMapTexts(projectTitle), ...data.texts };
     const [selectedEpisode, setEpisode] = useState(null);
@@ -287,13 +331,16 @@ export default function CharacterMap({ data, onChange, projectTitle, episodeCoun
     const characters = useMemo(() => charactersAtEpisode(data, episode), [data, episode]);
     const exportData = useMemo(() => fitCharacterMapPositions({ ...data, characters }, exportMargins ?? undefined), [data, characters, exportMargins]);
     const [selected, setSelected] = useState(null);
+    const [actorLinksOpen, setActorLinksOpen] = useState(false);
+    const actorWrapRef = useRef(null);
     const [linkingId, setLinkingId] = useState(null);
     const [editingConnectionId, setEditingConnectionId] = useState(null);
     const [editingCharacterId, setEditingCharacterId] = useState(null);
+    const [editingGroupId, setEditingGroupId] = useState(null);
     const [hoverId, setHoverId] = useState(null);
     const [hoveredConnectionId, setHoveredConnectionId] = useState(null);
     const [authors, setAuthors] = useState([]);
-    const [authorsLoading, setAuthorsLoading] = useState(editable);
+    const [authorsLoading, setAuthorsLoading] = useState(true);
     const dialog = useRef(null);
     const canvasRef = useRef(null);
     const dragRef = useRef(null);
@@ -317,19 +364,39 @@ export default function CharacterMap({ data, onChange, projectTitle, episodeCoun
         : selected?.kind === "group" ? (data.groups || []).find((item) => item.id === selected.id)
         : connections.find((item) => item.id === selected?.id);
     const activeDirection = selected?.kind === "relationship" && active ? characterMapDirection(active) : null;
+    // Look this up live from the linked author instead of trusting the saved `actor`
+    // string, so it always reflects the author's current nickname + full name.
+    const activePlayedByAuthor = selected?.kind === "character" && active && active.author_id
+        ? authors.find((author) => author.id === active.author_id) || null
+        : null;
+    const activePlayedBy = selected?.kind === "character" && active
+        ? (active.author_id ? authorDisplayName(activePlayedByAuthor || { name: active.actor }) : active.actor)
+        : null;
+    const activePlayedByHasLinks = !!(activePlayedByAuthor && (activePlayedByAuthor.instagram_url || activePlayedByAuthor.twitter_url));
     const editingConnection = editable ? connections.find((item) => item.id === editingConnectionId) : null;
     const editingCharacter = editable ? characters.find((item) => item.id === editingCharacterId) : null;
+    const editingGroup = editable ? (data.groups || []).find((item) => item.id === editingGroupId) : null;
     const focusId = linkingId || hoverId;
     const touchesFocus = (connection) => connection.source.id === focusId || connection.target.id === focusId;
 
     useEffect(() => {
-        if (!editable) return;
+        // Fetched for both editors (the "Played by" picker) and public viewers (to
+        // show the linked author's current nickname + full name in character details).
         let stillMounted = true;
         getAuthors().then((response) => { if (stillMounted) setAuthors(response.data || []); })
             .catch(() => {})
             .finally(() => { if (stillMounted) setAuthorsLoading(false); });
         return () => { stillMounted = false; };
-    }, [editable]);
+    }, []);
+
+    useEffect(() => {
+        if (!actorLinksOpen) return;
+        const closeIfOutside = (event) => {
+            if (actorWrapRef.current && !actorWrapRef.current.contains(event.target)) setActorLinksOpen(false);
+        };
+        document.addEventListener("pointerdown", closeIfOutside);
+        return () => document.removeEventListener("pointerdown", closeIfOutside);
+    }, [actorLinksOpen]);
 
     useEffect(() => {
         const remeasure = () => setMeasureTick((value) => value + 1);
@@ -376,7 +443,7 @@ export default function CharacterMap({ data, onChange, projectTitle, episodeCoun
             return same ? current : measured;
         });
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [characterSignature, canvasSize, compact, measureTick, measureNonce, expanded, editingCharacterId, editingConnectionId]);
+    }, [characterSignature, canvasSize, compact, measureTick, measureNonce, expanded, editingCharacterId, editingConnectionId, editingGroupId]);
     const budgets = useMemo(() => labelBudgets(connections, canvasSize, renderScale, exportView),
         // eslint-disable-next-line react-hooks/exhaustive-deps
         [connectionSignature, canvasSize, renderScale, exportView]);
@@ -399,12 +466,14 @@ export default function CharacterMap({ data, onChange, projectTitle, episodeCoun
 
     function openDetails(kind, id) {
         setSelected({ kind, id });
+        setActorLinksOpen(false);
         dialog.current.showModal();
     }
 
     function startLinking(id) {
         setEditingCharacterId(null);
         setEditingConnectionId(null);
+        setEditingGroupId(null);
         setLinkingId(id);
     }
 
@@ -430,6 +499,7 @@ export default function CharacterMap({ data, onChange, projectTitle, episodeCoun
         dragRef.current = null;
         if (linkingId) { completeLink(character.id); return; }
         setEditingConnectionId(null);
+        setEditingGroupId(null);
         setEditingCharacterId(character.id);
     }
 
@@ -506,7 +576,21 @@ export default function CharacterMap({ data, onChange, projectTitle, episodeCoun
     function connectionClick(connection) {
         if (!editable) { openDetails("relationship", connection.id); return; }
         setEditingCharacterId(null);
+        setEditingGroupId(null);
         setEditingConnectionId(connection.id);
+    }
+
+    function groupClick(group) {
+        if (!editable) { openDetails("group", group.id); return; }
+        setEditingCharacterId(null);
+        setEditingConnectionId(null);
+        setEditingGroupId(group.id);
+    }
+
+    function removeGroup(group) {
+        if (!confirm(`Remove the "${group.label || "group"}" outline? Its characters are not removed.`)) return;
+        onChange({ ...data, groups: (data.groups || []).filter((item) => item.id !== group.id) });
+        setEditingGroupId(null);
     }
 
     function addCharacter() {
@@ -634,7 +718,7 @@ export default function CharacterMap({ data, onChange, projectTitle, episodeCoun
         setHoverId((current) => current === id ? null : current);
     }
 
-    return <section ref={sectionRef} className={`character-map${editable && (editingCharacter || editingConnection) ? " has-side-editor" : ""}${expanded ? " is-expanded" : ""}${exportView ? " is-exporting" : ""}`} aria-labelledby="character-map-heading">
+    return <section ref={sectionRef} className={`character-map${editable && (editingCharacter || editingConnection || editingGroup) ? " has-side-editor" : ""}${expanded ? " is-expanded" : ""}${exportView ? " is-exporting" : ""}`} aria-labelledby="character-map-heading">
         <div className="character-map-heading">
             <div><span className="character-map-eyebrow">{texts.eyebrow}</span>
                 <h2 id="character-map-heading">{texts.heading}</h2>
@@ -673,7 +757,7 @@ export default function CharacterMap({ data, onChange, projectTitle, episodeCoun
                 const bounds = characterGroupBounds(group, characters, cardSpans);
                 if (!bounds) return null;
                 return <div key={group.id} className={`character-map-group ${group.shape}`} style={{ left: `${bounds.left}%`, top: `${bounds.top}%`, width: `${bounds.width}%`, height: `${bounds.height}%`, '--group-color': group.color }} role="group" aria-label={`${group.label}: ${characters.filter((character) => group.character_ids.includes(character.id)).map((character) => character.name).join(', ')}`}>
-                    <button type="button" className={`character-map-group-label ${group.label_position === "bottom" ? "bottom" : "top"}`} onClick={() => openDetails("group", group.id)}>{group.label}</button>
+                    <button type="button" className={`character-map-group-label ${group.label_position === "bottom" ? "bottom" : "top"}`} onClick={() => groupClick(group)}>{group.label}</button>
                     {editable && ["top", "bottom", "left", "right"].map((edge) => <button key={edge} type="button" className={`character-map-group-edge ${edge}`} aria-label={`Adjust ${group.label || "group"} ${edge} margin`} title={`Drag to adjust ${edge} margin`}
                         onPointerDown={(event) => handleGroupResizeDown(event, group, bounds, edge)} onPointerMove={handleGroupResizeMove} onPointerUp={handleGroupResizeUp} onPointerCancel={handleGroupResizeUp}
                         onKeyDown={(event) => {
@@ -739,6 +823,7 @@ export default function CharacterMap({ data, onChange, projectTitle, episodeCoun
             {editingConnection && <ConnectionPopover data={data} onChange={onChange} connection={editingConnection} episode={episode} episodes={episodes} onClose={() => setEditingConnectionId(null)} />}
             {editingCharacter && <CharacterEditPopover data={data} onChange={onChange} character={editingCharacter} authors={authors} authorsLoading={authorsLoading} episode={episode} episodes={episodes}
                 onStartLink={() => startLinking(editingCharacter.id)} onRemove={() => removeCharacter(editingCharacter)} onClose={() => setEditingCharacterId(null)} />}
+            {editingGroup && <GroupEditPopover data={data} onChange={onChange} group={editingGroup} onRemove={() => removeGroup(editingGroup)} onClose={() => setEditingGroupId(null)} />}
         </div>
         <p className="character-map-note">{exportView ? [episode && `version based on ${characterMapEpisodeLabel(data, episode)}`, "© viewmim.info"].filter(Boolean).join(" · ")
             : episode ? texts.footer.replaceAll('{episode}', characterMapEpisodeLabel(data, episode)) : texts.noEpisodes}</p>
@@ -757,7 +842,27 @@ export default function CharacterMap({ data, onChange, projectTitle, episodeCoun
                 <p className="character-map-detail-subtitle">{selected.kind === "character" ? active.role
                     : selected.kind === "group" ? characters.filter((character) => active.character_ids.includes(character.id)).map((character) => character.name).join(', ')
                     : `${activeDirection.from.name} ${activeDirection.arrow || "&"} ${activeDirection.to.name}`}</p>
-                {active.actor && <p>{texts.playedBy} {active.actor}</p>}
+                {activePlayedBy && (
+                    <p>
+                        {texts.playedBy}{" "}
+                        {activePlayedByHasLinks ? (
+                            <span className="character-map-actor-wrap" ref={actorWrapRef}>
+                                <button type="button" className="character-map-actor-link" aria-expanded={actorLinksOpen}
+                                    onClick={() => setActorLinksOpen((value) => !value)}>{activePlayedBy}</button>
+                                {actorLinksOpen && (
+                                    <span className="character-map-actor-popover" role="group" aria-label={`${activePlayedBy}'s social links`}>
+                                        {activePlayedByAuthor.instagram_url && <a href={activePlayedByAuthor.instagram_url} target="_blank" rel="noopener noreferrer" aria-label="Instagram" title="Instagram">
+                                            <img src="https://cdn.simpleicons.org/instagram" alt="" />
+                                        </a>}
+                                        {activePlayedByAuthor.twitter_url && <a href={activePlayedByAuthor.twitter_url} target="_blank" rel="noopener noreferrer" aria-label="X / Twitter" title="X / Twitter">
+                                            <img src="https://cdn.simpleicons.org/x/000000" alt="" />
+                                        </a>}
+                                    </span>
+                                )}
+                            </span>
+                        ) : activePlayedBy}
+                    </p>
+                )}
                 <p>{active.description}</p>
             </>}
         </dialog>

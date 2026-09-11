@@ -46,6 +46,7 @@ function ProfileCard({ author: initialAuthor, defaultPhoto, thaiFullName, fcIcon
     function startEdit() {
         setDraft({
             name: author.name || "",
+            nickname: author.nickname || "",
             full_name: author.full_name || "",
             birthday: author.birthday || "",
             ig_pfp_url: author.ig_pfp_url || "",
@@ -104,6 +105,7 @@ function ProfileCard({ author: initialAuthor, defaultPhoto, thaiFullName, fcIcon
     const defaultProfilePhoto = author.profile_photo_url || author.ig_pfp_url || author.twitter_pfp_url;
     const displayPhoto = resolvePhotoUrl(defaultProfilePhoto) || defaultPhoto;
     const editPhoto = photoPreview || resolvePhotoUrl(defaultProfilePhoto) || defaultPhoto;
+    const displayFullName = [author.nickname, author.full_name].filter(Boolean).join(" ");
 
     if (editing) {
         return (
@@ -134,8 +136,12 @@ function ProfileCard({ author: initialAuthor, defaultPhoto, thaiFullName, fcIcon
                         <input value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} />
                     </div>
                     <div className="archive-edit-row">
+                        <label>Nickname</label>
+                        <input value={draft.nickname} onChange={(e) => setDraft({ ...draft, nickname: e.target.value })} placeholder="e.g. View" />
+                    </div>
+                    <div className="archive-edit-row">
                         <label>Full Name</label>
-                        <input value={draft.full_name} onChange={(e) => setDraft({ ...draft, full_name: e.target.value })} placeholder="e.g. Ploypichaya Manassa" />
+                        <input value={draft.full_name} onChange={(e) => setDraft({ ...draft, full_name: e.target.value })} placeholder="e.g. Benyapa Jeenprasom" />
                     </div>
                     <div className="archive-edit-row">
                         <label>Birthday</label>
@@ -185,7 +191,7 @@ function ProfileCard({ author: initialAuthor, defaultPhoto, thaiFullName, fcIcon
             <div className="archive-identity">
                 <h2 className="archive-name">{author.name}</h2>
 
-                {(thaiFullName || author.full_name) && (
+                {(thaiFullName || displayFullName) && (
                     <div className={`archive-full-names ${thaiFullName ? "archive-full-names--bilingual" : ""}`.trim()}>
                         {thaiFullName && (
                             <div className="archive-full-name archive-full-name--words" lang="th">
@@ -194,9 +200,9 @@ function ProfileCard({ author: initialAuthor, defaultPhoto, thaiFullName, fcIcon
                                 ))}
                             </div>
                         )}
-                        {author.full_name && (
+                        {displayFullName && (
                             <div className="archive-full-name">
-                                {thaiFullName ? splitBeforeSurname(author.full_name) : author.full_name}
+                                {thaiFullName ? splitBeforeSurname(displayFullName) : displayFullName}
                             </div>
                         )}
                     </div>

@@ -1,13 +1,24 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createAuthor, getAuthors, updateAuthor } from "../api/authorsService";
 import Avatar from "../components/Avatar";
+import VisibilityToggle from "../components/VisibilityToggle";
 import "../styles/EventForm.css";
+
+const CATEGORY_OPTIONS = [
+    { value: "artist", label: "Artist" },
+    { value: "crew", label: "Crew" },
+    { value: "official", label: "Official Account" },
+    { value: "family_friend", label: "Friends & Family" },
+    { value: "fan", label: "Fan Account" },
+];
+const DEFAULT_CATEGORY = "artist";
 
 const FIELD_GROUPS = [
     {
         title: "Identity",
         fields: [
             { key: "name", label: "Display Name", required: true },
+            { key: "nickname", label: "Nickname" },
             { key: "full_name", label: "Full Name" },
             { key: "birthday", label: "Birthday", type: "date" },
         ],
@@ -42,6 +53,7 @@ function buildDraft(author) {
         draft[field.key] = author[field.key] || "";
         return draft;
     }, {
+        category: author.category || DEFAULT_CATEGORY,
         show_on_timeline: !!author.show_on_timeline,
         sort_order: author.sort_order ?? author.id ?? 0,
     });
@@ -53,6 +65,7 @@ function buildPayload(draft) {
         payload[field.key] = field.required ? value : value || null;
         return payload;
     }, {
+        category: draft.category || DEFAULT_CATEGORY,
         show_on_timeline: !!draft.show_on_timeline,
         sort_order: Math.max(0, Math.floor(Number(draft.sort_order) || 0)),
     });
@@ -64,8 +77,11 @@ export default function ManageAuthors() {
     const [loading, setLoading] = useState(true);
     const [savingId, setSavingId] = useState(null);
     const [query, setQuery] = useState("");
+    const [categoryFilter, setCategoryFilter] = useState("all");
     const [draggedAuthorId, setDraggedAuthorId] = useState(null);
     const [dragTarget, setDragTarget] = useState(null);
+    const [editingAuthorId, setEditingAuthorId] = useState(null);
+    const dialogRef = useRef(null);
 
     useEffect(() => {
         async function loadAuthors() {
@@ -85,15 +101,47 @@ export default function ManageAuthors() {
         loadAuthors();
     }, []);
 
+    useEffect(() => {
+        const dialog = dialogRef.current;
+        if (!dialog) return;
+        if (editingAuthorId !== null) {
+            if (!dialog.open) dialog.showModal();
+        } else if (dialog.open) {
+            dialog.close();
+        }
+    }, [editingAuthorId]);
+
+    useEffect(() => {
+        const dialog = dialogRef.current;
+        if (!dialog) return;
+        const handleClose = () => setEditingAuthorId(null);
+        dialog.addEventListener("close", handleClose);
+        return () => dialog.removeEventListener("close", handleClose);
+    }, []);
+
+    const categoryCounts = useMemo(() => {
+        const counts = { all: authors.length };
+        CATEGORY_OPTIONS.forEach((opt) => { counts[opt.value] = 0; });
+        authors.forEach((author) => {
+            const category = drafts[author.id]?.category || author.category || DEFAULT_CATEGORY;
+            counts[category] = (counts[category] || 0) + 1;
+        });
+        return counts;
+    }, [authors, drafts]);
+
+    const reorderLocked = !!query.trim() || categoryFilter !== "all";
+
     const visibleAuthors = useMemo(() => {
         const term = query.trim().toLowerCase();
-        if (!term) return authors;
-        return authors.filter((author) =>
-            [author.name, author.full_name, author.instagram_url, author.twitter_url]
+        return authors.filter((author) => {
+            const category = drafts[author.id]?.category || author.category || DEFAULT_CATEGORY;
+            if (categoryFilter !== "all" && category !== categoryFilter) return false;
+            if (!term) return true;
+            return [author.name, author.nickname, author.full_name, author.instagram_url, author.twitter_url]
                 .filter(Boolean)
-                .some((value) => value.toLowerCase().includes(term))
-        );
-    }, [authors, query]);
+                .some((value) => value.toLowerCase().includes(term));
+        });
+    }, [authors, query, categoryFilter, drafts]);
 
     function updateDraft(authorId, key, value) {
         setDrafts((current) => ({
@@ -106,7 +154,7 @@ export default function ManageAuthors() {
     }
 
     function reorderAuthor(targetAuthorId, position) {
-        if (!draggedAuthorId || draggedAuthorId === targetAuthorId || query.trim()) return;
+        if (!draggedAuthorId || draggedAuthorId === targetAuthorId || reorderLocked) return;
 
         const fromIndex = authors.findIndex((author) => author.id === draggedAuthorId);
         if (fromIndex < 0) return;
@@ -140,9 +188,8 @@ export default function ManageAuthors() {
         setAuthors((current) => [...current, newAuthor]);
         setDrafts((current) => ({ ...current, [temporaryId]: buildDraft(newAuthor) }));
         setQuery("");
-        requestAnimationFrame(() => {
-            document.querySelector(`[data-author-id="${temporaryId}"]`)?.scrollIntoView({ behavior: "smooth", block: "center" });
-        });
+        setCategoryFilter("all");
+        setEditingAuthorId(temporaryId);
     }
 
     async function saveAuthor(author) {
@@ -167,6 +214,7 @@ export default function ManageAuthors() {
                 ...Object.fromEntries(Object.entries(current).filter(([id]) => id !== String(author.id))),
                 [updated.id]: buildDraft(updated),
             }));
+            setEditingAuthorId((current) => current === author.id ? null : current);
         } catch (err) {
             console.error("Save author failed:", err);
             alert("Could not save author.");
@@ -197,6 +245,7 @@ export default function ManageAuthors() {
                 .sort((a, b) => (a.sort_order ?? a.id) - (b.sort_order ?? b.id));
             setAuthors(updatedAuthors);
             setDrafts(Object.fromEntries(updatedAuthors.map((author) => [author.id, buildDraft(author)])));
+            setEditingAuthorId(null);
         } catch (err) {
             console.error("Save all authors failed:", err);
             alert("Could not save all authors.");
@@ -207,6 +256,10 @@ export default function ManageAuthors() {
 
     if (loading) return <div style={{ padding: 20 }}>Loading authors...</div>;
 
+    const editingAuthor = authors.find((author) => author.id === editingAuthorId) || null;
+    const editingDraft = editingAuthor ? (drafts[editingAuthor.id] || buildDraft(editingAuthor)) : null;
+    const editingSaving = editingAuthor && (savingId === editingAuthor.id || savingId === "all");
+
     return (
         <div className="manage-authors-page" style={{ padding: 20, maxWidth: 1100, margin: "0 auto" }}>
             <form id="manage-authors-save-form" onSubmit={saveAllAuthors} />
@@ -216,7 +269,7 @@ export default function ManageAuthors() {
                 onClick={addAuthor}
                 hidden
             />
-            <div style={{ display: "flex", justifyContent: "space-between", gap: 16, alignItems: "end", flexWrap: "wrap" }}>
+            <div className="manage-authors-toolbar">
                 <div>
                     <h2 style={{ marginBottom: 4 }}>Manage Authors</h2>
                     <p style={{ marginTop: 0, color: "#777" }}>{authors.length} authors</p>
@@ -227,22 +280,52 @@ export default function ManageAuthors() {
                     <input
                         value={query}
                         onChange={(e) => setQuery(e.target.value)}
-                        placeholder="Name or social URL"
+                        placeholder="Name, nickname, or social URL"
                     />
                 </div>
             </div>
 
-            <div style={{ display: "grid", gap: 16, marginTop: 20 }}>
+            <div className="manage-authors-filter-tabs" role="tablist" aria-label="Filter by category">
+                <button
+                    type="button"
+                    role="tab"
+                    aria-selected={categoryFilter === "all"}
+                    className={`manage-authors-filter-tab${categoryFilter === "all" ? " is-active" : ""}`}
+                    onClick={() => setCategoryFilter("all")}
+                >
+                    All <span className="manage-authors-filter-count">{categoryCounts.all}</span>
+                </button>
+                {CATEGORY_OPTIONS.map((opt) => (
+                    <button
+                        key={opt.value}
+                        type="button"
+                        role="tab"
+                        aria-selected={categoryFilter === opt.value}
+                        className={`manage-authors-filter-tab${categoryFilter === opt.value ? " is-active" : ""}`}
+                        onClick={() => setCategoryFilter(opt.value)}
+                    >
+                        {opt.label} <span className="manage-authors-filter-count">{categoryCounts[opt.value] || 0}</span>
+                    </button>
+                ))}
+            </div>
+
+            {reorderLocked && (
+                <p className="manage-authors-lock-note">Clear the search and set the category filter to "All" to drag-reorder authors.</p>
+            )}
+
+            <div className="manage-authors-list">
                 {visibleAuthors.map((author) => {
                     const draft = drafts[author.id] || buildDraft(author);
-                    const saving = savingId === author.id || savingId === "all";
+                    const isDragging = draggedAuthorId === author.id;
+                    const category = draft.category || DEFAULT_CATEGORY;
 
                     return (
                         <div
                             key={author.id}
                             data-author-id={author.id}
+                            className={`manage-authors-row${isDragging ? " is-dragging" : ""}`}
                             onDragOver={(e) => {
-                                if (!query.trim()) {
+                                if (!reorderLocked) {
                                     e.preventDefault();
                                     const rect = e.currentTarget.getBoundingClientRect();
                                     const position = e.clientY < rect.top + rect.height / 2 ? "before" : "after";
@@ -255,20 +338,6 @@ export default function ManageAuthors() {
                                 setDraggedAuthorId(null);
                                 setDragTarget(null);
                             }}
-                            style={{
-                                border: "1px solid rgba(0, 0, 0, 0.14)",
-                                borderRadius: 8,
-                                padding: 14,
-                                display: "grid",
-                                gap: 19,
-                                position: "relative",
-                                opacity: draggedAuthorId === author.id ? 0.55 : 1,
-                                height: draggedAuthorId === author.id ? 56 : "auto",
-                                minHeight: draggedAuthorId === author.id ? 56 : undefined,
-                                overflow: draggedAuthorId === author.id ? "hidden" : "visible",
-                                boxSizing: "border-box",
-                                transition: "opacity 140ms ease",
-                            }}
                         >
                             {dragTarget?.id === author.id && draggedAuthorId !== author.id && (
                                 <div
@@ -277,7 +346,7 @@ export default function ManageAuthors() {
                                         position: "absolute",
                                         left: 8,
                                         right: 8,
-                                        [dragTarget.position === "before" ? "top" : "bottom"]: -10,
+                                        [dragTarget.position === "before" ? "top" : "bottom"]: -5,
                                         height: 4,
                                         borderRadius: 999,
                                         background: "#a76719",
@@ -287,8 +356,11 @@ export default function ManageAuthors() {
                                     }}
                                 />
                             )}
-                            <div
-                                draggable={!query.trim()}
+
+                            <button
+                                type="button"
+                                className="manage-authors-drag-handle"
+                                draggable={!reorderLocked}
                                 onDragStart={(e) => {
                                     setDraggedAuthorId(author.id);
                                     e.dataTransfer.effectAllowed = "move";
@@ -298,87 +370,55 @@ export default function ManageAuthors() {
                                     setDraggedAuthorId(null);
                                     setDragTarget(null);
                                 }}
-                                title={query.trim() ? "Clear search to reorder authors" : "Drag to change display order"}
+                                title={reorderLocked ? "Clear search and category filter to reorder" : "Drag to change display order"}
                                 aria-label="Drag to change display order"
-                                style={{
-                                    position: "absolute",
-                                    top: 14,
-                                    left: "50%",
-                                    transform: "translateX(-50%)",
-                                    cursor: query.trim() ? "not-allowed" : "grab",
-                                    color: "#8a7768",
-                                    fontSize: "1.3rem",
-                                    lineHeight: 1,
-                                    letterSpacing: 3,
-                                    userSelect: "none",
-                                    padding: "4px 22px",
-                                    border: "1px solid rgba(138, 119, 104, 0.28)",
-                                    borderRadius: 999,
-                                    background: "rgba(255, 248, 239, 0.9)",
-                                    zIndex: 2,
-                                }}
+                                style={{ cursor: reorderLocked ? "not-allowed" : "grab" }}
                             >
                                 ⋮⋮
-                            </div>
-                            <label className="author-visibility-toggle" title={draft.show_on_timeline ? "Visible on the public timeline" : "Hidden from the public timeline"}>
-                                <input
-                                    type="checkbox"
-                                    checked={!!draft.show_on_timeline}
-                                    onChange={(e) => updateDraft(author.id, "show_on_timeline", e.target.checked)}
-                                />
-                                <span>Timeline Public</span>
-                            </label>
+                            </button>
 
-                            <div className="manage-author-header" style={{ display: "flex", gap: 14, alignItems: "center", paddingRight: 112 }}>
+                            <div className="manage-authors-avatar">
                                 <Avatar
                                     url={draft.profile_photo_url || draft.ig_pfp_url || draft.twitter_pfp_url}
                                     authorId={author.id}
                                     name={draft.name}
                                 />
-                                <div>
-                                    <strong className="manage-author-name">{draft.name || (author.isNew ? "New Author" : `Author #${author.id}`)}</strong>
-                                    <div style={{ fontSize: "0.85rem", color: "#777" }}>{author.isNew ? "Not saved yet" : `ID ${author.id}`}</div>
-                                </div>
                             </div>
 
-                            {FIELD_GROUPS.map((group) => (
-                                <section key={group.title} style={{ display: "grid", gap: 0 }}>
-                                    <h3 style={{ margin: "0 0 -2px", fontSize: "0.78rem", lineHeight: 1, color: "#777", textTransform: "uppercase", letterSpacing: "0.05em" }}>
-                                        {group.title}
-                                    </h3>
-                                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", columnGap: 12, rowGap: 0 }}>
-                                        {group.fields.map((field) => (
-                                            <div className="eventform-section" key={field.key} style={{ marginBottom: 0 }}>
-                                                <label>
-                                                    {field.label} {field.required && <span className="form-required">*</span>}
-                                                </label>
-                                                <input
-                                                    type={field.type || "text"}
-                                                    value={draft[field.key] || ""}
-                                                    onChange={(e) => updateDraft(author.id, field.key, e.target.value)}
-                                                    required={field.required}
-                                                />
-                                            </div>
-                                        ))}
-                                    </div>
-                                </section>
-                            ))}
-
-                            <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "end", flexWrap: "wrap", paddingTop: 4 }}>
-                                <div className="eventform-section" style={{ width: 190, marginBottom: 0 }}>
-                                    <label style={{ whiteSpace: "nowrap" }}>Display Order <span style={{ fontWeight: 400, opacity: 0.65 }}>(lower first)</span></label>
-                                    <input
-                                        type="number"
-                                        min="0"
-                                        step="1"
-                                        value={draft.sort_order}
-                                        onChange={(e) => updateDraft(author.id, "sort_order", e.target.value)}
-                                    />
-                                </div>
-                                <button type="button" disabled={saving} onClick={() => saveAuthor(author)}>
-                                    {saving ? "Saving..." : "Save Author"}
-                                </button>
+                            <div className="manage-authors-row-info">
+                                <strong>
+                                    {draft.name || (author.isNew ? "New Author" : `Author #${author.id}`)}
+                                    {draft.nickname && <span className="manage-authors-nickname"> "{draft.nickname}"</span>}
+                                </strong>
+                                <div className="manage-authors-row-sub">{author.isNew ? "Not saved yet" : `ID ${author.id}`}</div>
                             </div>
+
+                            <select
+                                className={`author-category-select cat-${category}`}
+                                value={category}
+                                onChange={(e) => updateDraft(author.id, "category", e.target.value)}
+                                aria-label={`Category for ${draft.name || "author"}`}
+                            >
+                                {CATEGORY_OPTIONS.map((opt) => (
+                                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                ))}
+                            </select>
+
+                            <VisibilityToggle
+                                className="manage-authors-row-toggle"
+                                checked={!!draft.show_on_timeline}
+                                onChange={(e) => updateDraft(author.id, "show_on_timeline", e.target.checked)}
+                                label="Public"
+                                title={draft.show_on_timeline ? "Visible on the public timeline" : "Hidden from the public timeline"}
+                            />
+
+                            <button
+                                type="button"
+                                className="manage-authors-row-edit"
+                                onClick={() => setEditingAuthorId(author.id)}
+                            >
+                                Edit
+                            </button>
                         </div>
                     );
                 })}
@@ -388,6 +428,101 @@ export default function ManageAuthors() {
                 )}
             </div>
 
+            <dialog
+                ref={dialogRef}
+                className="manage-authors-dialog"
+                aria-labelledby="manage-authors-dialog-title"
+                onClick={(e) => { if (e.target === dialogRef.current) dialogRef.current.close(); }}
+            >
+                <button
+                    type="button"
+                    className="manage-authors-dialog-close"
+                    aria-label="Close editor"
+                    onClick={() => dialogRef.current?.close()}
+                >
+                    ×
+                </button>
+
+                {editingAuthor && editingDraft && (
+                    <>
+                        <div className="manage-authors-dialog-header">
+                            <Avatar
+                                url={editingDraft.profile_photo_url || editingDraft.ig_pfp_url || editingDraft.twitter_pfp_url}
+                                authorId={editingAuthor.id}
+                                name={editingDraft.name}
+                            />
+                            <div>
+                                <h3 id="manage-authors-dialog-title">
+                                    {editingDraft.name || (editingAuthor.isNew ? "New Author" : `Author #${editingAuthor.id}`)}
+                                </h3>
+                                <span>{editingAuthor.isNew ? "Not saved yet" : `ID ${editingAuthor.id}`}</span>
+                            </div>
+                        </div>
+
+                        <div style={{ display: "flex", gap: 16, flexWrap: "wrap", alignItems: "flex-end", margin: "14px 0" }}>
+                            <div className="eventform-section" style={{ margin: 0, minWidth: 180 }}>
+                                <label>Category</label>
+                                <select
+                                    value={editingDraft.category || DEFAULT_CATEGORY}
+                                    onChange={(e) => updateDraft(editingAuthor.id, "category", e.target.value)}
+                                >
+                                    {CATEGORY_OPTIONS.map((opt) => (
+                                        <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            <VisibilityToggle
+                                checked={!!editingDraft.show_on_timeline}
+                                onChange={(e) => updateDraft(editingAuthor.id, "show_on_timeline", e.target.checked)}
+                                label="Timeline Public"
+                                title={editingDraft.show_on_timeline ? "Visible on the public timeline" : "Hidden from the public timeline"}
+                            />
+                        </div>
+
+                        {FIELD_GROUPS.map((group) => (
+                            <section key={group.title} style={{ display: "grid", gap: 0 }}>
+                                <h3 style={{ margin: "0 0 -2px", fontSize: "0.78rem", lineHeight: 1, color: "#777", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                                    {group.title}
+                                </h3>
+                                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", columnGap: 12, rowGap: 0 }}>
+                                    {group.fields.map((field) => (
+                                        <div className="eventform-section" key={field.key} style={{ marginBottom: 0 }}>
+                                            <label>
+                                                {field.label} {field.required && <span className="form-required">*</span>}
+                                            </label>
+                                            <input
+                                                type={field.type || "text"}
+                                                value={editingDraft[field.key] || ""}
+                                                onChange={(e) => updateDraft(editingAuthor.id, field.key, e.target.value)}
+                                                required={field.required}
+                                            />
+                                        </div>
+                                    ))}
+                                </div>
+                            </section>
+                        ))}
+
+                        <div className="eventform-section" style={{ width: 190 }}>
+                            <label style={{ whiteSpace: "nowrap" }}>Display Order <span style={{ fontWeight: 400, opacity: 0.65 }}>(lower first)</span></label>
+                            <input
+                                type="number"
+                                min="0"
+                                step="1"
+                                value={editingDraft.sort_order}
+                                onChange={(e) => updateDraft(editingAuthor.id, "sort_order", e.target.value)}
+                            />
+                        </div>
+
+                        <div className="manage-authors-dialog-actions">
+                            <button type="button" onClick={() => dialogRef.current?.close()}>Close</button>
+                            <button type="button" disabled={editingSaving} onClick={() => saveAuthor(editingAuthor)}>
+                                {editingSaving ? "Saving..." : "Save Author"}
+                            </button>
+                        </div>
+                    </>
+                )}
+            </dialog>
         </div>
     );
 }
