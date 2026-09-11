@@ -311,7 +311,7 @@ function GroupEditPopover({ data, onChange, group, onRemove, onClose }) {
     </PopoverShell>;
 }
 
-export default function CharacterMap({ data, onChange, projectTitle, episodeCount = 0, editable = false, isAdmin = false, headerControls = null, onEpisodePublicChange = null, busy = false, exportView = false, forcedEpisode = null, measureNonce = 0 }) {
+export default function CharacterMap({ data, onChange, projectTitle, episodeCount = 0, editable = false, isAdmin = false, headerControls = null, onEpisodePublicChange = null, busy = false, exportView = false, forcedEpisode = null, measureNonce = 0, useLoafFrame = false }) {
     const texts = { ...characterMapTexts(projectTitle), ...data.texts };
     const [selectedEpisode, setEpisode] = useState(null);
     const [expanded, setExpanded] = useState(false);
@@ -718,7 +718,7 @@ export default function CharacterMap({ data, onChange, projectTitle, episodeCoun
         setHoverId((current) => current === id ? null : current);
     }
 
-    return <section ref={sectionRef} className={`character-map${editable && (editingCharacter || editingConnection || editingGroup) ? " has-side-editor" : ""}${expanded ? " is-expanded" : ""}${exportView ? " is-exporting" : ""}`} aria-labelledby="character-map-heading">
+    return <section ref={sectionRef} className={`character-map${useLoafFrame ? " frame-loaf" : ""}${editable && (editingCharacter || editingConnection || editingGroup) ? " has-side-editor" : ""}${expanded ? " is-expanded" : ""}${exportView ? " is-exporting" : ""}`} aria-labelledby="character-map-heading">
         <div className="character-map-heading">
             <div><span className="character-map-eyebrow">{texts.eyebrow}</span>
                 <h2 id="character-map-heading">{texts.heading}</h2>
@@ -830,7 +830,7 @@ export default function CharacterMap({ data, onChange, projectTitle, episodeCoun
         {exportStage && createPortal(
             // Outside the visible chart, so page-level rules for it cannot reach the copy.
             <div className="character-map-export-stage" ref={stageRef} aria-hidden="true">
-                <CharacterMap data={exportData} projectTitle={projectTitle} episodeCount={episodeCount} exportView forcedEpisode={episode} measureNonce={exportNonce} />
+                <CharacterMap data={exportData} projectTitle={projectTitle} episodeCount={episodeCount} exportView forcedEpisode={episode} measureNonce={exportNonce} useLoafFrame={useLoafFrame} />
             </div>, document.body)}
         <dialog ref={dialog} className="character-map-dialog" aria-labelledby="character-map-detail-title" onClick={(event) => { if (event.target === dialog.current) dialog.current.close(); }}>
             <button type="button" className="character-map-close" aria-label="Close details" onClick={() => dialog.current.close()}>×</button>

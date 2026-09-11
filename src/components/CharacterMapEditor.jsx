@@ -3,7 +3,7 @@ import { characterMapEpisodes, addCharacterMapEpisode, removeCharacterMapEpisode
 import CharacterMap from "./CharacterMap";
 import VisibilityToggle from "./VisibilityToggle";
 
-export default function CharacterMapEditor({ data, onChange, visible, onVisibleChange, projectTitle, episodeCount }) {
+export default function CharacterMapEditor({ data, onChange, visible, onVisibleChange, projectTitle, episodeCount, useLoafFrame = false }) {
     const defaultTexts = characterMapTexts(projectTitle);
     const episodes = characterMapEpisodes(data, episodeCount);
     const [episodeInput, setEpisodeInput] = useState("");
@@ -76,7 +76,7 @@ export default function CharacterMapEditor({ data, onChange, visible, onVisibleC
             </div>
         </details>
         <h4>Character map ({data.characters.length} character{data.characters.length === 1 ? "" : "s"}, {data.relationships.length} relationship{data.relationships.length === 1 ? "" : "s"})</h4>
-        <CharacterMap data={data} onChange={onChange} editable projectTitle={projectTitle} episodeCount={episodeCount}
+        <CharacterMap data={data} onChange={onChange} editable projectTitle={projectTitle} episodeCount={episodeCount} useLoafFrame={useLoafFrame}
             onEpisodePublicChange={(number, episodePublic) => onChange(setCharacterMapEpisodePublic({ ...data, episodes }, number, episodePublic))} />
     </section>;
 }

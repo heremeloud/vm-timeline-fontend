@@ -30,6 +30,9 @@ export default function CharacterMapSection({ project, isAdmin, onSaved }) {
     }
 
     const isPublic = project.show_character_map !== false;
+    // The bread-loaf portrait frame is a one-off for this bakery-themed series;
+    // every other project gets the plain default frame.
+    const useLoafFrame = project.slug === "bake-love-feeling";
     const hasPublicEpisode = visibleCharacterMapEpisodes(data, characterMapEpisodes(data, project.episode_count)).length > 0;
     const adminControls = isAdmin && !draft
         ? <div className="character-map-header-actions">
@@ -48,13 +51,13 @@ export default function CharacterMapSection({ project, isAdmin, onSaved }) {
             if (await persist({ character_map: draft, show_character_map: draftVisible })) setDraft(null);
         }}>
             <fieldset className="character-map-edit-fields" disabled={saving}>
-                <CharacterMapEditor data={draft} onChange={setDraft} visible={draftVisible} onVisibleChange={setDraftVisible} projectTitle={project.title} episodeCount={project.episode_count} />
+                <CharacterMapEditor data={draft} onChange={setDraft} visible={draftVisible} onVisibleChange={setDraftVisible} projectTitle={project.title} episodeCount={project.episode_count} useLoafFrame={useLoafFrame} />
                 <div className="character-map-editor-actions">
                     <button type="submit" className="form-primary-submit">{saving ? "Saving…" : "Save character map"}</button>
                     <button type="button" className="series-metadata-add" onClick={() => { setDraft(null); setError(""); }}>Cancel</button>
                 </div>
             </fieldset>
-        </form> : (isAdmin || (isPublic && hasPublicEpisode)) && <CharacterMap data={data} projectTitle={project.title} episodeCount={project.episode_count} isAdmin={isAdmin} headerControls={adminControls} busy={saving}
+        </form> : (isAdmin || (isPublic && hasPublicEpisode)) && <CharacterMap data={data} projectTitle={project.title} episodeCount={project.episode_count} isAdmin={isAdmin} headerControls={adminControls} busy={saving} useLoafFrame={useLoafFrame}
             onEpisodePublicChange={isAdmin && !draft && project.character_map
                 ? (number, episodePublic) => persist({ character_map: setCharacterMapEpisodePublic(data, number, episodePublic) })
                 : null} />}
