@@ -1,9 +1,14 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { addCharacterMapEpisode, relationshipsAtEpisode, sampleCharacterMap, characterMapEpisodes, removeCharacterMapEpisode, characterMapDirection, charactersAtEpisode, characterDebutEpisode, setCharacterDebut } from "./characterMap.js";
+import { addRelationshipChartEpisode, relationshipsAtEpisode, sampleRelationshipChart, relationshipChartEpisodes, removeRelationshipChartEpisode, relationshipChartDirection, charactersAtEpisode, characterDebutEpisode, setCharacterDebut, relationshipChartImageName, relationshipChartTexts } from "./relationshipChart.js";
+
+test("relationship chart terminology is used in headings and downloads", () => {
+    assert.equal(relationshipChartTexts("Series").eyebrow, "RELATIONSHIP CHART");
+    assert.equal(relationshipChartImageName("Series", "Episode 1"), "Series - relationship chart - Episode 1");
+});
 
 test("episode changes carry forward without leaking future relationships", () => {
-    const data = sampleCharacterMap();
+    const data = sampleRelationshipChart();
     data.relationships[0].changes[1].episode = 3;
     data.relationships[0].changes[2].episode = 5;
     assert.equal(relationshipsAtEpisode(data, 2)[0].label, "First encounter");
@@ -13,7 +18,7 @@ test("episode changes carry forward without leaking future relationships", () =>
 });
 
 test("hidden changes persist until a later visible change", () => {
-    const data = sampleCharacterMap();
+    const data = sampleRelationshipChart();
     data.relationships[0].changes[1].hidden = true;
     assert.equal(relationshipsAtEpisode(data, 2).some((item) => item.id === "ab"), false);
     assert.equal(relationshipsAtEpisode(data, 3).some((item) => item.id === "ab"), true);
@@ -21,14 +26,14 @@ test("hidden changes persist until a later visible change", () => {
 });
 
 test("explicit episode lists override project counts, including an empty list", () => {
-    const data = sampleCharacterMap();
-    assert.deepEqual(characterMapEpisodes({ ...data, episodes: [5, 1] }, 12), [5, 1]);
-    assert.deepEqual(characterMapEpisodes({ ...data, episodes: [] }, 12), []);
+    const data = sampleRelationshipChart();
+    assert.deepEqual(relationshipChartEpisodes({ ...data, episodes: [5, 1] }, 12), [5, 1]);
+    assert.deepEqual(relationshipChartEpisodes({ ...data, episodes: [] }, 12), []);
 });
 
 test("removal deletes changes, preserves numbering and leaves the original draft intact", () => {
-    const data = sampleCharacterMap();
-    const result = removeCharacterMapEpisode(data, [1, 2, 3], 1);
+    const data = sampleRelationshipChart();
+    const result = removeRelationshipChartEpisode(data, [1, 2, 3], 1);
     assert.deepEqual(result.episodes, [2, 3]);
     assert.equal(result.relationships.length, 1);
     assert.deepEqual(result.relationships[0].changes.map((change) => change.episode), [2, 3]);
@@ -37,7 +42,7 @@ test("removal deletes changes, preserves numbering and leaves the original draft
 });
 
 test("relationship history follows custom story order instead of numeric IDs", () => {
-    const data = { ...sampleCharacterMap(), episodes: [3, 1, 2], episode_labels: { 3: "Novel chapter 5" } };
+    const data = { ...sampleRelationshipChart(), episodes: [3, 1, 2], episode_labels: { 3: "Novel chapter 5" } };
     assert.equal(relationshipsAtEpisode(data, 3)[0].label, "Something more?");
     assert.equal(relationshipsAtEpisode(data, 1)[0].label, "First encounter");
     assert.equal(relationshipsAtEpisode(data, 2)[0].label, "Growing closer");
@@ -46,20 +51,20 @@ test("relationship history follows custom story order instead of numeric IDs", (
 
 test("a one-way relationship reads left to right whichever end the arrow is on", () => {
     const whale = { id: "w", name: '"Whale" Tarntara' }, noey = { id: "n", name: '"Noey" Naralak' };
-    const backwards = characterMapDirection({ source: whale, target: noey, arrow_start: true, arrow_end: false });
+    const backwards = relationshipChartDirection({ source: whale, target: noey, arrow_start: true, arrow_end: false });
     assert.deepEqual([backwards.from.name, backwards.arrow, backwards.to.name], ['"Noey" Naralak', "→", '"Whale" Tarntara']);
-    const forwards = characterMapDirection({ source: whale, target: noey, arrow_start: false, arrow_end: true });
+    const forwards = relationshipChartDirection({ source: whale, target: noey, arrow_start: false, arrow_end: true });
     assert.deepEqual([forwards.from.name, forwards.arrow, forwards.to.name], ['"Whale" Tarntara', "→", '"Noey" Naralak']);
-    const mutual = characterMapDirection({ source: whale, target: noey, arrow_start: true, arrow_end: true });
+    const mutual = relationshipChartDirection({ source: whale, target: noey, arrow_start: true, arrow_end: true });
     assert.deepEqual([mutual.from.name, mutual.arrow, mutual.to.name], ['"Whale" Tarntara', "↔", '"Noey" Naralak']);
-    const plain = characterMapDirection({ source: whale, target: noey, arrow_start: false, arrow_end: false });
+    const plain = relationshipChartDirection({ source: whale, target: noey, arrow_start: false, arrow_end: false });
     assert.deepEqual([plain.from.name, plain.arrow, plain.to.name], ['"Whale" Tarntara', "", '"Noey" Naralak']);
 });
 
 test("new episodes snapshot the chosen version and exclude later connections", () => {
-    const data = sampleCharacterMap();
+    const data = sampleRelationshipChart();
     data.relationships[1].changes[0].episode = 2;
-    const result = addCharacterMapEpisode(data, [1, 2, 3], 4, "New chapter", 1);
+    const result = addRelationshipChartEpisode(data, [1, 2, 3], 4, "New chapter", 1);
     assert.deepEqual(relationshipsAtEpisode(result, 4).map(r => r.label), relationshipsAtEpisode(data, 1).map(r => r.label));
     result.relationships[0].changes.at(-1).label = "Changed";
     assert.equal(data.relationships[0].changes[0].label, "First encounter");

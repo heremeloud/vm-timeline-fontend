@@ -1,0 +1,347 @@
+/* overflow:clip (not hidden) - hidden would make this the sticky-positioning "scroll
+   container" for the side editor panel below, which stops it from tracking page scroll. */
+.relationship-chart { margin: 30px 0; border: 1px solid #eadbd2; border-radius: 20px; overflow: clip; background: #fffcf6; color: #614c45; }
+.relationship-chart-heading { display: flex; align-items: start; justify-content: space-between; gap: 16px; padding: 28px 28px 20px; }
+.relationship-chart-heading-controls { display: flex; flex-direction: column; align-items: end; gap: 8px; flex-shrink: 0; }
+.relationship-chart-header-actions { display: flex; align-items: center; gap: 8px; }
+.relationship-chart-header-actions button { white-space: nowrap; padding: 4px 10px; border: 1px solid #dfcbbc; border-radius: 6px; background: #fff; color: #614c45; font: inherit; font-size: 0.68rem; font-weight: 600; line-height: 1; cursor: pointer; box-shadow: 0 1px 3px rgba(0, 0, 0, .06); }
+.relationship-chart-header-actions button:hover:not(:disabled) { background: #faf3ea; }
+.relationship-chart-header-actions button:disabled { opacity: .65; cursor: wait; }
+.relationship-chart-hidden-note { color: #a4614f; font-weight: 600; }
+.relationship-chart-eyebrow { font-size: 10px; font-weight: 700; letter-spacing: 1.8px; color: #a46e67; }
+.relationship-chart-heading h2 { font-family: Georgia, serif; font-size: clamp(30px, 4vw, 36px); font-weight: 400; margin: 10px 0; line-height: 1.2; }
+.relationship-chart-heading p, .relationship-chart-note { font-size: 12px; line-height: 1.6; color: #88766d; margin: 0; }
+.relationship-chart-heading .relationship-chart-eyebrow { font-size: 14px; }
+.relationship-chart-heading p { font-size: 16px; }
+.relationship-chart-toolbar { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px; margin: 0 28px; padding: 14px 0; border-top: 1px solid #eddfd3; border-bottom: 1px solid #eddfd3; font-size: 11px; }
+.relationship-chart-toolbar label { display: flex; align-items: center; gap: 10px; }
+.relationship-chart-episode-controls { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
+.relationship-chart-toolbar select { box-sizing: border-box; appearance: none; -webkit-appearance: none; height: 32px; padding: 0 26px 0 10px; font-family: inherit; font-size: 0.85rem; line-height: 1.2; border: 1px solid #ddd; border-radius: 8px; background-color: #fff; color: #333; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23999' d='M6 8L1 3h10z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 8px center; cursor: pointer; outline: none; transition: border-color .15s; }
+.relationship-chart-toolbar select:focus { border-color: #955803; }
+.relationship-chart-edit-hint { color: #806348; font-style: italic; }
+.relationship-chart-viewport { overflow: auto; overscroll-behavior-x: contain; container-type: inline-size; }
+/* A wider chart — expanded, or the 1600px export sheet — draws bigger cards and bigger type,
+   instead of leaving the same small cards adrift in more space. */
+@container (min-width: 820px) { .relationship-chart .relationship-chart-canvas { --card-scale: 1.25; } }
+@container (min-width: 1080px) { .relationship-chart .relationship-chart-canvas { --card-scale: 1.45; } }
+@container (min-width: 1400px) { .relationship-chart .relationship-chart-canvas { --card-scale: 1.7; } }
+@container (min-width: 1750px) { .relationship-chart .relationship-chart-canvas { --card-scale: 1.95; } }
+@container (min-width: 2150px) { .relationship-chart .relationship-chart-canvas { --card-scale: 2.2; } }
+@container (min-width: 2550px) { .relationship-chart .relationship-chart-canvas { --card-scale: 2.45; } }
+.relationship-chart-canvas { min-width: 620px; --card-scale: 1; position: relative; height: calc(var(--canvas-height, 490px) * var(--card-scale, 1)); background-image: radial-gradient(#e6d7c9 0.7px, transparent 0.7px); background-size: 18px 18px; }
+.relationship-chart-decoration { position: absolute; top: 18px; left: 0; right: 0; text-align: center; font: italic 15px Georgia, serif; color: #b79980; }
+.relationship-chart-lines { position: absolute; width: 100%; height: 100%; inset: 0; pointer-events: none; }
+.relationship-chart-lines > path { fill: none; stroke-width: 2; vector-effect: non-scaling-stroke; }
+.relationship-chart.relationship-chart .relationship-chart-person { position: absolute; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; gap: 6px; --card-w: 120px; --card-h: 124px; --card-name: 16px; --card-role: 13px; width: calc((var(--card-w) + 34px) * var(--card-scale)); height: calc(var(--card-h) * var(--card-scale)); overflow: visible; padding: 0; border: 0; background: transparent; color: #614c45; cursor: pointer; font: inherit; }
+.relationship-chart.relationship-chart .relationship-chart-person.is-large { --card-w: 148px; --card-h: 152px; --card-name: 18px; --card-role: 14px; }
+.relationship-chart.relationship-chart .relationship-chart-person.is-medium { --card-w: 120px; --card-h: 124px; --card-name: 16px; --card-role: 13px; }
+.relationship-chart.relationship-chart .relationship-chart-person.is-small { --card-w: 96px; --card-h: 100px; --card-name: 14px; --card-role: 12px; }
+/* Plain rounded-square frame is the default for every project; the bread-loaf frame
+   is opted into only for the bakery-themed "Bake Love Feeling" via .frame-loaf below. */
+.relationship-chart-frame { display: block; flex-shrink: 0; box-sizing: border-box; width: calc(var(--card-w) * var(--card-scale)); height: calc(var(--card-h) * var(--card-scale)); padding: calc(var(--card-h) * var(--card-scale) * .13) calc(var(--card-w) * var(--card-scale) * .135) calc(var(--card-h) * var(--card-scale) * .10); border: 0; background: url('/icons/character-frame.svg') center / 100% 100% no-repeat; filter: drop-shadow(0 5px 7px #76513e1c); transition: transform .18s; }
+.relationship-chart-frame .relationship-chart-portrait { border-radius: 18%; }
+.relationship-chart.frame-loaf .relationship-chart-frame { background-image: url('/icons/character-loaf-frame.svg'); }
+.relationship-chart.frame-loaf .relationship-chart-frame .relationship-chart-portrait { border-radius: 46% 46% 15% 15% / 40% 40% 13% 13%; }
+.relationship-chart-person:hover .relationship-chart-frame { transform: translateY(-3px); }
+.relationship-chart-person.linking .relationship-chart-frame { outline: 3px solid #977258; outline-offset: 3px; border-radius: 50%; }
+.relationship-chart-portrait { width: 100%; height: 100%; color: #b76d79; }
+.relationship-chart-person strong { font-family: inherit; font-weight: 600; font-size: max(14px, calc(var(--card-name) * var(--card-scale))); line-height: 1.25; text-shadow: 0 0 3px #fffcf6, 0 0 6px #fffcf6, 0 0 10px #fffcf6; }.relationship-chart-person > span:last-child { font-size: max(12px, calc(var(--card-role) * var(--card-scale))); color: #897468; text-shadow: 0 0 3px #fffcf6, 0 0 6px #fffcf6, 0 0 10px #fffcf6; }
+.relationship-chart.relationship-chart .relationship-chart-connection { position: absolute; transform: translate(-50%, -50%); box-sizing: border-box; width: calc(16px * var(--card-scale, 1)); height: calc(16px * var(--card-scale, 1)); padding: 0; border: 2px solid #fffcf6; border-radius: 50%; background: var(--connection-color, #a67c52); box-shadow: 0 1px 4px #38282033; cursor: pointer; transition: opacity .15s, transform .15s; }
+.relationship-chart.relationship-chart .relationship-chart-connection:hover, .relationship-chart.relationship-chart .relationship-chart-connection.is-revealed { transform: translate(-50%, -50%) scale(1.3); }
+.relationship-chart-connection-label { position: absolute; left: 50%; bottom: 100%; transform: translate(-50%, -8px); min-width: max-content; max-width: 200px; white-space: normal; overflow-wrap: anywhere; background: color-mix(in srgb, var(--connection-color, #a67c52) 16%, #fff); border: 1px solid color-mix(in srgb, var(--connection-color, #a67c52) 55%, transparent); color: color-mix(in srgb, var(--connection-color, #a67c52) 78%, #3a2620); border-radius: 12px; padding: calc(6px * var(--card-scale, 1)) calc(10px * var(--card-scale, 1)); font-family: inherit; font-size: calc(13px * var(--card-scale, 1)); line-height: 1.35; opacity: 0; pointer-events: none; transition: opacity .12s; }
+.relationship-chart.relationship-chart .relationship-chart-connection:hover .relationship-chart-connection-label, .relationship-chart.relationship-chart .relationship-chart-connection.is-revealed .relationship-chart-connection-label, .relationship-chart.relationship-chart .relationship-chart-connection:focus-visible .relationship-chart-connection-label { opacity: 1; }
+.relationship-chart-person, .relationship-chart.relationship-chart .relationship-chart-connection { transition: opacity .15s; }
+.relationship-chart-person.is-dimmed, .relationship-chart.relationship-chart .relationship-chart-connection.is-dimmed { opacity: .3; }
+.relationship-chart-lines > path, .relationship-chart-lines > g { transition: opacity .15s; }
+.relationship-chart-lines > path.is-dimmed, .relationship-chart-lines > g.is-dimmed { opacity: .18; }
+.relationship-chart button:focus-visible, .relationship-chart select:focus-visible { outline: 3px solid #977258; outline-offset: 4px; }
+/* No tap flash or focus box around a card that was clicked; keyboard focus still shows. */
+.relationship-chart.relationship-chart .relationship-chart-person { -webkit-tap-highlight-color: transparent; user-select: none; }
+.relationship-chart.relationship-chart .relationship-chart-person:focus:not(:focus-visible), .relationship-chart.relationship-chart .relationship-chart-connection:focus:not(:focus-visible) { outline: none; }
+.relationship-chart-note { padding: 15px 28px; border-top: 1px solid #eddfd3; background: #faf5ec; }
+.relationship-chart-dialog { box-sizing: border-box; width: min(420px, calc(100% - 32px)); max-height: 85dvh; padding: 32px; border: 1px solid #e1c9b8; border-radius: 20px; color: #614c45; background: #fffcf6; box-shadow: 0 20px 80px #38282033; }
+.relationship-chart-dialog::backdrop { background: #34242166; backdrop-filter: blur(3px); }
+.relationship-chart.relationship-chart .relationship-chart-close { position: absolute; top: 8px; right: 10px; border: 0; background: transparent; color: #614c45; font-size: 28px; cursor: pointer; padding: 4px 10px; }
+.relationship-chart-dialog > .relationship-chart-portrait { display: block; width: 90px; height: 90px; margin: 20px auto; }
+.relationship-chart-dialog h3 { font-family: inherit; font-size: 1.1rem; font-weight: 600; margin: 20px 0 8px; }.relationship-chart-dialog p { font-size: 14px; line-height: 1.7; }.relationship-chart-detail-subtitle { color: #a46e67; }
+.relationship-chart-detail-links { border-top: 1px solid #eddfd3; margin-top: 22px; }.relationship-chart-detail-links h4 { font-size: 12px; }.relationship-chart-detail-links button { display: flex; justify-content: space-between; gap: 12px; width: 100%; border: 0; background: #f7eee4; border-radius: 8px; padding: 12px; margin-top: 8px; color: #614c45; cursor: pointer; }.relationship-chart-detail-links button span { color: #88766d; }
+.relationship-chart-actor-wrap { position: relative; display: inline-block; }
+.relationship-chart.relationship-chart .relationship-chart-actor-link { padding: 0; border: 0; background: transparent; color: inherit; font: inherit; text-decoration: underline dotted; text-underline-offset: 3px; cursor: pointer; }
+.relationship-chart.relationship-chart .relationship-chart-actor-link:hover,
+.relationship-chart.relationship-chart .relationship-chart-actor-link[aria-expanded="true"] { background: transparent; color: #a67c52; }
+.relationship-chart-actor-popover { position: absolute; z-index: 5; top: 50%; left: calc(100% + 6px); transform: translateY(-50%); display: flex; gap: 8px; padding: 6px 8px; border: 1px solid #e1c9b8; border-radius: 12px; background: #fffcf6; box-shadow: 0 8px 20px #38282033; white-space: nowrap; }
+.relationship-chart-actor-popover a { display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 50%; background: #f7eee4; }
+.relationship-chart-actor-popover a:hover { background: #eadbd2; }
+.relationship-chart-actor-popover img { width: 15px; height: 15px; }
+@media (max-width: 520px) { .relationship-chart:not(.is-exporting) .relationship-chart-heading { padding: 20px 16px 16px; flex-direction: column; gap: 8px; }.relationship-chart:not(.is-exporting) .relationship-chart-toolbar { margin: 0 16px; }.relationship-chart:not(.is-exporting) .relationship-chart-canvas { --card-scale: .82; }.relationship-chart:not(.is-exporting) .relationship-chart-connection-label { font-size: 12px; padding: 5px 9px; }.relationship-chart:not(.is-exporting) .relationship-chart-decoration { display: none; }.relationship-chart:not(.is-exporting) .relationship-chart-note { padding: 14px 16px; } }
+
+.relationship-chart-portrait { object-fit: cover; border-radius: inherit; }
+.relationship-chart-person strong, .relationship-chart-person > span:last-child { width: 100%; max-width: 100%; overflow-wrap: break-word; }
+.relationship-chart.relationship-chart .relationship-chart-person { text-align: center; }
+/* the short role wraps in a narrower column than the name, so the caption stays a tight block */
+.relationship-chart-person > span:last-child { max-width: calc(var(--card-w) * var(--card-scale)); }
+.relationship-chart-editor-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 16px; margin: 16px 0; font-size: 13px; }
+.relationship-chart-visibility { display: flex !important; align-items: center; gap: 8px; font-size: 13px; cursor: pointer; }
+.relationship-chart-visibility input[type="checkbox"] { width: 16px; height: 16px; margin: 0; accent-color: #a67c52; }
+.relationship-chart-editor details { margin-top: 18px; border-top: 1px solid #e6d7c9; padding-top: 14px; }
+.relationship-chart-editor summary { cursor: pointer; color: #806348; font-weight: 600; }
+.relationship-chart-editor fieldset { min-width: 0; border: 1px solid #e6d7c9; border-radius: 10px; padding: 16px; margin: 18px 0; }
+.relationship-chart-editor legend { font-size: 14px; color: #806348; padding: 0 6px; }
+.relationship-chart-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-bottom: 12px; }
+.relationship-chart-fields label { min-width: 0; }.relationship-chart-fields input, .relationship-chart-fields select { box-sizing: border-box; max-width: 100%; }
+.relationship-chart-change { margin: 16px 0; padding: 14px; background: #faf6ef; border-radius: 8px; }
+.relationship-chart-editor .relationship-chart-toolbar label { font-weight: 400; margin: 0; }.relationship-chart-editor .relationship-chart-toolbar select { width: auto; }
+@media (max-width: 520px) { .relationship-chart-fields { grid-template-columns: 1fr; } }
+
+.eventform-form .relationship-chart .relationship-chart-person:hover { background: transparent; }
+.eventform-form .relationship-chart .relationship-chart-toolbar label { display: flex; align-items: center; }
+.eventform-form .relationship-chart .relationship-chart-toolbar select { background-color: #fff; color: #333; color-scheme: light; height: 32px; min-height: 32px; padding: 0 26px 0 10px; border-color: #ddd; font-size: 0.85rem; }
+.eventform-form .relationship-chart-visibility input[type="checkbox"] { min-height: 16px; height: 16px; width: 16px; }
+.relationship-chart-editor { scroll-margin-top: 24px; }
+.relationship-chart-inline-editor { padding: 20px; border: 1px solid #eadbd2; border-radius: 20px; background: #fffcf6; }
+.relationship-chart-edit-fields { border: 0; padding: 0; margin: 0; min-width: 0; }
+.relationship-chart-person .relationship-chart-thai-name { width: 100%; font-size: 13px; line-height: 1.4; color: #896d59; text-shadow: 0 0 3px #fffcf6, 0 0 6px #fffcf6, 0 0 10px #fffcf6; max-width: 100%; overflow-wrap: break-word; }
+.relationship-chart-episode-list { display: grid; gap: 10px; margin: 14px 0; }
+.relationship-chart-episode-row { display: flex; gap: 8px; align-items: end; flex-wrap: wrap; }
+.relationship-chart-episode-row > label:not(.visibility-toggle) { flex: 1; min-width: 0; margin: 0; }
+.relationship-chart-episode-row .visibility-toggle { flex: 0 0 auto; width: auto; margin: 0 0 6px; }
+.eventform-form .visibility-toggle { display: inline-flex; width: auto; margin-bottom: 0; }
+.eventform-form .visibility-toggle input[type="checkbox"] { width: 12px; height: 12px; min-height: 12px; margin: 0; }
+.relationship-chart-group { position: absolute; box-sizing: border-box; border: 2px solid var(--group-color); border-radius: 16px; background: color-mix(in srgb, var(--group-color) 5%, transparent); pointer-events: none; }
+.relationship-chart-group.circle { border-radius: 50%; }
+.relationship-chart-group-label { overflow-wrap: break-word; position: absolute; left: 50%; transform: translateX(-50%); max-width: 90%; margin: 0; padding: 2px 10px; border: 0; background: #fffcf6; color: var(--group-color); border-radius: 10px; font: inherit; font-size: calc(12px * var(--card-scale, 1)); font-weight: 600; line-height: 1.4; text-align: center; cursor: pointer; pointer-events: auto; }
+.relationship-chart-group-label.top { top: -12px; }
+.relationship-chart-group-label.bottom { bottom: -12px; }
+.relationship-chart-group-label:hover { text-decoration: none; }
+.relationship-chart-group-handle { position: absolute; right: -8px; bottom: -8px; z-index: 3; box-sizing: border-box; width: calc(16px * var(--card-scale, 1)); height: calc(16px * var(--card-scale, 1)); padding: 0; border: 2px solid #fffcf6; border-radius: 50%; background: var(--group-color); box-shadow: 0 1px 3px #38282033; cursor: nwse-resize; pointer-events: auto; }
+.relationship-chart-canvas-resize { position: absolute; left: 50%; bottom: 4px; z-index: 4; transform: translateX(-50%); width: 64px; height: 16px; padding: 0; border: 0; background: transparent; cursor: ns-resize; }
+.relationship-chart-canvas-resize::before { content: ""; display: block; margin: 6px auto 0; width: 100%; height: 4px; border-radius: 4px; background: #d8c4ad; }
+.relationship-chart-canvas-resize:hover::before, .relationship-chart-canvas-resize:focus-visible::before { background: #a67c52; }
+.relationship-chart-heading h2, .relationship-chart-heading p, .relationship-chart-note, .relationship-chart-dialog p { white-space: pre-wrap; overflow-wrap: anywhere; }
+.relationship-chart-decoration { pointer-events: none; }
+.relationship-chart-popover-backdrop { position: fixed; inset: 0; z-index: 10; background: #34242166; backdrop-filter: blur(3px); }
+.relationship-chart-popover { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 11; box-sizing: border-box; width: min(380px, calc(100% - 32px)); max-height: 85dvh; overflow-y: auto; padding: 24px; border: 1px solid #e1c9b8; border-radius: 20px; background: #fffcf6; color: #614c45; box-shadow: 0 20px 80px #38282033; font-family: inherit; font-size: 1rem; }
+.relationship-chart-popover label { display: block; margin-bottom: 10px; }
+.relationship-chart-popover input[type="text"], .relationship-chart-popover input:not([type]), .relationship-chart-popover textarea { width: 100%; box-sizing: border-box; }
+.relationship-chart-popover input[type="color"] { width: 100%; height: 34px; box-sizing: border-box; padding: 2px; border: 1px solid #dfcbbc; border-radius: 8px; cursor: pointer; }
+.relationship-chart-popover-title { font-weight: 600; margin: 0 0 10px; padding-right: 20px; }
+.relationship-chart-popover .relationship-chart-fields { grid-template-columns: 1fr 1fr; }
+.relationship-chart-popover .relationship-chart-editor-actions { margin: 10px 0 0; }
+.relationship-chart-swatches { display: flex; gap: 8px; margin: -2px 0 10px; }
+.relationship-chart-swatches button:not(.relationship-chart-symbol) { width: 22px; height: 22px; padding: 0; border-radius: 50%; border: 2px solid transparent; background: var(--swatch-color); cursor: pointer; }
+.relationship-chart-swatches button.is-selected:not(.relationship-chart-symbol) { border-color: #614c45; }
+.relationship-chart-symbol { width: 26px; height: 26px; padding: 0; border-radius: 6px; border: 1px solid #e6d7c9; background: #fff; cursor: pointer; font-size: 13px; line-height: 1; }
+.relationship-chart-symbol.is-selected { background: #f7eee4; border-color: #977258; }
+
+.relationship-chart-label-measure { position: absolute; top: 0; left: 0; height: 0; overflow: hidden; visibility: hidden; pointer-events: none; }
+.relationship-chart-label-measure .relationship-chart-connection-label { position: static; box-sizing: border-box; min-width: 0; display: block; width: max-content; transform: none; white-space: normal; overflow-wrap: anywhere; opacity: 1; }
+.relationship-chart.relationship-chart .relationship-chart-connection.has-inline-label { width: auto; height: auto; max-width: 190px; padding: 6px 10px; border-radius: 12px; border: 1px solid color-mix(in srgb, var(--connection-color, #a67c52) 48%, transparent); background: color-mix(in srgb, var(--connection-color, #a67c52) 13%, #fffcf6); box-shadow: 0 1px 3px #38282018; }
+.relationship-chart-connection.has-inline-label .relationship-chart-connection-label { position: static; min-width: 0; display: block; transform: none; opacity: 1; padding: 0; border: 0; background: transparent; max-width: none; white-space: normal; overflow-wrap: anywhere; text-align: center; font-size: calc(13px * var(--card-scale, 1)); color: color-mix(in srgb, var(--connection-color, #a67c52) 78%, #3a2620); }
+.relationship-chart.relationship-chart .relationship-chart-connection.has-inline-label:hover, .relationship-chart.relationship-chart .relationship-chart-connection.has-inline-label.is-revealed { transform: translate(-50%, -50%) scale(1.06); }
+
+.relationship-chart-popover label { font-family: inherit; font-size: 1rem; font-weight: 600; line-height: 1.35; }
+.relationship-chart-popover input, .relationship-chart-popover select, .relationship-chart-popover textarea { font-family: inherit; font-size: .95rem; line-height: 1.4; }
+.relationship-chart-popover .relationship-chart-editor-actions button, .relationship-chart-inline-editor > fieldset > .relationship-chart-editor-actions button { font-family: inherit; font-size: .95rem; }
+.relationship-chart-person .relationship-chart-thai-name { font-family: inherit; font-size: max(12px, calc(var(--card-role) * var(--card-scale))); }
+.relationship-chart .relationship-chart-group-edge { position: absolute; z-index: 4; padding: 0; border: 2px solid #fffcf6; border-radius: 6px; background: var(--group-color); pointer-events: auto; touch-action: none; box-shadow: 0 1px 3px #38282033; }
+.relationship-chart-group-edge.top, .relationship-chart-group-edge.bottom { width: 32px; height: 12px; left: 25%; transform: translateX(-50%); cursor: ns-resize; }
+.relationship-chart-group-edge.top { top: -6px; }.relationship-chart-group-edge.bottom { bottom: -6px; }
+.relationship-chart-group-edge.left, .relationship-chart-group-edge.right { width: 12px; height: 32px; top: 50%; transform: translateY(-50%); cursor: ew-resize; }
+.relationship-chart-group-edge.left { left: -6px; }.relationship-chart-group-edge.right { right: -6px; }
+.relationship-chart-group-handle { touch-action: none; }
+.relationship-chart-story-label { white-space: nowrap; flex-shrink: 0; }
+.relationship-chart-episode-controls > label:first-child { min-width: 0; }
+.relationship-chart-line-legend { display: flex; flex-wrap: wrap; gap: 8px 18px; padding: 0; margin: 0; list-style: none; font-size: .85rem; line-height: 1.4; color: #614c45; }
+.relationship-chart-line-legend li { display: flex; align-items: center; gap: 6px; min-width: 0; max-width: 100%; }
+.relationship-chart-line-legend svg { flex-shrink: 0; }
+.relationship-chart-line-legend span { overflow-wrap: anywhere; }
+@media (max-width: 520px) { .relationship-chart-episode-controls { max-width: 100%; }.relationship-chart-toolbar select { min-width: 0; max-width: 180px; }.relationship-chart-line-legend { flex-basis: 100%; } }
+/* Editors sit beside the chart instead of blocking it with a modal. */
+.relationship-chart .relationship-chart-side-panel { position: relative; inset: auto; transform: none; z-index: auto; width: auto; max-height: none; margin: 0; padding: 24px; border: 0; border-top: 1px solid #eadbd2; border-radius: 0; box-shadow: none; min-width: 0; }
+.relationship-chart-side-panel .relationship-chart-fields { grid-template-columns: 1fr; }
+.relationship-chart-side-panel .relationship-chart-popover-title { padding-right: 30px; }
+.relationship-chart-side-save { display: flex; flex-wrap: wrap; gap: 10px; position: sticky; bottom: -24px; background: #fffcf6; border-top: 1px solid #eadbd2; margin-top: 20px; padding: 16px 0 0; }
+.relationship-chart-side-save button { font: inherit; font-size: .95rem; }
+/* Keep expansion out of ancestor intrinsic sizing, especially the editor fieldset. */
+.relationship-chart-section, .relationship-chart-inline-editor, .relationship-chart-edit-fields,
+.relationship-chart-editor { min-width: 0; box-sizing: border-box; width: 100%; }
+.relationship-chart-edit-fields { margin: 0; padding: 0; border: 0; }
+.relationship-chart { min-width: 0; container: relationship-chart-layout / inline-size; }
+.relationship-chart.is-expanded { --expanded-width: calc(100vw - 48px); box-sizing: border-box; width: var(--expanded-width); margin-inline: calc((100% - var(--expanded-width)) / 2); }
+.relationship-chart-workspace { display: grid; grid-template-columns: minmax(0, 1fr); align-items: start; }
+.relationship-chart-workspace > .relationship-chart-viewport { min-width: 0; }
+.relationship-chart-workspace > .relationship-chart-side-panel { position: relative; inset: auto; transform: none; width: auto; max-height: none; overflow: visible; }
+@container relationship-chart-layout (min-width: 1050px) {
+    .has-side-editor > .relationship-chart-workspace { grid-template-columns: clamp(280px, 26cqw, 380px) minmax(0, 1fr); }
+    .has-side-editor > .relationship-chart-workspace > .relationship-chart-viewport { grid-column: 2; grid-row: 1; }
+    .has-side-editor > .relationship-chart-workspace > .relationship-chart-side-panel { grid-column: 1; grid-row: 1; }
+    .relationship-chart-workspace > .relationship-chart-side-panel {
+        position: sticky;
+        top: max(16px, env(safe-area-inset-top));
+        align-self: start;
+        max-height: none;
+        overflow: visible;
+        border-top: 0;
+        border-right: 1px solid #eadbd2;
+    }
+}
+@media (max-width: 600px) {
+    .relationship-chart.is-expanded { --expanded-width: calc(100vw - 24px); }
+    .relationship-chart-heading { flex-wrap: wrap; }
+}
+.relationship-chart.relationship-chart .relationship-chart-expand, .relationship-chart.relationship-chart .relationship-chart-download { display: inline-flex; align-items: center; justify-content: center; min-width: 38px; height: 34px; padding: 0 9px; border: 1px solid #dfcbbc; border-radius: 8px; background: #fff; color: #7a5a45; cursor: pointer; }
+.relationship-chart-icon { display: block; width: 20px; height: 20px; }
+.relationship-chart-spinner { display: block; width: 15px; height: 15px; border: 2px solid #dfcbbc; border-top-color: #7a5a45; border-radius: 50%; animation: relationship-chart-spin .7s linear infinite; }
+@keyframes relationship-chart-spin { to { transform: rotate(360deg); } }
+.relationship-chart.relationship-chart .relationship-chart-expand:hover, .relationship-chart.relationship-chart .relationship-chart-download:hover:not(:disabled) { background: #faf3ea; }
+.relationship-chart.relationship-chart .relationship-chart-download:disabled { opacity: .6; cursor: wait; }
+.relationship-chart-download-error { max-width: 220px; margin: 0; text-align: right; font-size: 11px; line-height: 1.4; color: #a4614f; }
+.relationship-chart-expand[aria-pressed="true"] { box-shadow: inset 0 0 0 1px #a67c52; }
+
+.relationship-chart.relationship-chart .relationship-chart-group-label,
+.relationship-chart.relationship-chart .relationship-chart-group-label:hover {
+    z-index: 1;
+    color: #614c45;
+    background: #fffcf6;
+    border: 0;
+    box-shadow: none;
+    text-decoration: none;
+    opacity: 1;
+}
+/* Scale the chart introduction in expanded view, independently of character cards. */
+.relationship-chart.is-expanded > .relationship-chart-heading .relationship-chart-eyebrow {
+    font-size: clamp(15px, 1vw, 16px);
+    letter-spacing: 2px;
+}
+.relationship-chart.is-expanded > .relationship-chart-heading h2 {
+    font-size: clamp(36px, 3.2vw, 48px);
+    line-height: 1.2;
+}
+.relationship-chart.is-expanded > .relationship-chart-heading p {
+    font-size: 18px;
+    line-height: 1.6;
+}
+/* Give group badges clear hover feedback without an underline or accent color. */
+.relationship-chart.relationship-chart .relationship-chart-group-label {
+    transition: transform .15s ease, box-shadow .15s ease, background-color .15s ease;
+}
+.relationship-chart.relationship-chart .relationship-chart-group-label:hover,
+.relationship-chart.relationship-chart .relationship-chart-group-label:focus-visible {
+    transform: translate(-50%, -2px);
+    background: #fff;
+    box-shadow: 0 3px 9px #38282020;
+}
+.relationship-chart.relationship-chart .relationship-chart-group-label:active {
+    transform: translate(-50%, 0);
+    box-shadow: 0 1px 3px #38282018;
+}
+@media (prefers-reduced-motion: reduce) {
+    .relationship-chart.relationship-chart .relationship-chart-group-label { transition: none; }
+}
+
+/* The downloaded image is the wide chart with just its title and the version it shows. */
+/* The export copy is laid out off-screen at a fixed width, so the visible chart never moves
+   and a phone produces the same wide image a desktop does. */
+.relationship-chart-export-stage { --export-width: 2400px; --sheet-scale: 1.5; position: fixed; left: 0; top: 0; z-index: -1; width: var(--export-width); opacity: 0; pointer-events: none; -webkit-text-size-adjust: none; text-size-adjust: none; }
+.relationship-chart-export-stage .relationship-chart { width: var(--export-width); max-width: none; margin: 0; }
+.relationship-chart.is-exporting > .relationship-chart-toolbar { display: none; }
+.relationship-chart.is-exporting .relationship-chart-viewport { overflow: visible; }
+.relationship-chart.is-exporting > .relationship-chart-heading { justify-content: center; text-align: center; padding-bottom: calc(24px * var(--sheet-scale, 1)); }
+.relationship-chart.is-exporting > .relationship-chart-heading > div { width: 100%; min-width: 0; max-width: none; }
+.relationship-chart.is-exporting .relationship-chart-heading p { display: none; }
+.relationship-chart.is-exporting > .relationship-chart-note { text-align: center; font-style: italic; }
+/* Everything in the sheet grows with it, so a wider export is not just more empty space. */
+.relationship-chart.is-exporting .relationship-chart-eyebrow { font-size: calc(22px * var(--sheet-scale, 1)); letter-spacing: calc(3px * var(--sheet-scale, 1)); }
+.relationship-chart.is-exporting .relationship-chart-heading h2 { font-size: calc(72px * var(--sheet-scale, 1)); margin: calc(4px * var(--sheet-scale, 1)) 0 0; white-space: nowrap; overflow-wrap: normal; }
+.relationship-chart.is-exporting > .relationship-chart-note { font-size: calc(20px * var(--sheet-scale, 1)); padding: calc(8px * var(--sheet-scale, 1)) 28px; }
+.relationship-chart.is-exporting .relationship-chart-decoration { font-size: calc(24px * var(--sheet-scale, 1)); top: calc(20px * var(--sheet-scale, 1)); }
+.relationship-chart.is-exporting .relationship-chart-canvas { --card-scale: var(--export-card-scale, 1.7); height: var(--export-canvas-height, calc(var(--canvas-height, 490px) * var(--card-scale, 1))); }
+/* The sheet has horizontal room to spare, so captions run wider and wrap onto fewer lines.
+   Shorter captions leave more vertical room, which is what lets the cards grow. */
+.relationship-chart.is-exporting .relationship-chart-person strong,
+.relationship-chart.is-exporting .relationship-chart-person > span:last-child,
+.relationship-chart.is-exporting .relationship-chart-person .relationship-chart-thai-name { width: max-content; max-width: calc((var(--card-w) + 130px) * var(--card-scale, 1)); }
+/* Air between the chart and the credit line. */
+.relationship-chart.is-exporting .relationship-chart-viewport { padding-bottom: calc(22px * var(--sheet-scale, 1)); }
+
+/* Export typography remains readable when the 4:3 image is viewed on a phone. */
+.relationship-chart.is-exporting .relationship-chart-person strong { font-size: calc(var(--card-name) * var(--card-scale) * 1.15); }
+.relationship-chart.is-exporting .relationship-chart-person > span:last-child,
+.relationship-chart.is-exporting .relationship-chart-person .relationship-chart-thai-name { font-size: calc(var(--card-role) * var(--card-scale) * 1.2); }
+.relationship-chart.is-exporting .relationship-chart-group-label { font-size: calc(17px * var(--sheet-scale, 1)); padding: 4px 14px; }
+.relationship-chart.is-exporting .relationship-chart-connection-label,
+.relationship-chart.is-exporting .relationship-chart-connection.has-inline-label .relationship-chart-connection-label { font-size: calc(15px * var(--card-scale)); }
+
+.relationship-chart-export-subtitle { display: block; margin-top: calc(12px * var(--sheet-scale, 1)); font: italic calc(24px * var(--sheet-scale, 1)) / 1.4 Georgia, serif; color: #b79980; white-space: pre-wrap; overflow-wrap: anywhere; }
+/* Editing uses the same form treatment as project episodes and special items. */
+.eventform-form.relationship-chart-inline-editor { background: transparent; border: 0; border-radius: 0; padding: 0; }
+.relationship-chart-editor > details.series-metadata-section { margin-top: 24px; padding: 9px; border: 1px solid rgba(166, 124, 82, .3); border-radius: 12px; background: rgba(166, 124, 82, .07); }
+.relationship-chart-editor > details > summary { color: #3f352d; font-size: 1.05rem; font-weight: 600; line-height: 1.35; }
+.relationship-chart-editor > details > .eventform-field-note { margin: 6px 0 12px; font-size: .85rem; line-height: 1.4; }
+.relationship-chart-editor > details > fieldset { padding: 12px; border: 1px solid rgba(0, 0, 0, .15); border-radius: 8px; background: transparent; }
+.relationship-chart-editor > details > fieldset > legend { color: #3f352d; font-size: 1rem; font-weight: 600; }
+.relationship-chart-editor .relationship-chart-episode-row.series-metadata-row { display: grid; grid-template-columns: minmax(0, 1fr) auto 38px 38px 38px; gap: 6px; align-items: end; padding: 7px 0; border-top: 1px solid rgba(166, 124, 82, .22); }
+.relationship-chart-episode-row.series-metadata-row > button { height: 40px; padding: 0; }
+.relationship-chart-episode-row.series-metadata-row .visibility-toggle { align-self: center; }
+.relationship-chart-editor > details .relationship-chart-fields { margin-top: 12px; align-items: start; }
+.relationship-chart-editor > details label:not(.visibility-toggle):not(.relationship-chart-visibility) { margin-bottom: 6px; }
+.relationship-chart .relationship-chart-side-panel { color: #2f2924; background: #fffaf4; padding: 16px; }
+.relationship-chart-side-panel .relationship-chart-popover-title { font-size: 1.05rem; line-height: 1.35; margin-bottom: 16px; color: #3f352d; }
+.relationship-chart-side-panel .relationship-chart-fields { gap: 12px; margin-bottom: 12px; }
+.relationship-chart-side-panel > label { margin-bottom: 16px; }
+.relationship-chart-side-panel .relationship-chart-editor-actions { gap: 8px; }
+.relationship-chart-side-save { background: #fffaf4; bottom: -16px; padding-bottom: 8px; }
+.eventform-form .relationship-chart-form-remove { color: #a21d31; border: 1px solid currentColor; background: transparent; border-radius: 8px; }
+.eventform-form .relationship-chart-side-save .form-primary-submit { font-size: 1.05rem; }
+@media (max-width: 520px) {
+    .relationship-chart-editor .relationship-chart-episode-row.series-metadata-row { grid-template-columns: minmax(0, 1fr) 38px 38px 38px; }
+    .relationship-chart-episode-row.series-metadata-row > label:first-child { grid-column: 1 / -1; }
+}
+
+.relationship-chart-outline-swatches { flex-wrap: wrap; margin: 8px 0 0; }
+.relationship-chart-outline-swatches button { flex-shrink: 0; }
+
+/* Keep field labels aligned even when one control has a palette beneath it. */
+.relationship-chart-editor > details .relationship-chart-fields > button {
+    align-self: end;
+    min-height: 46px;
+    margin-bottom: 6px;
+}
+.relationship-chart-editor .relationship-chart-episode-row.series-metadata-row > label:not(.visibility-toggle) {
+    grid-template-rows: 20px 46px;
+    gap: 0;
+    margin-bottom: 0;
+}
+.relationship-chart-editor .relationship-chart-episode-row.series-metadata-row > button {
+    height: 46px;
+}
+.relationship-chart-editor .relationship-chart-episode-row.series-metadata-row > .visibility-toggle {
+    align-self: end;
+    margin: 0 0 13px;
+}
+
+.relationship-chart.has-side-editor > .relationship-chart-toolbar { align-self: start; }
+.relationship-chart.has-side-editor > .relationship-chart-heading { min-width: 0; }
+.relationship-chart.has-side-editor .relationship-chart-swatches { flex-wrap: wrap; }
+.relationship-chart.has-side-editor .relationship-chart-side-save { z-index: 2; }
+
+
+/* The editor moves as one panel with page scrolling, including its actions. */
+.relationship-chart-side-panel .relationship-chart-side-save { position: static; }
+
+.relationship-chart-members-heading { margin-top: 12px; font-size: 13px; font-weight: 600; }
+.relationship-chart-editor > details .relationship-chart-members,
+.relationship-chart-side-panel .relationship-chart-members {
+    max-height: 160px;
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
+    scrollbar-gutter: stable;
+    padding: 10px;
+    margin-top: 6px;
+    gap: 8px 12px;
+    border: 1px solid #e6d7c9;
+    border-radius: 8px;
+}
+.relationship-chart-members .relationship-chart-visibility { margin: 0; overflow-wrap: anywhere; }
+.relationship-chart-members input[type="checkbox"] { flex-shrink: 0; }
+.relationship-chart-members:focus-visible { outline: 2px solid #a67c52; outline-offset: 2px; }

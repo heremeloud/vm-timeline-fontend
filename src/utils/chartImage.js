@@ -46,7 +46,7 @@ async function fromNetwork(url) {
 export async function inlineImages(root) {
     const portraits = [];
     const rootBox = root.getBoundingClientRect();
-    for (const node of root.querySelectorAll("img.character-map-portrait")) {
+    for (const node of root.querySelectorAll("img.relationship-chart-portrait")) {
         const source = node.currentSrc || node.src;
         if (!source) continue;
         let png;

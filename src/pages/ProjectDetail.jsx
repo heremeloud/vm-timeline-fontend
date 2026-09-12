@@ -3,7 +3,7 @@ import { useParams, useNavigate, Link } from "react-router-dom";
 import { getAdminProject, getProject, deleteProject } from "../api/projectsService";
 import { ROUTES } from "../routes";
 import Avatar from "../components/Avatar";
-import CharacterMapSection from "../components/CharacterMapSection";
+import RelationshipChartSection from "../components/RelationshipChartSection";
 import "../styles/Projects.css";
 import { formatEventDateRange } from "../utils/eventDateRange";
 
@@ -293,8 +293,8 @@ export default function ProjectDetail() {
                 </div>
             </div>
 
-            {(project.character_map || (isAdmin && project.category === "series")) &&
-                <CharacterMapSection key={project.id} project={project} isAdmin={isAdmin} onSaved={(patch) => setProject((current) => ({ ...current, ...patch }))} />}
+            {(project.relationship_chart || (isAdmin && project.category === "series")) &&
+                <RelationshipChartSection key={project.id} project={project} isAdmin={isAdmin} onSaved={(patch) => setProject((current) => ({ ...current, ...patch }))} />}
 
 
             {project.filming_days?.length > 0 && (

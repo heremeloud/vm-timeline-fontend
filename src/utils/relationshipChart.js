@@ -5,7 +5,7 @@ const sampleCharacters = [
     { id: "d", name: "Character D", role: "The familiar face", x: 73, y: 78, tone: "#9680a7", description: "Someone with a connection to the past. This is a sample supporting character." },
 ];
 
-export function sampleCharacterMap() {
+export function sampleRelationshipChart() {
     return {
         characters: sampleCharacters.map((character) => ({ ...character, actor: "", photo: "" })),
         relationships: [
@@ -27,7 +27,7 @@ const TRIM_MIN_SPAN = 0.04;
 const ARROW_LENGTH = 12;
 const ARROW_HALF_WIDTH = 6;
 
-// Card footprints in CSS pixels, mirrored from .character-map-person in CharacterMap.css.
+// Card footprints in CSS pixels, mirrored from .relationship-chart-person in RelationshipChart.css.
 export const CARD_SIZES = {
     large: { width: 148, height: 152, textAllowance: 46 },
     medium: { width: 120, height: 124, textAllowance: 42 },
@@ -241,7 +241,7 @@ export function relationshipsAtEpisode(data, episode, insets = null) {
     });
 }
 
-export function characterMapEpisodes(data, episodeCount = 0) {
+export function relationshipChartEpisodes(data, episodeCount = 0) {
     if (Array.isArray(data.episodes)) return [...data.episodes];
     const last = Math.min(1000, Math.max(1, Number(episodeCount) || 0,
         ...data.relationships.flatMap((relationship) => relationship.changes.map((change) => Number(change.episode) || 1)),
@@ -249,21 +249,21 @@ export function characterMapEpisodes(data, episodeCount = 0) {
     return Array.from({ length: last }, (_, index) => index + 1);
 }
 
-export function isCharacterMapEpisodePublic(data, episode) {
+export function isRelationshipChartEpisodePublic(data, episode) {
     return !(data.hidden_episodes || []).includes(episode);
 }
 
-export function setCharacterMapEpisodePublic(data, episode, isPublic) {
+export function setRelationshipChartEpisodePublic(data, episode, isPublic) {
     const hidden = (data.hidden_episodes || []).filter((number) => number !== episode);
     return { ...data, hidden_episodes: isPublic ? hidden : [...hidden, episode].sort((a, b) => a - b) };
 }
 
 // Admins keep every entry; the public only sees the ones marked public.
-export function visibleCharacterMapEpisodes(data, episodes, isAdmin = false) {
-    return isAdmin ? episodes : episodes.filter((number) => isCharacterMapEpisodePublic(data, number));
+export function visibleRelationshipChartEpisodes(data, episodes, isAdmin = false) {
+    return isAdmin ? episodes : episodes.filter((number) => isRelationshipChartEpisodePublic(data, number));
 }
 
-export function removeCharacterMapEpisode(data, episodes, episode) {
+export function removeRelationshipChartEpisode(data, episodes, episode) {
     return { ...data, episodes: episodes.filter((number) => number !== episode),
         hidden_episodes: (data.hidden_episodes || []).filter((number) => number !== episode),
         characters: data.characters.map((character) => character.changes?.length
@@ -323,13 +323,13 @@ export function toggleLabelSymbol(label, symbol) {
     return label.startsWith(symbol) ? label.slice(symbol.length).trimStart() : `${symbol} ${label}`.trim();
 }
 
-export function characterMapEpisodeLabel(data, episode) {
+export function relationshipChartEpisodeLabel(data, episode) {
     return data.episode_labels?.[episode]?.trim() || `Episode ${episode}`;
 }
 
-export function characterMapTexts(projectTitle) {
+export function relationshipChartTexts(projectTitle) {
     return {
-        eyebrow: 'CHARACTER MAP', heading: projectTitle,
+        eyebrow: 'RELATIONSHIP CHART', heading: projectTitle,
         introduction: 'Tap a character or a relationship to explore.',
         decoration: 'a recipe for connection', storyLabel: 'Story so far',
         playedBy: 'Played by',
@@ -340,11 +340,11 @@ export function characterMapTexts(projectTitle) {
 
 const LINE_DASH = { solid: "", dashed: "6 4", dotted: "1.5 4.5" };
 
-export function characterMapLineDash(lineStyle) {
+export function relationshipChartLineDash(lineStyle) {
     return LINE_DASH[lineStyle] || "";
 }
 
-export function characterMapArrow(connection) {
+export function relationshipChartArrow(connection) {
     if (connection.arrow_start && connection.arrow_end) return "↔";
     if (connection.arrow_end) return "→";
     if (connection.arrow_start) return "←";
@@ -352,15 +352,15 @@ export function characterMapArrow(connection) {
 }
 
 // A one-way relationship always reads left to right, so a back-pointing arrow swaps the two names.
-export function characterMapDirection(connection) {
-    const arrow = characterMapArrow(connection);
+export function relationshipChartDirection(connection) {
+    const arrow = relationshipChartArrow(connection);
     if (arrow === "←") return { from: connection.target, to: connection.source, arrow: "→" };
     return { from: connection.source, to: connection.target, arrow };
 }
 
 // For the exported sheet: spread the cast across the whole canvas, keeping their relative spacing.
 // The on-page chart usually leaves wide empty margins, which would otherwise shrink the cards.
-export function fitCharacterMapPositions(data, { marginX = 7, marginLeft = marginX, marginRight = marginX, marginTop = 14, marginBottom = 18 } = {}) {
+export function fitRelationshipChartPositions(data, { marginX = 7, marginLeft = marginX, marginRight = marginX, marginTop = 14, marginBottom = 18 } = {}) {
     if (!data.characters?.length) return data;
     const xs = data.characters.map((character) => character.x), ys = data.characters.map((character) => character.y);
     const minX = Math.min(...xs), maxX = Math.max(...xs), minY = Math.min(...ys), maxY = Math.max(...ys);
@@ -373,9 +373,9 @@ export function fitCharacterMapPositions(data, { marginX = 7, marginLeft = margi
     })) };
 }
 
-export function characterMapImageName(projectTitle, episodeLabel) {
-    const name = [projectTitle, "character map", episodeLabel].filter(Boolean).join(" - ");
-    return name.replace(/[\\/:*?"<>|]+/g, "").replace(/\s+/g, " ").trim() || "character map";
+export function relationshipChartImageName(projectTitle, episodeLabel) {
+    const name = [projectTitle, "relationship chart", episodeLabel].filter(Boolean).join(" - ");
+    return name.replace(/[\\/:*?"<>|]+/g, "").replace(/\s+/g, " ").trim() || "relationship chart";
 }
 
 export const GROUP_PADDING_MIN = 4;
@@ -442,7 +442,7 @@ export function characterGroupBounds(group, characters, spans = null) {
 }
 
 // Snapshot the selected version, including absent connections so later states cannot leak in.
-export function addCharacterMapEpisode(data, episodes, episode, label, baseEpisode) {
+export function addRelationshipChartEpisode(data, episodes, episode, label, baseEpisode) {
     const baseIndex = episodes.indexOf(baseEpisode);
     return { ...data, episodes: [...episodes, episode],
         episode_labels: { ...data.episode_labels, [episode]: label },
