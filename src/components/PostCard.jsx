@@ -224,6 +224,8 @@ export default function PostCard({ post, showReplies = true, eventTagIndex = nul
                                 external_url={post.external_url}
                                 media_url={post.media_url}
                                 media_urls={post.media_urls || []}
+                                display_source={post.display_source}
+                                content_type={post.content_type}
                                 caption={post.caption}
                                 author_id={post.author_id}
                                 author_name={post.author_name}

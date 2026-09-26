@@ -1,6 +1,6 @@
-import { useState, useEffect, useRef } from "react";
+import { Component, useState, useEffect, useRef } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
-import { getAdminPost, updatePost } from "../api/postsService";
+import { archiveInstagramPost, getAdminPost, updatePost } from "../api/postsService";
 import { getAuthors } from "../api/authorsService";
 import { ROUTES } from "../routes";
 import { isImage, isVideo } from "../utils/media";
@@ -66,12 +66,15 @@ export default function EditPost() {
     const [showTranslationNote, setShowTranslationNote] = useState(true);
     const [mediaURL, setMediaURL] = useState("");
     const [mediaItems, setMediaItems] = useState([emptyStoryItem()]);
+    const [displaySource, setDisplaySource] = useState("external");
     const [storyItemQuantity, setStoryItemQuantity] = useState(10);
     const [postedAt, setPostedAt] = useState("");
     const [postedTime, setPostedTime] = useState("");
     const [postedAtIsEstimated, setPostedAtIsEstimated] = useState(false);
     const [isVisible, setIsVisible] = useState(true);
     const [isAdult, setIsAdult] = useState(false);
+    const [archiving, setArchiving] = useState(false);
+    const [archiveMessage, setArchiveMessage] = useState("");
     const supportsExactPostTime = platform !== "ig" || contentType === "post";
 
     // -----------------------------
@@ -133,6 +136,7 @@ export default function EditPost() {
             setShowTimelineContext(p.show_timeline_context ?? true);
             setShowTranslationNote(p.show_translation_note ?? true);
             setMediaURL(p.media_url || "");
+            setDisplaySource(p.display_source || "external");
             // media_urls is now an array of objects {url, text, translation, note}
             const parsed = p.media_urls && p.media_urls.length > 0
                 ? p.media_urls.map((item) =>
@@ -158,7 +162,7 @@ export default function EditPost() {
     if (loading) return <div>Loading...</div>;
     if (!post) return <div>Post not found</div>;
 
-    const previewItems = platform === "ig" && contentType !== "post"
+    const previewItems = platform === "ig"
         ? mediaItems.filter((item) => item.url.trim())
         : mediaURL.trim()
             ? [{ url: mediaURL.trim(), text: "", translation: "", note: "" }]
@@ -249,6 +253,54 @@ export default function EditPost() {
         if (detectedDate) setPostedAt(detectedDate);
     };
 
+    const setSingleMediaUrl = (value) => {
+        setMediaURL(value);
+        setMediaItems((items) => [
+            { ...(items[0] || emptyStoryItem()), url: value },
+            ...items.slice(1),
+        ]);
+    };
+
+    const handleArchiveInstagramPost = async () => {
+        const savedAuthorId = post.author_id || "";
+        const archiveFieldsChanged =
+            externalURL.trim() !== (post.external_url || "").trim()
+            || postedAt !== (post.posted_at || "")
+            || authorId !== savedAuthorId
+            || tempAuthorName.trim() !== (post.temp_author_name || "").trim()
+            || platform !== post.platform
+            || contentType !== post.content_type;
+        if (archiveFieldsChanged) {
+            alert("Save the post URL, author, date, and content type before archiving.");
+            return;
+        }
+        if (caption.trim() && !window.confirm("Archive the original Instagram media and replace the saved caption with Instagram's current caption?")) {
+            return;
+        }
+
+        setArchiving(true);
+        setArchiveMessage("");
+        try {
+            const response = await archiveInstagramPost(postId);
+            const archivedPost = response.data.post;
+            const archivedItems = (archivedPost.media_urls || []).map((item) =>
+                typeof item === "string"
+                    ? { ...emptyStoryItem(), url: item }
+                    : { ...emptyStoryItem(), ...item, url: item.url || "" }
+            );
+            setPost(archivedPost);
+            setCaption(archivedPost.caption || "");
+            setMediaURL(archivedPost.media_url || "");
+            setMediaItems(archivedItems.length ? archivedItems : [emptyStoryItem()]);
+            setDisplaySource(archivedPost.display_source || "r2");
+            setArchiveMessage(`Archived ${response.data.media_urls.length} media ${response.data.media_urls.length === 1 ? "item" : "items"} to R2.`);
+        } catch (error) {
+            setArchiveMessage(error.response?.data?.detail || error.message || "Instagram archive failed.");
+        } finally {
+            setArchiving(false);
+        }
+    };
+
     async function saveChanges(e) {
         e.preventDefault();
         if (!tempAuthorName.trim() && !authorId) {
@@ -262,6 +314,7 @@ export default function EditPost() {
         else if (platform === "tt") newURL = normalizeTikTokURL(newURL);
 
         const isIGCollection = platform === "ig" && contentType !== "post";
+        const isIGPost = platform === "ig" && contentType === "post";
         let newlyUploadedUrls = [];
         try {
             newlyUploadedUrls = await mediaUploaderRef.current?.uploadPending() || [];
@@ -272,17 +325,19 @@ export default function EditPost() {
 
         const effectiveMediaItems = isIGCollection
             ? appendUploadedUrls(mediaItems, newlyUploadedUrls, emptyStoryItem)
+            : isIGPost && newlyUploadedUrls.length
+                ? [{ ...emptyStoryItem(), url: newlyUploadedUrls[0] }]
             : mediaItems;
         const newId = extractExternalId(newURL, platform);
-        const filteredMediaItems = isIGCollection
+        const filteredMediaItems = (isIGCollection || isIGPost)
             ? effectiveMediaItems
                 .map((item) => ({ ...item, url: item.url.trim() }))
-                .filter((item) => item.url || (contentType === "broadcast" && (item.text.trim() || item.translation.trim() || item.note.trim())))
+                .filter((item) => item.url || (contentType === "broadcast" && (item.text?.trim() || item.translation?.trim() || item.note?.trim())))
                 .map((item) => ({
                     url: item.url,
-                    text: item.text.trim() || null,
-                    translation: item.translation.trim() || null,
-                    note: item.note.trim() || null,
+                    text: item.text?.trim() || null,
+                    translation: item.translation?.trim() || null,
+                    note: item.note?.trim() || null,
                     attachment_type: contentType === "broadcast" ? item.attachment_type || "screenshot" : null,
                 }))
             : [];
@@ -301,8 +356,9 @@ export default function EditPost() {
             timeline_context: timelineContext.trim() || null,
             show_timeline_context: showTimelineContext,
             show_translation_note: showTranslationNote,
-            media_url: isIGCollection ? null : (newlyUploadedUrls[0] || mediaURL || null),
+            media_url: isIGCollection ? null : (newlyUploadedUrls[0] || filteredMediaItems[0]?.url || mediaURL || null),
             media_urls_json: JSON.stringify(filteredMediaItems),
+            display_source: displaySource,
             posted_at: postedAt,
             posted_at_utc: supportsExactPostTime ? bangkokDateTimeToUtc(postedAt, postedTime) : null,
             posted_at_is_estimated: supportsExactPostTime && postedAtIsEstimated,
@@ -320,14 +376,17 @@ export default function EditPost() {
         <div style={{ padding: 20, maxWidth: 800, margin: "0 auto" }}>
             <h2>Edit Post #{postId}</h2>
 
-            <CompactPostPreview
-                platform={platform}
-                contentType={contentType}
-                externalURL={externalURL}
-                caption={caption}
-                previewItems={previewItems}
-                post={post}
-            />
+            <PreviewErrorBoundary resetKey={displaySource}>
+                <CompactPostPreview
+                    platform={platform}
+                    contentType={contentType}
+                    externalURL={externalURL}
+                    caption={caption}
+                    previewItems={previewItems}
+                    displaySource={displaySource}
+                    post={post}
+                />
+            </PreviewErrorBoundary>
 
             <form id="edit-post-form" className="eventform-form" onSubmit={saveChanges}>
 
@@ -396,16 +455,7 @@ export default function EditPost() {
                     </div>
                 </div>
 
-                <div className="eventform-section">
-                    <label>Post-specific Author <span className="form-optional">(optional)</span></label>
-                    <input
-                        type="text"
-                        value={tempAuthorName}
-                        onChange={(e) => setTempAuthorName(e.target.value)}
-                        placeholder="Display a different author on this post only"
-                    />
-                    <div className="eventform-field-note">This overrides the displayed name without adding an author to the directory.</div>
-                </div>
+                
 
                 {tempAuthorName.trim() && (
                     <div className="eventform-section">
@@ -427,7 +477,49 @@ export default function EditPost() {
                         onChange={(e) => setExternalURL(e.target.value)}
                         onPaste={handlePostUrlPaste}
                     />
+                    {platform === "ig" && contentType === "post" && externalURL.trim() && (
+                        <div style={{ marginTop: 8 }}>
+                            <button
+                                type="button"
+                                onClick={handleArchiveInstagramPost}
+                                disabled={archiving}
+                                className="form-secondary-button"
+                            >
+                                {archiving ? "Archiving from Instagram…" : "Download media to R2 & save caption"}
+                            </button>
+                            <div className="eventform-field-note">
+                                Archives the saved Instagram URL. Save URL, author, or date changes first.
+                            </div>
+                            {archiveMessage && (
+                                <div role="status" style={{ marginTop: 6, fontSize: "0.9rem" }}>{archiveMessage}</div>
+                            )}
+                        </div>
+                    )}
                 </div>
+
+                <div className="eventform-section">
+                    <label>Post-specific Author <span className="form-optional">(optional)</span></label>
+                    <input
+                        type="text"
+                        value={tempAuthorName}
+                        onChange={(e) => setTempAuthorName(e.target.value)}
+                        placeholder="Display a different author on this post only"
+                    />
+                    <div className="eventform-field-note">This overrides the displayed name without adding an author to the directory.</div>
+                </div>
+
+                {platform === "ig" && contentType === "post" && externalURL.trim() && previewItems.some((item) => isFromR2(item.url)) && (
+                    <div className="eventform-section">
+                        <label>Displayed Instagram Source</label>
+                        <select value={displaySource} onChange={(e) => setDisplaySource(e.target.value)}>
+                            <option value="r2">Archived R2 media</option>
+                            <option value="external">Original Instagram embed</option>
+                        </select>
+                        <div className="eventform-field-note">
+                            Both sources remain saved. You can switch this later without re-uploading.
+                        </div>
+                    </div>
+                )}
 
                 <div className="eventform-section">
                     <label>External ID</label>
@@ -646,11 +738,11 @@ export default function EditPost() {
                                 author={authors.find((item) => item.id === Number(authorId))?.name || ""}
                                 postedAt={postedAt}
                                 mediaType={platform === "ig" ? "ig" : platform}
-                                onUploaded={(urls) => setMediaURL(urls[0] || "")}
+                                onUploaded={(urls) => setSingleMediaUrl(urls[0] || "")}
                             />
                             <input
                                 value={mediaURL}
-                                onChange={(e) => setMediaURL(e.target.value)}
+                                onChange={(e) => setSingleMediaUrl(e.target.value)}
                                 onPaste={(e) => {
                                     const pastedUrl = e.clipboardData.getData("text");
                                     const detectedAuthor = detectMediaAuthor(pastedUrl, authors);
@@ -695,7 +787,36 @@ export default function EditPost() {
     );
 }
 
-function CompactPostPreview({ platform, contentType, externalURL, caption, previewItems, post }) {
+class PreviewErrorBoundary extends Component {
+    state = { failed: false };
+
+    static getDerivedStateFromError() {
+        return { failed: true };
+    }
+
+    componentDidUpdate(previousProps) {
+        if (this.state.failed && previousProps.resetKey !== this.props.resetKey) {
+            this.setState({ failed: false });
+        }
+    }
+
+    componentDidCatch(error) {
+        console.error("Post preview failed:", error);
+    }
+
+    render() {
+        if (this.state.failed) {
+            return (
+                <div className="eventform-section" role="alert">
+                    Preview unavailable. Your edits are still intact and can be saved.
+                </div>
+            );
+        }
+        return this.props.children;
+    }
+}
+
+function CompactPostPreview({ platform, contentType, externalURL, caption, previewItems, displaySource, post }) {
     const hasExternal = !!externalURL.trim();
     const hasMedia = previewItems.length > 0;
     const primaryMediaUrl = previewItems[0]?.url || "";
@@ -744,17 +865,36 @@ function CompactPostPreview({ platform, contentType, externalURL, caption, previ
                                 author_photo={post?.author_photo}
                             />
                         ) : (
-                            <InstagramEmbed
-                                external_url={externalURL}
-                                media_url={previewItems.length === 1 ? primaryMediaUrl : ""}
-                                media_urls={previewItems.length > 1 ? previewItems : []}
-                                caption={caption}
-                                author_id={post?.author_id}
-                                author_name={post?.author_name}
-                                author_photo={post?.author_photo}
-                                author_ig_pfp_url={post?.author_ig_pfp_url}
-                                author_instagram_url={post?.author_instagram_url}
-                            />
+                            <>
+                                <div style={{ display: displaySource === "external" ? "block" : "none" }}>
+                                    <InstagramEmbed
+                                        external_url={externalURL}
+                                        display_source="external"
+                                        content_type={contentType}
+                                        caption={caption}
+                                        author_id={post?.author_id}
+                                        author_name={post?.author_name}
+                                        author_photo={post?.author_photo}
+                                        author_ig_pfp_url={post?.author_ig_pfp_url}
+                                        author_instagram_url={post?.author_instagram_url}
+                                    />
+                                </div>
+                                <div style={{ display: displaySource === "r2" ? "block" : "none" }}>
+                                    <InstagramEmbed
+                                        external_url={externalURL}
+                                        media_url={previewItems.length === 1 ? primaryMediaUrl : ""}
+                                        media_urls={previewItems.length > 1 ? previewItems : []}
+                                        display_source="r2"
+                                        content_type={contentType}
+                                        caption={caption}
+                                        author_id={post?.author_id}
+                                        author_name={post?.author_name}
+                                        author_photo={post?.author_photo}
+                                        author_ig_pfp_url={post?.author_ig_pfp_url}
+                                        author_instagram_url={post?.author_instagram_url}
+                                    />
+                                </div>
+                            </>
                         )}
                     </div>}
                 </div>

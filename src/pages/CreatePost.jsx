@@ -474,15 +474,15 @@ export default function CreatePost() {
                     </>
                 )}
 
+
                 <div className="eventform-section">
-                    <label>Post-specific Author <span className="form-optional">(optional)</span></label>
+                    <label>External Post URL</label>
                     <input
-                        type="text"
-                        value={tempAuthorName}
-                        onChange={(e) => setTempAuthorName(e.target.value)}
-                        placeholder="Display a different author on this post only"
+                        value={external_url}
+                        onChange={(e) => setExternalURL(e.target.value)}
+                        onPaste={handlePostUrlPaste}
+                        placeholder="Paste tweet or IG URL"
                     />
-                    <div className="eventform-field-note">This overrides the displayed name without adding an author to the directory.</div>
                 </div>
 
                 {tempAuthorName.trim() && (
@@ -499,13 +499,14 @@ export default function CreatePost() {
                 )}
 
                 <div className="eventform-section">
-                    <label>External Post URL</label>
+                    <label>Post-specific Author <span className="form-optional">(optional)</span></label>
                     <input
-                        value={external_url}
-                        onChange={(e) => setExternalURL(e.target.value)}
-                        onPaste={handlePostUrlPaste}
-                        placeholder="Paste tweet or IG URL"
+                        type="text"
+                        value={tempAuthorName}
+                        onChange={(e) => setTempAuthorName(e.target.value)}
+                        placeholder="Display a different author on this post only"
                     />
+                    <div className="eventform-field-note">This overrides the displayed name without adding an author to the directory.</div>
                 </div>
 
                 <div className="eventform-section">

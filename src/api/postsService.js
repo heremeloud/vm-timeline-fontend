@@ -84,4 +84,7 @@ export const reorderPost = (id, targetPostId, position) => api.post(`/posts/admi
     position,
 });
 
+export const archiveInstagramPost = (id, destination = "primary") =>
+    api.post(`/posts/admin/${id}/archive`, { destination });
+
 export const deletePost = (id) => api.delete(`/posts/${id}`);

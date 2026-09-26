@@ -2,11 +2,12 @@ import { useEffect, useState } from "react";
 import { isVideo, isImage } from "../utils/media";
 import { getMediaDownloadUrl } from "../api/mediaService";
 import Avatar from "./Avatar";
+import "../styles/PostCard.css";
 
 // -------------------------------------------------------
 // Single media item (image or video)
 // -------------------------------------------------------
-function MediaItem({ url, caption }) {
+function MediaItem({ url, caption, postLayout = false }) {
     if (isVideo(url)) {
         return (
             <video
@@ -16,12 +17,10 @@ function MediaItem({ url, caption }) {
                 muted
                 autoPlay
                 preload="metadata"
-                style={{
-                    width: "100%",
-                    height: "auto",
-                    borderRadius: 12,
-                    background: "black",
-                    display: "block",
+                className={postLayout ? "ig-archive-media" : undefined}
+                style={postLayout ? undefined : {
+                    width: "100%", height: "auto", borderRadius: 12,
+                    background: "black", display: "block",
                 }}
             />
         );
@@ -32,12 +31,10 @@ function MediaItem({ url, caption }) {
                 src={url}
                 alt={caption || "Instagram media"}
                 loading="lazy"
-                style={{
-                    width: "100%",
-                    height: "auto",
-                    borderRadius: 12,
-                    objectFit: "contain",
-                    display: "block",
+                className={postLayout ? "ig-archive-media" : undefined}
+                style={postLayout ? undefined : {
+                    width: "100%", height: "auto", borderRadius: 12,
+                    objectFit: "contain", display: "block",
                 }}
             />
         );
@@ -48,7 +45,7 @@ function MediaItem({ url, caption }) {
 // -------------------------------------------------------
 // Carousel for multiple media items (each item is {url, text, translation, note})
 // -------------------------------------------------------
-function MediaCarousel({ items, caption, idx, setIdx }) {
+function MediaCarousel({ items, caption, idx, setIdx, postLayout = false }) {
     const total = items.length;
     const current = items[idx] || {};
     const displayUrl = typeof current === "string" ? current : current.url;
@@ -58,7 +55,11 @@ function MediaCarousel({ items, caption, idx, setIdx }) {
     return (
         <div>
             <div style={{ position: "relative" }}>
-                <MediaItem url={displayUrl} caption={caption} />
+                <MediaItem url={displayUrl} caption={caption} postLayout={postLayout} />
+
+                {postLayout && total > 1 && (
+                    <div className="ig-archive-count" aria-live="polite">{idx + 1}/{total}</div>
+                )}
 
                 {total > 1 && (
                     <>
@@ -147,6 +148,24 @@ const dotStyle = (active) => ({
     cursor: "pointer",
 });
 
+function instagramUsername(profileUrl, fallbackName) {
+    try {
+        const parsed = new URL(profileUrl);
+        const username = decodeURIComponent(parsed.pathname.split("/").filter(Boolean)[0] || "");
+        return username || fallbackName || "Instagram";
+    } catch {
+        return fallbackName || "Instagram";
+    }
+}
+
+function renderCaptionWithHashtags(caption) {
+    return caption.split(/(#[\p{L}\p{M}\p{N}_]+)/gu).map((part, index) =>
+        /^#[\p{L}\p{M}\p{N}_]+$/u.test(part)
+            ? <span className="ig-archive-hashtag" key={`${part}-${index}`}>{part}</span>
+            : part
+    );
+}
+
 // -------------------------------------------------------
 // Main component
 // -------------------------------------------------------
@@ -154,6 +173,8 @@ export default function InstagramEmbed({
     external_url,
     media_url,
     media_urls = [],   // array of {url, text, translation, note} objects (or legacy strings)
+    display_source = "external",
+    content_type = "post",
     caption = "",
     author_name,
     author_photo,
@@ -162,7 +183,7 @@ export default function InstagramEmbed({
     author_id,
 }) {
     const [storyIndex, setStoryIndex] = useState(0);
-    const igUrl = (external_url || "").trim();
+    const externalUrl = (external_url || "").trim();
     const singleMediaUrl = (media_url || "").trim();
 
     // Build normalized items array: [{url, text, translation, note}]
@@ -177,8 +198,10 @@ export default function InstagramEmbed({
             ? [{ url: singleMediaUrl, text: null, translation: null, note: null }]
             : [];
 
-    const hasIGEmbed = igUrl.length > 0;
     const hasMedia = allItems.length > 0;
+    const useArchivedMedia = display_source === "r2" && hasMedia;
+    const igUrl = useArchivedMedia ? "" : externalUrl;
+    const hasIGEmbed = igUrl.length > 0;
 
     // Instagram embed processing
     useEffect(() => {
@@ -219,7 +242,62 @@ export default function InstagramEmbed({
         );
     }
 
-    // 2) Story / manual media → show avatar + carousel
+    // 2) Archived post → render a self-contained Instagram-style card.
+    if (hasMedia && content_type === "post") {
+        const profileName = instagramUsername(author_instagram_url, author_name);
+        const avatar = (
+            <Avatar
+                url={author_ig_pfp_url || author_photo}
+                authorId={author_id}
+                name={author_name}
+            />
+        );
+        return (
+            <article className="ig-archive-card" aria-label={`Archived Instagram post by ${profileName}`}>
+                <header className="ig-archive-header">
+                    {author_instagram_url ? (
+                        <a href={author_instagram_url} target="_blank" rel="noopener noreferrer" className="ig-author-link">
+                            {avatar}
+                        </a>
+                    ) : avatar}
+                    <div className="ig-archive-author">
+                        {author_instagram_url ? (
+                            <a href={author_instagram_url} target="_blank" rel="noopener noreferrer" className="ig-author-link">
+                                {profileName}
+                            </a>
+                        ) : profileName}
+                    </div>
+                    {author_instagram_url && (
+                        <a
+                            className="ig-archive-view-profile"
+                            href={author_instagram_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                        >
+                            View profile
+                        </a>
+                    )}
+                </header>
+
+                <MediaCarousel
+                    items={allItems}
+                    caption={caption}
+                    idx={storyIndex}
+                    setIdx={setStoryIndex}
+                    postLayout
+                />
+
+                {caption && (
+                    <div className="ig-archive-caption">
+                        <strong className="ig-archive-caption-username">{profileName}</strong>
+                        <div className="ig-archive-caption-text">{renderCaptionWithHashtags(caption)}</div>
+                    </div>
+                )}
+            </article>
+        );
+    }
+
+    // 3) Story / manual media → show avatar + carousel
     if (hasMedia) {
         const avatar = (
             <Avatar

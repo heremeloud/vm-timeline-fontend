@@ -83,6 +83,8 @@ function ManageDisplayPreview({ url, title, tab, item }) {
                 external_url={item.external_url}
                 media_url={item.media_url}
                 media_urls={item.media_urls || []}
+                display_source={item.display_source}
+                content_type={item.content_type || item.post_content_type}
                 caption={item.caption}
                 author_id={item.author_id}
                 author_name={item.author_name}
