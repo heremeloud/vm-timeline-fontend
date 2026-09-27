@@ -63,6 +63,7 @@ export default function CreatePost() {
     const [captionTranslationNote, setCaptionTranslationNote] = useState("");
     const [timelineContext, setTimelineContext] = useState("");
     const [showTimelineContext, setShowTimelineContext] = useState(true);
+    const [showOnRelatedPage, setShowOnRelatedPage] = useState(true);
     const [showTranslationNote, setShowTranslationNote] = useState(true);
     const [mediaURL, setMediaURL] = useState("");
     const [isVisible, setIsVisible] = useState(true);
@@ -303,6 +304,7 @@ export default function CreatePost() {
                 caption_translation_note: captionTranslationNote.trim() || null,
                 timeline_context: timelineContext.trim() || null,
                 show_timeline_context: showTimelineContext,
+                show_on_related_page: showOnRelatedPage,
                 show_translation_note: showTranslationNote,
                 media_url: finalMediaUrl,
                 media_urls_json: JSON.stringify(filteredMediaItems),
@@ -548,7 +550,7 @@ export default function CreatePost() {
                 </div>
 
                 <div className="eventform-section">
-                    <label>About This Post <span className="form-optional">(optional)</span></label>
+                    <label>Related Event / Project <span className="form-optional">(optional)</span></label>
                     <AutoResizeTextarea
                         value={timelineContext}
                         onChange={(e) => setTimelineContext(e.target.value)}
@@ -561,9 +563,17 @@ export default function CreatePost() {
                             checked={showTimelineContext}
                             onChange={(e) => setShowTimelineContext(e.target.checked)}
                         />
-                        Show “About this post”
+                        Show “Related Event / Project”
                     </label>
-                    <div className="eventform-field-note">Shown as curator-provided context, separate from the author's original caption.</div>
+                    <label style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8 }}>
+                        <input
+                            type="checkbox"
+                            checked={showOnRelatedPage}
+                            onChange={(e) => setShowOnRelatedPage(e.target.checked)}
+                        />
+                        Show post on related event page
+                    </label>
+                    <div className="eventform-field-note">The first checkbox controls the label on the post. The second controls whether the post appears on the related page.</div>
                 </div>
 
                 <div className="eventform-section">

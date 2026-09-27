@@ -3,19 +3,27 @@ import { Link, useLocation } from "react-router-dom";
 import { getAuthors, updateAuthor } from "../api/authorsService";
 import { countAdminPosts, countAdminPostSearch, deletePost, getAdminPosts, reorderPost, searchAdminPosts, updatePost } from "../api/postsService";
 import { countAdminEvents, getAdminEvents, updateEvent } from "../api/eventsService";
+import { createEventView, deleteEventView, getAdminEventViews, updateEventView } from "../api/eventViewsService";
+import { createEventCategory, createEventSubcategory, deleteEventCategory, deleteEventSubcategory, updateEventCategory, updateEventSubcategory } from "../api/eventCategoriesService";
 import { countAdminProjects, getAdminProjects, updateProject } from "../api/projectsService";
 import { getAdminTopics, updateTopic } from "../api/topicsService";
 import { ROUTES } from "../routes";
 import { formatEventDateRange } from "../utils/eventDateRange";
+import useEventCategories from "../hooks/useEventCategories";
 import { isVideo } from "../utils/media";
 import TweetEmbed from "../components/TweetEmbed";
 import InstagramEmbed from "../components/InstagramEmbed";
 import TikTokEmbed from "../components/TikTokEmbed";
+import VisibilityToggle from "../components/VisibilityToggle";
 import "../styles/EventForm.css";
 
 const LIMIT = 25;
-const TABS = ["posts", "events", "projects", "specials", "authors"];
+const TABS = ["posts", "events", "event-settings", "projects", "specials", "authors"];
 const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:8000";
+
+function tabLabel(tab) {
+    return tab === "event-settings" ? "Event Setup" : tab.charAt(0).toUpperCase() + tab.slice(1);
+}
 
 function resolvePreviewUrl(url = "") {
     return url.startsWith("/static/") ? `${API_BASE}${url}` : url;
@@ -186,7 +194,9 @@ export default function ManageDisplay() {
         setLoadedPreviousPosts(false);
         setLoadedNextPosts(false);
 
-        if (activeTab === "posts") {
+        if (activeTab === "event-settings") {
+            setItems([]);
+        } else if (activeTab === "posts") {
             const searchTerm = submittedPostSearch.trim();
             const res = searchTerm ? await searchAdminPosts({
                 q: searchTerm,
@@ -244,7 +254,10 @@ export default function ManageDisplay() {
 
         async function loadLastPage() {
             let total = 0;
-            if (activeTab === "posts") {
+            if (activeTab === "event-settings") {
+                if (!cancelled) setLastPage(1);
+                return;
+            } else if (activeTab === "posts") {
                 const searchTerm = submittedPostSearch.trim();
                 const res = searchTerm ? await countAdminPostSearch({
                     q: searchTerm,
@@ -489,27 +502,22 @@ export default function ManageDisplay() {
                 Control which saved content appears in public-facing lists.
             </p>
 
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 16 }}>
+            <div className="manage-authors-filter-tabs" role="tablist" aria-label="Manage display section">
                 {TABS.map((tab) => (
                     <button
                         key={tab}
                         type="button"
+                        role="tab"
+                        aria-selected={activeTab === tab}
+                        className={`manage-authors-filter-tab${activeTab === tab ? " is-active" : ""}`}
                         onClick={() => setActiveTab(tab)}
-                        style={{
-                            padding: "8px 12px",
-                            borderRadius: 8,
-                            border: "1px solid rgba(0,0,0,0.15)",
-                            cursor: "pointer",
-                            background: activeTab === tab ? "#a67c52" : "#fff",
-                            color: activeTab === tab ? "#fff" : "inherit",
-                        }}
                     >
-                        {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                        {tabLabel(tab)}
                     </button>
                 ))}
             </div>
 
-            {activeTab !== "authors" && (
+            {activeTab !== "authors" && activeTab !== "event-settings" && (
                 <div className="eventform-section eventform-form" style={{ width: "min(100%, 240px)", marginTop: 14 }}>
                     <label>Sort</label>
                     <select value={sortOrder} onChange={(e) => setSortOrder(e.target.value)}>
@@ -602,8 +610,10 @@ export default function ManageDisplay() {
                 </section>
             )}
 
-            <section className="eventform-section eventform-form">
-                <h3>{activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}</h3>
+            {activeTab === "event-settings" && <EventDisplaySettings />}
+
+            {activeTab !== "event-settings" && <section className="eventform-section eventform-form">
+                <h3>{tabLabel(activeTab)}</h3>
 
                 {activeTab !== "authors" && renderPaginationControls("top")}
 
@@ -695,8 +705,623 @@ export default function ManageDisplay() {
                 {activeTab !== "authors" && (
                     renderPaginationControls("bottom")
                 )}
-            </section>
+            </section>}
         </div>
+    );
+}
+
+const EMPTY_EVENT_VIEW = {
+    title: "",
+    slug: "",
+    is_visible: true,
+    name_filter: "",
+    category: "",
+    subcategory: "",
+    author: "",
+    event_sort: "newest",
+    view_mode: "list",
+};
+
+function EventCategoryManager({ categories, loading, reload }) {
+    const [newCategory, setNewCategory] = useState("");
+    const [saving, setSaving] = useState(false);
+    const [error, setError] = useState("");
+    const [selectedCategoryId, setSelectedCategoryId] = useState(null);
+    const [draggedId, setDraggedId] = useState(null);
+    const [dropTarget, setDropTarget] = useState(null);
+    const dialogRef = useRef(null);
+
+    useEffect(() => {
+        const dialog = dialogRef.current;
+        if (!dialog) return;
+        if (selectedCategoryId !== null) {
+            if (!dialog.open) dialog.showModal();
+        } else if (dialog.open) {
+            dialog.close();
+        }
+    }, [selectedCategoryId]);
+
+    useEffect(() => {
+        const dialog = dialogRef.current;
+        if (!dialog) return;
+        const handleClose = () => setSelectedCategoryId(null);
+        dialog.addEventListener("close", handleClose);
+        return () => dialog.removeEventListener("close", handleClose);
+    }, []);
+
+    async function run(action) {
+        setSaving(true);
+        setError("");
+        try {
+            await action();
+            await reload();
+            return true;
+        } catch (err) {
+            setError(err.response?.data?.detail || "Could not update event categories.");
+            return false;
+        } finally {
+            setSaving(false);
+        }
+    }
+
+    async function addCategory(e) {
+        e.preventDefault();
+        if (!newCategory.trim()) return;
+        const saved = await run(() => createEventCategory({ name: newCategory }));
+        if (saved) setNewCategory("");
+    }
+
+    async function removeCategory(category) {
+        if (!confirm(`Delete the “${category.label}” category and its subcategories? Categories used by events cannot be deleted.`)) return;
+        const removed = await run(() => deleteEventCategory(category.id));
+        if (removed && selectedCategoryId === category.id) setSelectedCategoryId(null);
+    }
+
+    function dropCategory(targetId, position) {
+        if (!draggedId || draggedId === targetId) return;
+        const reordered = [...categories];
+        const sourceIndex = reordered.findIndex((item) => item.id === draggedId);
+        const [moved] = reordered.splice(sourceIndex, 1);
+        let targetIndex = reordered.findIndex((item) => item.id === targetId);
+        if (position === "after") targetIndex += 1;
+        reordered.splice(targetIndex, 0, moved);
+        run(() => Promise.all(reordered.map((item, index) =>
+            item.sort_order === index ? Promise.resolve() : updateEventCategory(item.id, { sort_order: index })
+        )));
+        setDraggedId(null);
+        setDropTarget(null);
+    }
+
+    return (
+        <section className="eventform-section eventform-form">
+            <h3 style={{ marginBottom: 4 }}>Event categories</h3>
+            <p style={{ marginTop: 0, color: "#77695e", fontSize: "0.88rem" }}>
+                Drag categories into their public order. Open one only when you need to edit it or manage its subcategories.
+            </p>
+            {error && <p role="alert" style={{ color: "#9a3412" }}>{error}</p>}
+            <form className="event-setup-add-row" onSubmit={addCategory}>
+                <label style={{ flex: "1 1 220px" }}>
+                    New category
+                    <input value={newCategory} onChange={(e) => setNewCategory(e.target.value)} placeholder="e.g. Concert" />
+                </label>
+                <button className="event-setup-add-button" type="submit" disabled={saving || !newCategory.trim()}>+ Add category</button>
+            </form>
+            <div className="manage-authors-list">
+                {loading ? <p>Loading...</p> : categories.map((category) => {
+                    const position = dropTarget?.id === category.id ? dropTarget.position : null;
+                    return <div key={category.id || category.value}>
+                        <div
+                            className={`manage-authors-row${draggedId === category.id ? " is-dragging" : ""}`}
+                            onDragOver={(event) => {
+                                event.preventDefault();
+                                const rect = event.currentTarget.getBoundingClientRect();
+                                setDropTarget({ id: category.id, position: event.clientY < rect.top + rect.height / 2 ? "before" : "after" });
+                            }}
+                            onDrop={(event) => {
+                                event.preventDefault();
+                                dropCategory(category.id, dropTarget?.position || "before");
+                            }}
+                        >
+                            {position && draggedId !== category.id && <div aria-hidden="true" style={{ position: "absolute", left: 8, right: 8, [position === "before" ? "top" : "bottom"]: -5, height: 4, borderRadius: 999, background: "#a76719", boxShadow: "0 0 0 2px #fff8ef", zIndex: 5, pointerEvents: "none" }} />}
+                            <button
+                                type="button"
+                                className="manage-authors-drag-handle"
+                                draggable
+                                onDragStart={(event) => {
+                                    setDraggedId(category.id);
+                                    event.dataTransfer.effectAllowed = "move";
+                                    event.dataTransfer.setData("text/plain", String(category.id));
+                                }}
+                                onDragEnd={() => { setDraggedId(null); setDropTarget(null); }}
+                                title="Drag to reorder"
+                                aria-label={`Drag ${category.label} to reorder`}
+                                style={{ cursor: "grab" }}
+                            >⋮⋮</button>
+                            <div className="manage-authors-row-info">
+                                <strong>{category.label}</strong>
+                                <div className="manage-authors-row-sub">{category.subcategories?.length || 0} subcategories · stored as “{category.value}”</div>
+                            </div>
+                            <button type="button" className="manage-authors-row-edit" onClick={() => setSelectedCategoryId(category.id)}>Edit</button>
+                            <button type="button" disabled={saving} className="btn-delete manage-display-delete" onClick={() => removeCategory(category)}>Delete</button>
+                        </div>
+                    </div>;
+                })}
+            </div>
+
+            <dialog
+                ref={dialogRef}
+                className="manage-authors-dialog"
+                aria-labelledby="event-category-dialog-title"
+                onClick={(event) => { if (event.target === dialogRef.current) dialogRef.current.close(); }}
+            >
+                <button type="button" className="manage-authors-dialog-close" aria-label="Close editor" onClick={() => dialogRef.current?.close()}>×</button>
+                {categories.find((category) => category.id === selectedCategoryId) && (() => {
+                    const category = categories.find((item) => item.id === selectedCategoryId);
+                    return <>
+                        <div className="manage-authors-dialog-header">
+                            <div>
+                                <h3 id="event-category-dialog-title">{category.label}</h3>
+                                <span>Event category · {category.subcategories?.length || 0} subcategories</span>
+                            </div>
+                        </div>
+                        {error && <p role="alert" style={{ color: "#9a3412" }}>{error}</p>}
+                        <EventCategoryEditor key={`${category.id}-${category.value}-${category.label}`} category={category} saving={saving} run={run} />
+                    </>;
+                })()}
+            </dialog>
+        </section>
+    );
+}
+
+function EventCategoryEditor({ category, saving, run }) {
+    const [name, setName] = useState(category.value);
+    const [label, setLabel] = useState(category.label);
+    const [newSubcategory, setNewSubcategory] = useState("");
+    const [editingSubcategoryId, setEditingSubcategoryId] = useState(null);
+    const [draggedId, setDraggedId] = useState(null);
+    const [dropTarget, setDropTarget] = useState(null);
+
+    async function saveCategory() {
+        await run(() => updateEventCategory(category.id, { name, label }));
+    }
+
+    async function addSubcategory(e) {
+        e.preventDefault();
+        if (!newSubcategory.trim()) return;
+        const saved = await run(() => createEventSubcategory({ category_id: category.id, name: newSubcategory }));
+        if (saved) setNewSubcategory("");
+    }
+
+    function dropSubcategory(targetId, position) {
+        if (!draggedId || draggedId === targetId) return;
+        const subcategories = category.subcategories || [];
+        const reordered = [...subcategories];
+        const sourceIndex = reordered.findIndex((item) => item.id === draggedId);
+        const [moved] = reordered.splice(sourceIndex, 1);
+        let targetIndex = reordered.findIndex((item) => item.id === targetId);
+        if (position === "after") targetIndex += 1;
+        reordered.splice(targetIndex, 0, moved);
+        run(() => Promise.all(reordered.map((item, index) =>
+            item.sort_order === index ? Promise.resolve() : updateEventSubcategory(item.id, { sort_order: index })
+        )));
+        setDraggedId(null);
+        setDropTarget(null);
+    }
+
+    return (
+        <div style={{ display: "grid", gap: 14, marginTop: 18 }}>
+            <strong>Category details</strong>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))", gap: 10 }}>
+                <label>
+                    Stored name
+                    <input value={name} onChange={(e) => setName(e.target.value)} />
+                </label>
+                <label>
+                    Display label
+                    <input value={label} onChange={(e) => setLabel(e.target.value)} />
+                </label>
+            </div>
+            <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                <button type="button" disabled={saving || !name.trim()} onClick={saveCategory}>Save category</button>
+            </div>
+
+            <div style={{ borderTop: "1px solid rgba(0,0,0,.12)", paddingTop: 10 }}>
+                <strong>Subcategories</strong>
+                <div className="manage-authors-list">
+                    {(category.subcategories || []).map((subcategory) => {
+                        const editing = editingSubcategoryId === subcategory.id;
+                        const position = dropTarget?.id === subcategory.id ? dropTarget.position : null;
+                        return <div key={subcategory.id || subcategory.value}>
+                            <div
+                                className={`manage-authors-row${draggedId === subcategory.id ? " is-dragging" : ""}`}
+                                onDragOver={(event) => {
+                                    event.preventDefault();
+                                    const rect = event.currentTarget.getBoundingClientRect();
+                                    setDropTarget({ id: subcategory.id, position: event.clientY < rect.top + rect.height / 2 ? "before" : "after" });
+                                }}
+                                onDrop={(event) => {
+                                    event.preventDefault();
+                                    dropSubcategory(subcategory.id, dropTarget?.position || "before");
+                                }}
+                            >
+                                {position && draggedId !== subcategory.id && <div aria-hidden="true" style={{ position: "absolute", left: 8, right: 8, [position === "before" ? "top" : "bottom"]: -5, height: 4, borderRadius: 999, background: "#a76719", boxShadow: "0 0 0 2px #fff8ef", zIndex: 5, pointerEvents: "none" }} />}
+                                <button
+                                    type="button"
+                                    className="manage-authors-drag-handle"
+                                    draggable
+                                    onDragStart={(event) => {
+                                        setDraggedId(subcategory.id);
+                                        event.dataTransfer.effectAllowed = "move";
+                                        event.dataTransfer.setData("text/plain", String(subcategory.id));
+                                    }}
+                                    onDragEnd={() => { setDraggedId(null); setDropTarget(null); }}
+                                    title="Drag to reorder"
+                                    aria-label={`Drag ${subcategory.label} to reorder`}
+                                    style={{ cursor: "grab" }}
+                                >⋮⋮</button>
+                                <div className="manage-authors-row-info">
+                                    <strong>{subcategory.label}</strong>
+                                    <div className="manage-authors-row-sub">stored as “{subcategory.value}”</div>
+                                </div>
+                                <button type="button" className="manage-authors-row-edit" onClick={() => setEditingSubcategoryId(editing ? null : subcategory.id)}>{editing ? "Close" : "Edit"}</button>
+                                <button type="button" disabled={saving} className="btn-delete manage-display-delete" onClick={async () => {
+                                    if (!confirm(`Delete the “${subcategory.label}” subcategory? Subcategories used by events cannot be deleted.`)) return;
+                                    const removed = await run(() => deleteEventSubcategory(subcategory.id));
+                                    if (removed) setEditingSubcategoryId(null);
+                                }}>Delete</button>
+                            </div>
+                            {editing && <EventSubcategoryEditor key={`${subcategory.id}-${subcategory.value}-${subcategory.label}`} subcategory={subcategory} saving={saving} run={run} />}
+                        </div>;
+                    })}
+                    {(category.subcategories || []).length === 0 && <span style={{ opacity: 0.7 }}>No subcategories.</span>}
+                </div>
+                <form className="event-setup-add-row event-setup-add-row--subcategory" onSubmit={addSubcategory}>
+                    <label style={{ flex: "1 1 220px" }}>
+                        New subcategory
+                        <input value={newSubcategory} onChange={(e) => setNewSubcategory(e.target.value)} placeholder="e.g. Fan meeting" />
+                    </label>
+                    <button className="event-setup-add-button" type="submit" disabled={saving || !newSubcategory.trim()}>+ Add subcategory</button>
+                </form>
+            </div>
+        </div>
+    );
+}
+
+function EventSubcategoryEditor({ subcategory, saving, run }) {
+    const [name, setName] = useState(subcategory.value);
+    const [label, setLabel] = useState(subcategory.label);
+
+    return (
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 8, alignItems: "end", padding: "8px 12px" }}>
+            <label>
+                Stored name
+                <input value={name} onChange={(e) => setName(e.target.value)} />
+            </label>
+            <label>
+                Display label
+                <input value={label} onChange={(e) => setLabel(e.target.value)} />
+            </label>
+            <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
+                <button type="button" disabled={saving || !name.trim()} onClick={() => run(() => updateEventSubcategory(subcategory.id, { name, label }))}>Save</button>
+            </div>
+        </div>
+    );
+}
+
+function eventViewSlug(value) {
+    return value.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+}
+
+function EventDisplaySettings() {
+    const { categories, loading, reload } = useEventCategories();
+    return (
+        <>
+            <EventCategoryManager categories={categories} loading={loading} reload={reload} />
+            <FilteredEventPages categories={categories} />
+        </>
+    );
+}
+
+function FilteredEventPages({ categories }) {
+    const [views, setViews] = useState([]);
+    const [draft, setDraft] = useState(null);
+    const [editingId, setEditingId] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [saving, setSaving] = useState(false);
+    const [error, setError] = useState("");
+    const [draggedId, setDraggedId] = useState(null);
+    const [dropTarget, setDropTarget] = useState(null);
+    const dialogRef = useRef(null);
+
+    async function loadViews() {
+        setLoading(true);
+        try {
+            const res = await getAdminEventViews();
+            setViews(res.data || []);
+        } catch (err) {
+            setError(err.response?.data?.detail || "Could not load filtered event pages.");
+        } finally {
+            setLoading(false);
+        }
+    }
+
+    useEffect(() => {
+        loadViews();
+    }, []);
+
+    useEffect(() => {
+        const dialog = dialogRef.current;
+        if (!dialog) return;
+        if (draft) {
+            if (!dialog.open) dialog.showModal();
+        } else if (dialog.open) {
+            dialog.close();
+        }
+    }, [draft]);
+
+    useEffect(() => {
+        const dialog = dialogRef.current;
+        if (!dialog) return;
+        const handleClose = () => {
+            setDraft(null);
+            setEditingId(null);
+        };
+        dialog.addEventListener("close", handleClose);
+        return () => dialog.removeEventListener("close", handleClose);
+    }, []);
+
+    function startCreate() {
+        setEditingId(null);
+        setDraft({ ...EMPTY_EVENT_VIEW });
+        setError("");
+    }
+
+    function startEdit(view) {
+        setEditingId(view.id);
+        setDraft({
+            ...EMPTY_EVENT_VIEW,
+            ...view,
+            name_filter: view.name_filter || "",
+            category: view.category || "",
+            subcategory: view.subcategory || "",
+            author: view.author || "",
+        });
+        setError("");
+    }
+
+    function updateDraft(field, value) {
+        setDraft((current) => {
+            const next = { ...current, [field]: value };
+            if (field === "category") next.subcategory = "";
+            return next;
+        });
+    }
+
+    async function saveView(e) {
+        e.preventDefault();
+        setSaving(true);
+        setError("");
+        try {
+            const payload = {
+                ...draft,
+                title: draft.title.trim(),
+                slug: eventViewSlug(draft.slug),
+                name_filter: draft.name_filter?.trim() || null,
+                category: draft.category || null,
+                subcategory: draft.subcategory || null,
+                author: draft.author || null,
+            };
+            if (editingId) await updateEventView(editingId, payload);
+            else await createEventView(payload);
+            setDraft(null);
+            setEditingId(null);
+            await loadViews();
+        } catch (err) {
+            setError(err.response?.data?.detail || "Could not save the filtered event page.");
+        } finally {
+            setSaving(false);
+        }
+    }
+
+    async function removeView(view) {
+        if (!confirm(`Delete the filtered event page “${view.title}”?`)) return;
+        setError("");
+        try {
+            await deleteEventView(view.id);
+            setViews((current) => current.filter((item) => item.id !== view.id));
+            if (editingId === view.id) {
+                setEditingId(null);
+                setDraft(null);
+            }
+        } catch (err) {
+            setError(err.response?.data?.detail || "Could not delete the filtered event page.");
+        }
+    }
+
+    async function dropView(targetId, position) {
+        if (!draggedId || draggedId === targetId) return;
+        const reordered = [...views];
+        const sourceIndex = reordered.findIndex((item) => item.id === draggedId);
+        if (sourceIndex < 0) return;
+        const [moved] = reordered.splice(sourceIndex, 1);
+        let targetIndex = reordered.findIndex((item) => item.id === targetId);
+        if (position === "after") targetIndex += 1;
+        reordered.splice(targetIndex, 0, moved);
+        setViews(reordered.map((item, index) => ({ ...item, sort_order: index })));
+        setSaving(true);
+        setError("");
+        try {
+            await Promise.all(reordered.map((item, index) =>
+                item.sort_order === index ? Promise.resolve() : updateEventView(item.id, { sort_order: index })
+            ));
+            await loadViews();
+        } catch (err) {
+            setError(err.response?.data?.detail || "Could not reorder filtered event pages.");
+            await loadViews();
+        } finally {
+            setSaving(false);
+            setDraggedId(null);
+            setDropTarget(null);
+        }
+    }
+
+    return (
+        <section className="eventform-section eventform-form">
+            <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center" }}>
+                <div>
+                    <h3 style={{ marginBottom: 4 }}>Filtered event pages</h3>
+                    <p style={{ margin: 0, color: "#77695e", fontSize: "0.88rem" }}>
+                        Give a saved combination of event filters its own public URL.
+                    </p>
+                </div>
+                {!draft && <button type="button" onClick={startCreate}>+ Add page</button>}
+            </div>
+
+            {error && <p role="alert" style={{ color: "#9a3412" }}>{error}</p>}
+
+            <dialog
+                ref={dialogRef}
+                className="manage-authors-dialog"
+                aria-labelledby="filtered-event-page-dialog-title"
+                onClick={(event) => { if (event.target === dialogRef.current) dialogRef.current.close(); }}
+            >
+                <button type="button" className="manage-authors-dialog-close" aria-label="Close editor" onClick={() => dialogRef.current?.close()}>×</button>
+                {draft && <>
+                    <div className="manage-authors-dialog-header">
+                        <div>
+                            <h3 id="filtered-event-page-dialog-title">{editingId ? draft.title || "Edit event page" : "New filtered event page"}</h3>
+                            <span>Public event URL and default filters</span>
+                        </div>
+                    </div>
+                    {error && <p role="alert" style={{ color: "#9a3412" }}>{error}</p>}
+                <form onSubmit={saveView} style={{ display: "grid", gap: 12, marginTop: 16 }}>
+                    <div style={{ display: "grid", gap: 12, gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))" }}>
+                        <label>
+                            Page name <span className="form-required">*</span>
+                            <input
+                                required
+                                value={draft.title}
+                                onChange={(e) => {
+                                    const title = e.target.value;
+                                    setDraft((current) => ({
+                                        ...current,
+                                        title,
+                                        slug: editingId || current.slug ? current.slug : eventViewSlug(title),
+                                    }));
+                                }}
+                                placeholder="ViewMim fan events"
+                            />
+                        </label>
+                        <label>
+                            Slug <span className="form-required">*</span>
+                            <input required value={draft.slug} onChange={(e) => updateDraft("slug", eventViewSlug(e.target.value))} placeholder="viewmim-fan-events" />
+                            <small>Public URL: /events/view/{draft.slug || "your-slug"}</small>
+                        </label>
+                        <label>
+                            Search text
+                            <input value={draft.name_filter} onChange={(e) => updateDraft("name_filter", e.target.value)} placeholder="Name, #, or keyword" />
+                        </label>
+                        <label>
+                            Artist
+                            <select value={draft.author} onChange={(e) => updateDraft("author", e.target.value)}>
+                                <option value="">All</option>
+                                <option value="viewmim">ViewMim</option>
+                                <option value="view">View</option>
+                                <option value="mim">Mim</option>
+                                <option value="vimmy">Vimmy</option>
+                            </select>
+                        </label>
+                        <label>
+                            Category
+                            <select value={draft.category} onChange={(e) => updateDraft("category", e.target.value)}>
+                                <option value="">All</option>
+                                {categories.map((category) => <option key={category.value} value={category.value}>{category.label}</option>)}
+                            </select>
+                        </label>
+                        <label>
+                            Subcategory
+                            <select value={draft.subcategory} disabled={!draft.category} onChange={(e) => updateDraft("subcategory", e.target.value)}>
+                                <option value="">All</option>
+                                {(categories.find((category) => category.value === draft.category)?.subcategories || []).map((subcategory) => (
+                                    <option key={subcategory.value} value={subcategory.value}>{subcategory.label}</option>
+                                ))}
+                            </select>
+                        </label>
+                        <label>
+                            Default sort
+                            <select value={draft.event_sort} onChange={(e) => updateDraft("event_sort", e.target.value)}>
+                                <option value="newest">Newest First</option>
+                                <option value="oldest">Oldest First</option>
+                            </select>
+                        </label>
+                        <label>
+                            Default view
+                            <select value={draft.view_mode} onChange={(e) => updateDraft("view_mode", e.target.value)}>
+                                <option value="list">List</option>
+                                <option value="calendar">Calendar</option>
+                            </select>
+                        </label>
+                    </div>
+                    <VisibilityToggle
+                        className="manage-display-public-toggle"
+                        checked={!!draft.is_visible}
+                        disabled={saving}
+                        onChange={(e) => updateDraft("is_visible", e.target.checked)}
+                        label="Public"
+                    />
+                    <div className="manage-authors-dialog-actions">
+                        <button type="submit" disabled={saving}>{saving ? "Saving..." : "Save page"}</button>
+                        <button type="button" disabled={saving} onClick={() => dialogRef.current?.close()}>Cancel</button>
+                    </div>
+                </form>
+                </>}
+            </dialog>
+
+            <div className="manage-authors-list">
+                {loading ? <p>Loading...</p> : views.map((view) => {
+                    const position = dropTarget?.id === view.id ? dropTarget.position : null;
+                    return <div
+                        key={view.id}
+                        className={`manage-authors-row${draggedId === view.id ? " is-dragging" : ""}`}
+                        onDragOver={(event) => {
+                            event.preventDefault();
+                            const rect = event.currentTarget.getBoundingClientRect();
+                            setDropTarget({ id: view.id, position: event.clientY < rect.top + rect.height / 2 ? "before" : "after" });
+                        }}
+                        onDrop={(event) => {
+                            event.preventDefault();
+                            dropView(view.id, dropTarget?.position || "before");
+                        }}
+                    >
+                        {position && draggedId !== view.id && <div aria-hidden="true" style={{ position: "absolute", left: 8, right: 8, [position === "before" ? "top" : "bottom"]: -5, height: 4, borderRadius: 999, background: "#a76719", boxShadow: "0 0 0 2px #fff8ef", zIndex: 5, pointerEvents: "none" }} />}
+                        <button
+                            type="button"
+                            className="manage-authors-drag-handle"
+                            draggable
+                            disabled={saving}
+                            onDragStart={(event) => {
+                                setDraggedId(view.id);
+                                event.dataTransfer.effectAllowed = "move";
+                                event.dataTransfer.setData("text/plain", String(view.id));
+                            }}
+                            onDragEnd={() => { setDraggedId(null); setDropTarget(null); }}
+                            title="Drag to reorder"
+                            aria-label={`Drag ${view.title} to reorder`}
+                            style={{ cursor: "grab" }}
+                        >⋮⋮</button>
+                        <div className="manage-authors-row-info">
+                            <strong>{view.title}</strong>
+                            <div className="manage-authors-row-sub">/events/view/{view.slug}</div>
+                        </div>
+                        <span style={{ whiteSpace: "nowrap", color: view.is_visible ? "#2f7d32" : "#9a3412" }}>{view.is_visible ? "public" : "hidden"}</span>
+                        {view.is_visible && <Link to={ROUTES.eventView(view.slug)} target="_blank" rel="noopener noreferrer">View</Link>}
+                        <button type="button" className="manage-authors-row-edit" onClick={() => startEdit(view)}>Edit</button>
+                        <button type="button" className="btn-delete manage-display-delete" onClick={() => removeView(view)}>Delete</button>
+                    </div>;
+                })}
+                {!loading && views.length === 0 && !draft && <p>No filtered event pages yet.</p>}
+            </div>
+        </section>
     );
 }
 
@@ -749,11 +1374,13 @@ function DisplayRow({ tab, item, author, isSearchResult = false, saving, returnT
             style={{
                 border: "1px solid rgba(0, 0, 0, 0.15)",
                 borderRadius: 8,
-                padding: 12,
+                paddingTop: 12,
+                paddingRight: 12,
+                paddingBottom: 12,
+                paddingLeft: canDrag ? 72 : 12,
                 display: "grid",
                 gap: 8,
                 position: "relative",
-                paddingTop: canDrag ? 48 : 12,
                 height: isDragging ? 58 : "auto",
                 minHeight: isDragging ? 58 : undefined,
                 overflow: isDragging ? "hidden" : "visible",
@@ -779,7 +1406,9 @@ function DisplayRow({ tab, item, author, isSearchResult = false, saving, returnT
                 />
             )}
             {canDrag && (
-                <div
+                <button
+                    type="button"
+                    className="manage-authors-drag-handle"
                     draggable
                     onDragStart={onDragStart}
                     onDragEnd={onDragEnd}
@@ -787,24 +1416,15 @@ function DisplayRow({ tab, item, author, isSearchResult = false, saving, returnT
                     aria-label="Drag to change post display order"
                     style={{
                         position: "absolute",
-                        top: 10,
-                        left: "50%",
-                        transform: "translateX(-50%)",
+                        top: "50%",
+                        left: 14,
+                        transform: "translateY(-50%)",
                         cursor: "grab",
-                        color: "#8a7768",
-                        fontSize: "1.2rem",
-                        lineHeight: 1,
-                        letterSpacing: 3,
-                        userSelect: "none",
-                        padding: "4px 18px",
-                        border: "1px solid rgba(138, 119, 104, 0.28)",
-                        borderRadius: 999,
-                        background: "rgba(255, 248, 239, 0.9)",
                         zIndex: 2,
                     }}
                 >
                     ⋮⋮
-                </div>
+                </button>
             )}
             <div className="manage-display-card-header" style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "flex-start" }}>
                 <div className="manage-display-entry-summary">
@@ -827,15 +1447,13 @@ function DisplayRow({ tab, item, author, isSearchResult = false, saving, returnT
 
             <div className="manage-display-actions" style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
                 {canManageDisplay && (
-                    <label className="manage-display-visibility-toggle" title={isVisible ? "Visible to the public" : "Hidden from the public"}>
-                        <input
-                            type="checkbox"
-                            checked={!!isVisible}
-                            disabled={saving}
-                            onChange={onToggle}
-                        />
-                        <span>Visible</span>
-                    </label>
+                    <VisibilityToggle
+                        className="manage-display-public-toggle"
+                        checked={!!isVisible}
+                        disabled={saving}
+                        onChange={onToggle}
+                        label="Public"
+                    />
                 )}
 
                 {editUrl && <Link to={editUrl} state={{ returnTo }} target="_blank" rel="noopener noreferrer">Edit</Link>}

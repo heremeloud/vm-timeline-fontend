@@ -708,7 +708,7 @@ export default function TopicForm() {
                                                     checked={draft.show_timeline_context}
                                                     onChange={(e) => updateNewPost(index, "show_timeline_context", e.target.checked)}
                                                 />
-                                                Show “About this post”
+                                                Show “Related Event / Project”
                                             </label>
                                         </div>
 
@@ -738,7 +738,7 @@ export default function TopicForm() {
                                         </div>
 
                                         <div>
-                                            <label>About This Post</label>
+                                            <label>Related Event / Project</label>
                                             <textarea
                                                 rows={2}
                                                 value={draft.timeline_context}

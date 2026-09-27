@@ -2,6 +2,7 @@ export const ROUTES = {
     home: "/",
     archive: "/archive",
     events: "/events",
+    eventView: (slug) => `/events/view/${slug}`,
     eventDetail: (id) => `/events/${id}`,
     projects: "/projects",
     projectDetail: (id) => `/projects/${id}`,

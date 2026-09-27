@@ -1,5 +1,11 @@
 # React + Vite
 
+## Event page navigation
+
+Public filtered event pages are shown as a “Browse event pages” chip row on `/events`.
+To hide the row without removing the filtered event pages or their routes, set
+`VITE_SHOW_EVENT_VIEW_NAVIGATION=false` when building the frontend.
+
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
 Currently, two official plugins are available:

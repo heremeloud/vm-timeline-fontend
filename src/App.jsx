@@ -39,6 +39,7 @@ function App() {
                 <Route path="/archive" element={<Archive />} />
                 <Route path="/post/:postId" element={<PostPage />} />
                 <Route path="/events" element={<Events />} />
+                <Route path="/events/view/:eventViewSlug" element={<Events />} />
                 <Route path="/events/:eventId" element={<EventDetail />} />
                 <Route path="/projects" element={<Projects />} />
                 <Route path="/projects/:projectId" element={<ProjectDetail />} />

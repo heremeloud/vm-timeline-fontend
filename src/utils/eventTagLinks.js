@@ -58,14 +58,14 @@ export function buildEventTagIndex(events = []) {
     return index;
 }
 
-export function getEventTagLinks(post, eventTagIndex) {
+export function getEventTagLinks(post, eventTagIndex, { includeHiddenTimelineContext = false } = {}) {
     if (!eventTagIndex?.size) return [];
 
     const text = [
         post.caption,
         post.caption_translation,
         post.caption_translation_note,
-        (post.show_timeline_context ?? true) ? post.timeline_context : null,
+        (includeHiddenTimelineContext || (post.show_timeline_context ?? true)) ? post.timeline_context : null,
     ].filter(Boolean).join("\n");
     const hashtags = text.match(/#[\p{L}\p{M}\p{N}_]+/gu) || [];
     const seen = new Set();

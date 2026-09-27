@@ -7,7 +7,7 @@ import { ROUTES } from "../routes";
 import EventPhotoFields from "../components/EventPhotoFields";
 import { cleanEventPhotos, normalizeEventPhotos } from "../utils/eventPhotos";
 import "../styles/EventForm.css";
-import { EVENT_CATEGORIES, EVENT_SUBCATEGORIES, formatEventSubcategory } from "../constants/eventCategories";
+import useEventCategories from "../hooks/useEventCategories";
 import { cleanPastedSocialUrls, normalizeSocialPostUrl } from "../utils/postUrls";
 import { formatEventDateRange, getEventStartDate } from "../utils/eventDateRange";
 import EventMediaFields, { cleanEventMediaItems, normalizeEventMediaItems } from "../components/EventMediaFields";
@@ -39,6 +39,7 @@ export default function EditEvent() {
     const safeReturnTo = returnTo?.startsWith("/") && !returnTo.startsWith("//")
         ? returnTo
         : ROUTES.events;
+    const { categories: eventCategories } = useEventCategories();
 
     const [loading, setLoading] = useState(true);
     const [authors, setAuthors] = useState([]);
@@ -305,20 +306,20 @@ export default function EditEvent() {
                         }}
                     >
                         <option value="">-- None --</option>
-                        {EVENT_CATEGORIES.map((c) => (
+                        {eventCategories.map((c) => (
                             <option key={c.value} value={c.value}>{c.label}</option>
                         ))}
                     </select>
                 </div>
 
-                {EVENT_SUBCATEGORIES[category]?.length > 0 && (
+                {eventCategories.find((item) => item.value === category)?.subcategories?.length > 0 && (
                     <div className="eventform-section">
                         <label>Subcategory <span className="form-optional">(optional)</span></label>
                         <select value={subcategory} onChange={(e) => setSubcategory(e.target.value)}>
                             <option value="">-- None --</option>
-                            {EVENT_SUBCATEGORIES[category].map((value) => (
-                                <option key={value} value={value}>
-                                    {formatEventSubcategory(value)}
+                            {eventCategories.find((item) => item.value === category).subcategories.map((option) => (
+                                <option key={option.value} value={option.value}>
+                                    {option.label}
                                 </option>
                             ))}
                         </select>

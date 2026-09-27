@@ -170,6 +170,8 @@ export default function EventCard({ event }) {
     const eventDateLabel = formatEventDateRange(event);
     const eventStartDate = getEventStartDate(event);
     const displayName = event.name;
+    const eventDetailUrl = ROUTES.eventDetail(event.id);
+    const isEventDetailPage = location.pathname === eventDetailUrl;
 
     async function handleCopy(text) {
         const ok = await copyToClipboard(text);
@@ -244,7 +246,13 @@ export default function EventCard({ event }) {
 
                 <div className="eventcard-header">
                     <div>
-                        <div className="eventcard-title">{displayName}</div>
+                        <div className="eventcard-title">
+                            {isEventDetailPage ? displayName : (
+                                <Link className="eventcard-title-link" to={eventDetailUrl}>
+                                    {displayName}
+                                </Link>
+                            )}
+                        </div>
                         {event.english_name && event.name !== event.english_name && (
                             <div className="eventcard-english-title" lang="en">{event.english_name}</div>
                         )}

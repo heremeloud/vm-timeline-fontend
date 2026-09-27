@@ -1,23 +1,47 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { getAdminEvent, getEvent } from "../api/eventsService";
+import { getAdminEvent, getEvent, getEventTagIndex } from "../api/eventsService";
+import { getEventPostCandidates } from "../api/postsService";
 import EventCard from "../components/EventCard";
+import PostCard from "../components/PostCard";
 import { ROUTES } from "../routes";
+import { buildEventTagIndex, getEventTagLinks } from "../utils/eventTagLinks";
 
 export default function EventDetail() {
     const { eventId } = useParams();
     const navigate = useNavigate();
     const [event, setEvent] = useState(null);
+    const [relatedPosts, setRelatedPosts] = useState([]);
+    const [eventTagIndex, setEventTagIndex] = useState(null);
     const [loading, setLoading] = useState(true);
     const isAdmin = !!localStorage.getItem("jwt");
 
     useEffect(() => {
         async function load() {
             try {
-                const res = await (isAdmin ? getAdminEvent(eventId) : getEvent(eventId));
-                setEvent(res.data.event);
+                const eventRes = await (isAdmin ? getAdminEvent(eventId) : getEvent(eventId));
+                setEvent(eventRes.data.event);
+                try {
+                    const [tagsRes, postsRes] = await Promise.all([
+                        getEventTagIndex(),
+                        getEventPostCandidates(eventId),
+                    ]);
+                    const index = buildEventTagIndex(tagsRes.data || []);
+                    setEventTagIndex(index);
+                    setRelatedPosts((postsRes.data || []).filter((post) =>
+                        getEventTagLinks(post, index, { includeHiddenTimelineContext: true }).some(({ event: linkedEvent }) =>
+                            String(linkedEvent.id) === String(eventId)
+                        )
+                    ));
+                } catch (relatedError) {
+                    console.error("Related event posts load failed:", relatedError);
+                    setRelatedPosts([]);
+                    setEventTagIndex(null);
+                }
             } catch {
                 setEvent(null);
+                setRelatedPosts([]);
+                setEventTagIndex(null);
             } finally {
                 setLoading(false);
             }
@@ -46,6 +70,18 @@ export default function EventDetail() {
                 ← Back to Events
             </button>
             <EventCard event={event} />
+            <section className="event-related-posts" aria-labelledby="event-related-posts-title">
+                <h2 id="event-related-posts-title">Related posts</h2>
+                {relatedPosts.length > 0 ? (
+                    <div className="timeline-container">
+                        {relatedPosts.map((post) => (
+                            <PostCard key={post.id} post={post} eventTagIndex={eventTagIndex} />
+                        ))}
+                    </div>
+                ) : (
+                    <p className="event-related-posts-empty">No related posts yet.</p>
+                )}
+            </section>
         </div>
     );
 }

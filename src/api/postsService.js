@@ -12,6 +12,8 @@ export const getTimeline = ({ limit, offset, sort, platform } = {}) => {
     return api.get(url);
 };
 
+export const getEventPostCandidates = (eventId) => api.get(`/posts/event/${eventId}`);
+
 export const getPost = (id) => api.get(`/posts/${id}`);
 
 export const getAdminPost = (id) => api.get(`/posts/admin/${id}`);

@@ -957,6 +957,7 @@
     flex: 0 0 58px;
     width: 58px;
     height: 58px;
+    box-sizing: border-box;
     overflow: visible;
     border: 1px solid rgba(166, 124, 82, 0.28);
     border-radius: 8px;
@@ -1082,7 +1083,86 @@
     margin: 0;
 }
 
-.manage-display-delete {
+/* Public controls align to the 58px media thumbnail width. */
+.eventform-form label.manage-display-public-toggle {
+    display: inline-flex;
+    width: 58px;
+    min-width: 58px;
+    max-width: 58px;
+    height: 24px;
+    min-height: 24px;
+    padding: 2px;
+    margin: 0;
+    box-sizing: border-box;
+    align-self: start;
+    justify-self: start;
+    justify-content: center;
+}
+
+/* Timeline rows use the same width with a shorter, quieter control. */
+.eventform-form .manage-display-actions > label.manage-display-public-toggle {
+    width: 58px;
+    min-width: 58px;
+    max-width: 58px;
+    height: 24px;
+    min-height: 24px;
+    padding: 2px;
+    gap: 2px;
+    font-size: 0.66rem;
+    line-height: 1;
+    align-self: center;
+}
+
+/* Compact row Edit actions match the standardized Delete button dimensions. */
+.eventform-form .manage-authors-row-edit {
+    display: inline-flex;
+    width: auto;
+    height: 30px;
+    min-height: 30px;
+    padding: 5px 10px;
+    border-radius: 6px;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    font-size: 0.8rem;
+    line-height: 1;
+}
+
+.event-setup-add-row {
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.event-setup-add-row--subcategory {
+    margin-top: 10px;
+}
+
+.eventform-form .event-setup-add-row > label {
+    margin-bottom: 0;
+}
+
+.eventform-form .event-setup-add-button {
+    height: 46px;
+    min-height: 46px;
+    box-sizing: border-box;
+    white-space: nowrap;
+}
+
+.manage-display-delete,
+.eventform-form .manage-display-delete {
+    display: inline-flex;
+    width: auto;
+    height: 30px;
+    min-height: 30px;
+    padding: 5px 10px;
+    border-radius: 6px;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    font-size: 0.8rem;
+    line-height: 1;
     margin-left: auto !important;
     background: #e32636 !important;
     color: #fff !important;
@@ -1139,6 +1219,16 @@
     color: #fff;
 }
 
+.manage-authors-filter-tab:focus,
+.manage-authors-filter-tab:focus-visible {
+    outline: none;
+}
+
+.manage-authors-filter-tab:focus-visible {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
 .manage-authors-filter-count {
     opacity: 0.7;
     font-weight: 500;
@@ -1180,7 +1270,8 @@
     overflow: hidden;
 }
 
-.manage-authors-drag-handle {
+.manage-authors-drag-handle,
+.eventform-form .manage-authors-drag-handle {
     flex: 0 0 auto;
     border: 1px solid rgba(138, 119, 104, 0.28);
     border-radius: 999px;
@@ -1194,6 +1285,14 @@
     min-height: 0;
     height: auto;
     user-select: none;
+}
+
+.eventform-form .manage-authors-drag-handle:hover,
+.eventform-form .manage-authors-drag-handle:focus-visible {
+    border-color: rgba(138, 119, 104, 0.45);
+    background: rgba(255, 248, 239, 0.9);
+    color: #8a7768;
+    opacity: 1;
 }
 
 .manage-authors-avatar .avatar-wrapper,

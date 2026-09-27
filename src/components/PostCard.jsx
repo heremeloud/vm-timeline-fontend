@@ -2,7 +2,12 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import "../styles/PostCard.css";
 import { getTextsByPost } from "../api/textsService";
-import { getAdminThread, getThread, deletePost, updatePost } from "../api/postsService";
+import {
+    getAdminThread,
+    getThread,
+    deletePost,
+    updatePost,
+} from "../api/postsService";
 import { ROUTES } from "../routes";
 import { getEventTagLinks } from "../utils/eventTagLinks";
 
@@ -18,7 +23,11 @@ import IGReply from "./IGReply";
 import TweetReply from "./TweetReply";
 import TikTokReply from "./TikTokReply";
 
-export default function PostCard({ post, showReplies = true, eventTagIndex = null }) {
+export default function PostCard({
+    post,
+    showReplies = true,
+    eventTagIndex = null,
+}) {
     const location = useLocation();
     const isAdmin = !!localStorage.getItem("jwt");
     const returnTo = `${location.pathname}${location.search}`;
@@ -29,16 +38,19 @@ export default function PostCard({ post, showReplies = true, eventTagIndex = nul
     const rendersAdultFallback = Boolean(post.is_adult);
     const eventTagLinks = useMemo(
         () => getEventTagLinks(post, eventTagIndex),
-        [post, eventTagIndex]
+        [post, eventTagIndex],
     );
     const standaloneEventTagLinks = useMemo(() => {
-        if (!post.timeline_context || !(post.show_timeline_context ?? true)) return eventTagLinks;
+        if (!post.timeline_context || !(post.show_timeline_context ?? true))
+            return eventTagLinks;
         const contextTags = new Set(
-            (post.timeline_context.match(/#[\p{L}\p{M}\p{N}_]+/gu) || [])
-                .map((tag) => tag.slice(1).toLocaleLowerCase())
+            (post.timeline_context.match(/#[\p{L}\p{M}\p{N}_]+/gu) || []).map(
+                (tag) => tag.slice(1).toLocaleLowerCase(),
+            ),
         );
-        return eventTagLinks.filter(({ hashtag }) =>
-            !contextTags.has(hashtag.replace(/^#/, "").toLocaleLowerCase())
+        return eventTagLinks.filter(
+            ({ hashtag }) =>
+                !contextTags.has(hashtag.replace(/^#/, "").toLocaleLowerCase()),
         );
     }, [eventTagLinks, post.timeline_context, post.show_timeline_context]);
 
@@ -64,7 +76,10 @@ export default function PostCard({ post, showReplies = true, eventTagIndex = nul
     }
 
     function saveReturnScroll() {
-        sessionStorage.setItem("homeTimelineReturnScrollY", String(window.scrollY));
+        sessionStorage.setItem(
+            "homeTimelineReturnScrollY",
+            String(window.scrollY),
+        );
     }
 
     useEffect(() => {
@@ -86,7 +101,9 @@ export default function PostCard({ post, showReplies = true, eventTagIndex = nul
 
                 // Only X uses child-post threads
                 if (isTwitter) {
-                    const tRes = await (isAdmin ? getAdminThread(post.id) : getThread(post.id));
+                    const tRes = await (isAdmin
+                        ? getAdminThread(post.id)
+                        : getThread(post.id));
                     if (!cancelled) setChildrenPosts(tRes.data);
 
                     // refresh Twitter embeds
@@ -126,7 +143,11 @@ export default function PostCard({ post, showReplies = true, eventTagIndex = nul
             {isAdmin && (
                 <label
                     className="post-visibility-toggle"
-                    title={isPublic ? "Visible to the public" : "Hidden from the public"}
+                    title={
+                        isPublic
+                            ? "Visible to the public"
+                            : "Hidden from the public"
+                    }
                 >
                     <input
                         type="checkbox"
@@ -151,70 +172,110 @@ export default function PostCard({ post, showReplies = true, eventTagIndex = nul
                         }}
                     />
                     <span className="post-platform-name">
-                        {isBroadcast ? "Instagram Broadcast Channel" : isInstagram ? "Instagram" : isTwitter ? "X (Twitter)" : "TikTok"}
+                        {isBroadcast
+                            ? "Instagram Broadcast Channel"
+                            : isInstagram
+                              ? "Instagram"
+                              : isTwitter
+                                ? "X (Twitter)"
+                                : "TikTok"}
                     </span>
                     <span className="post-date-sep">·</span>
                     {isAdmin && post.posted_at_utc
                         ? new Date(post.posted_at_utc).toLocaleString("en-US", {
-                            timeZone: "Asia/Bangkok",
-                            year: "numeric",
-                            month: "long",
-                            day: "numeric",
-                            hour: "numeric",
-                            minute: "2-digit",
-                            second: "2-digit",
-                            timeZoneName: "short",
-                        })
-                        : new Date(post.posted_at + "T00:00:00").toLocaleDateString("en-US", {
-                            year: "numeric",
-                            month: "long",
-                            day: "numeric",
-                        })}
-                    {isAdmin && post.posted_at_utc && post.posted_at_is_estimated && " (estimated)"}
+                              timeZone: "Asia/Bangkok",
+                              year: "numeric",
+                              month: "long",
+                              day: "numeric",
+                              hour: "numeric",
+                              minute: "2-digit",
+                              second: "2-digit",
+                              timeZoneName: "short",
+                          })
+                        : new Date(
+                              post.posted_at + "T00:00:00",
+                          ).toLocaleDateString("en-US", {
+                              year: "numeric",
+                              month: "long",
+                              day: "numeric",
+                          })}
+                    {isAdmin &&
+                        post.posted_at_utc &&
+                        post.posted_at_is_estimated &&
+                        " (estimated)"}
                 </div>
             )}
             <div className="post-embed">
                 {rendersAdultFallback ? (
                     isTwitter ? (
-                        <AdultTweetCard tweet={post} eventTagLinks={eventTagLinks} />
+                        <AdultTweetCard
+                            tweet={post}
+                            eventTagLinks={eventTagLinks}
+                        />
                     ) : (
                         <div className="post-adult-card">
                             {post.author_name && (
-                                <div className="post-adult-author">{post.author_name}</div>
+                                <div className="post-adult-author">
+                                    {post.author_name}
+                                </div>
                             )}
-                        {post.external_url && (
-                            <a href={post.external_url} target="_blank" rel="noopener noreferrer" className="post-adult-source">
-                                {isInstagram ? "Instagram post" : isTwitter ? "Tweet" : "TikTok"} ↗
-                            </a>
-                        )}
-                        {post.caption && (
-                            <p className="post-adult-caption">
-                                <EventLinkedText text={post.caption} eventTagLinks={eventTagLinks} />
-                            </p>
-                        )}
-                        {post.caption_translation && (
-                            <p className="post-adult-translation">
-                                <EventLinkedText text={post.caption_translation} eventTagLinks={eventTagLinks} />
-                            </p>
-                        )}
-                        {post.caption_translation_note && (post.show_translation_note ?? true) && (
-                            <p className="post-adult-note">
-                                📝 <EventLinkedText text={post.caption_translation_note} eventTagLinks={eventTagLinks} />
-                            </p>
-                        )}
-                        {post.media_url && (
-                            isVideo(post.media_url) ? (
-                                <video
-                                    src={post.media_url}
-                                    controls
-                                    playsInline
-                                    muted
-                                    className="post-adult-media"
-                                />
-                            ) : (
-                                <img src={post.media_url} alt="" className="post-adult-media" />
-                            )
-                        )}
+                            {post.external_url && (
+                                <a
+                                    href={post.external_url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="post-adult-source"
+                                >
+                                    {isInstagram
+                                        ? "Instagram post"
+                                        : isTwitter
+                                          ? "Tweet"
+                                          : "TikTok"}{" "}
+                                    ↗
+                                </a>
+                            )}
+                            {post.caption && (
+                                <p className="post-adult-caption">
+                                    <EventLinkedText
+                                        text={post.caption}
+                                        eventTagLinks={eventTagLinks}
+                                    />
+                                </p>
+                            )}
+                            {post.caption_translation && (
+                                <p className="post-adult-translation">
+                                    <EventLinkedText
+                                        text={post.caption_translation}
+                                        eventTagLinks={eventTagLinks}
+                                    />
+                                </p>
+                            )}
+                            {post.caption_translation_note &&
+                                (post.show_translation_note ?? true) && (
+                                    <p className="post-adult-note">
+                                        📝{" "}
+                                        <EventLinkedText
+                                            text={post.caption_translation_note}
+                                            eventTagLinks={eventTagLinks}
+                                        />
+                                    </p>
+                                )}
+                            {post.media_url &&
+                                (isVideo(post.media_url) ? (
+                                    <video
+                                        src={post.media_url}
+                                        controls
+                                        playsInline
+                                        muted
+                                        className="post-adult-media"
+                                    />
+                                ) : (
+                                    <img
+                                        src={post.media_url}
+                                        alt=""
+                                        className="post-adult-media"
+                                    />
+                                ))}
                         </div>
                     )
                 ) : (
@@ -241,7 +302,9 @@ export default function PostCard({ post, showReplies = true, eventTagIndex = nul
                                 channelName={post.author_broadcast_channel_name}
                                 externalUrl={post.external_url}
                                 authorName={post.author_name}
-                                authorPhoto={post.author_ig_pfp_url || post.author_photo}
+                                authorPhoto={
+                                    post.author_ig_pfp_url || post.author_photo
+                                }
                                 authorId={post.author_id}
                                 instagramUrl={post.author_instagram_url}
                             />
@@ -263,24 +326,45 @@ export default function PostCard({ post, showReplies = true, eventTagIndex = nul
                 )}
             </div>
 
-            {(post.caption_translation || (post.caption_translation_note && (post.show_translation_note ?? true))) && !rendersAdultFallback && (
-                <div className="post-caption-translation">
-                    {post.caption_translation && <p>
-                        <EventLinkedText text={post.caption_translation} eventTagLinks={eventTagLinks} />
-                    </p>}
-                    {post.caption_translation_note && (post.show_translation_note ?? true) && (
-                        <p className="post-translation-note">
-                            📝 <EventLinkedText text={post.caption_translation_note} eventTagLinks={eventTagLinks} />
-                        </p>
-                    )}
-                </div>
-            )}
+            {(post.caption_translation ||
+                (post.caption_translation_note &&
+                    (post.show_translation_note ?? true))) &&
+                !rendersAdultFallback && (
+                    <div className="post-caption-translation">
+                        {post.caption_translation && (
+                            <p>
+                                <EventLinkedText
+                                    text={post.caption_translation}
+                                    eventTagLinks={eventTagLinks}
+                                />
+                            </p>
+                        )}
+                        {post.caption_translation_note &&
+                            (post.show_translation_note ?? true) && (
+                                <p className="post-translation-note">
+                                    📝{" "}
+                                    <EventLinkedText
+                                        text={post.caption_translation_note}
+                                        eventTagLinks={eventTagLinks}
+                                    />
+                                </p>
+                            )}
+                    </div>
+                )}
 
             {post.timeline_context && (post.show_timeline_context ?? true) && (
-                <aside className="post-timeline-context" aria-label="About this post, added by the timeline curator">
-                    <div className="post-timeline-context-label">About this post</div>
+                <aside
+                    className="post-timeline-context"
+                    aria-label=", added by the timeline curator"
+                >
+                    <div className="post-timeline-context-label">
+                        Related Event / Project
+                    </div>
                     <p>
-                        <EventLinkedText text={post.timeline_context} eventTagLinks={eventTagLinks} />
+                        <EventLinkedText
+                            text={post.timeline_context}
+                            eventTagLinks={eventTagLinks}
+                        />
                     </p>
                 </aside>
             )}
@@ -293,20 +377,39 @@ export default function PostCard({ post, showReplies = true, eventTagIndex = nul
                 </div>
             )}
 
-            {!post.caption_translation && !(post.caption_translation_note && (post.show_translation_note ?? true)) && !rendersAdultFallback && standaloneEventTagLinks.length > 0 && (
-                <div className="post-event-tags" aria-label="Related events">
-                    {standaloneEventTagLinks.map(({ hashtag, event, projectId }) => (
-                        <Link
-                            key={`${hashtag}-${event.id}`}
-                            to={projectId ? ROUTES.projectDetail(projectId) : ROUTES.eventDetail(event.id)}
-                            className="post-event-tag-link"
-                            title={projectId ? "View related project" : `View event: ${event.name}`}
-                        >
-                            {hashtag}
-                        </Link>
-                    ))}
-                </div>
-            )}
+            {!post.caption_translation &&
+                !(
+                    post.caption_translation_note &&
+                    (post.show_translation_note ?? true)
+                ) &&
+                !rendersAdultFallback &&
+                standaloneEventTagLinks.length > 0 && (
+                    <div
+                        className="post-event-tags"
+                        aria-label="Related events"
+                    >
+                        {standaloneEventTagLinks.map(
+                            ({ hashtag, event, projectId }) => (
+                                <Link
+                                    key={`${hashtag}-${event.id}`}
+                                    to={
+                                        projectId
+                                            ? ROUTES.projectDetail(projectId)
+                                            : ROUTES.eventDetail(event.id)
+                                    }
+                                    className="post-event-tag-link"
+                                    title={
+                                        projectId
+                                            ? "View related project"
+                                            : `View event: ${event.name}`
+                                    }
+                                >
+                                    {hashtag}
+                                </Link>
+                            ),
+                        )}
+                    </div>
+                )}
 
             {showReplies && isInstagram && igReplies.length > 0 && (
                 <div className="reply-section">
@@ -367,7 +470,11 @@ export default function PostCard({ post, showReplies = true, eventTagIndex = nul
                                     window.location.reload();
                                 } catch (err) {
                                     console.error("Delete post failed:", err);
-                                    alert("Delete failed: " + (err.response?.data?.detail || err.message));
+                                    alert(
+                                        "Delete failed: " +
+                                            (err.response?.data?.detail ||
+                                                err.message),
+                                    );
                                 }
                             }
                         }}

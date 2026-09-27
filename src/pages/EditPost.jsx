@@ -63,6 +63,7 @@ export default function EditPost() {
     const [captionTranslationNote, setCaptionTranslationNote] = useState("");
     const [timelineContext, setTimelineContext] = useState("");
     const [showTimelineContext, setShowTimelineContext] = useState(true);
+    const [showOnRelatedPage, setShowOnRelatedPage] = useState(true);
     const [showTranslationNote, setShowTranslationNote] = useState(true);
     const [mediaURL, setMediaURL] = useState("");
     const [mediaItems, setMediaItems] = useState([emptyStoryItem()]);
@@ -134,6 +135,7 @@ export default function EditPost() {
             setCaptionTranslationNote(p.caption_translation_note || "");
             setTimelineContext(p.timeline_context || "");
             setShowTimelineContext(p.show_timeline_context ?? true);
+            setShowOnRelatedPage(p.show_on_related_page ?? true);
             setShowTranslationNote(p.show_translation_note ?? true);
             setMediaURL(p.media_url || "");
             setDisplaySource(p.display_source || "external");
@@ -355,6 +357,7 @@ export default function EditPost() {
             caption_translation_note: captionTranslationNote.trim() || null,
             timeline_context: timelineContext.trim() || null,
             show_timeline_context: showTimelineContext,
+            show_on_related_page: showOnRelatedPage,
             show_translation_note: showTranslationNote,
             media_url: isIGCollection ? null : (newlyUploadedUrls[0] || filteredMediaItems[0]?.url || mediaURL || null),
             media_urls_json: JSON.stringify(filteredMediaItems),
@@ -566,7 +569,7 @@ export default function EditPost() {
                 </div>
 
                 <div className="eventform-section">
-                    <label>About This Post <span className="form-optional">(optional)</span></label>
+                    <label>Related Event / Project <span className="form-optional">(optional)</span></label>
                     <AutoResizeTextarea
                         value={timelineContext}
                         onChange={(e) => setTimelineContext(e.target.value)}
@@ -579,9 +582,17 @@ export default function EditPost() {
                             checked={showTimelineContext}
                             onChange={(e) => setShowTimelineContext(e.target.checked)}
                         />
-                        Show “About this post”
+                        Show “Related Event / Project”
                     </label>
-                    <div className="eventform-field-note">Shown as curator-provided context, separate from the author's original caption.</div>
+                    <label style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8 }}>
+                        <input
+                            type="checkbox"
+                            checked={showOnRelatedPage}
+                            onChange={(e) => setShowOnRelatedPage(e.target.checked)}
+                        />
+                        Show post on related event page
+                    </label>
+                    <div className="eventform-field-note">The first checkbox controls the label on the post. The second controls whether the post appears on the related page.</div>
                 </div>
 
                 <div className="eventform-section">

@@ -1,11 +1,13 @@
 import { getEventPhotoForDate } from "../utils/eventPhotos";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { getAdminEvents, getEvents } from "../api/eventsService";
-import { Link, useSearchParams } from "react-router-dom";
+import { getEventView } from "../api/eventViewsService";
+import { Link, useParams, useSearchParams } from "react-router-dom";
 import { ROUTES } from "../routes";
 import EventCard from "../components/EventCard";
+import EventViewNavigation from "../components/EventViewNavigation";
 import "../styles/Home.css";
-import { EVENT_CATEGORIES, EVENT_SUBCATEGORIES, formatEventSubcategory } from "../constants/eventCategories";
+import useEventCategories from "../hooks/useEventCategories";
 import { getEventStartDate } from "../utils/eventDateRange";
 
 const CALENDAR_LIMIT = 500;
@@ -82,20 +84,25 @@ function eventOverlapsDay(event, dayKey) {
 }
 
 export default function Events() {
+    const { eventViewSlug } = useParams();
     const [searchParams, setSearchParams] = useSearchParams();
     const isAdmin = !!localStorage.getItem("jwt");
+    const { categories: eventCategories } = useEventCategories();
+    const [savedView, setSavedView] = useState(null);
+    const [savedViewLoading, setSavedViewLoading] = useState(!!eventViewSlug);
+    const [savedViewError, setSavedViewError] = useState("");
 
     const [events, setEvents] = useState([]);
 
     const [viewMode, setViewMode] = useState(() =>
         searchParams.get("view") === "calendar" ? "calendar" : "list"
     );
-    const [sortOrder, setSortOrder] = useState("newest");
-    const [nameInput, setNameInput] = useState("");
-    const [nameFilter, setNameFilter] = useState("");
-    const [categoryFilter, setCategoryFilter] = useState("");
-    const [subcategoryFilter, setSubcategoryFilter] = useState("");
-    const [authorFilter, setAuthorFilter] = useState("");
+    const [sortOrder, setSortOrder] = useState(() => searchParams.get("sort") === "oldest" ? "oldest" : "newest");
+    const [nameInput, setNameInput] = useState(() => searchParams.get("q") || "");
+    const [nameFilter, setNameFilter] = useState(() => searchParams.get("q") || "");
+    const [categoryFilter, setCategoryFilter] = useState(() => searchParams.get("category") || "");
+    const [subcategoryFilter, setSubcategoryFilter] = useState(() => searchParams.get("subcategory") || "");
+    const [authorFilter, setAuthorFilter] = useState(() => searchParams.get("author") || "");
     const [calendarStart, setCalendarStart] = useState(
         () => parseDateKey(searchParams.get("month")) || startOfDay(new Date())
     );
@@ -104,28 +111,93 @@ export default function Events() {
         Math.max(1, Number(searchParams.get("page")) || 1)
     );
 
+    useEffect(() => {
+        if (!eventViewSlug) {
+            setSavedView(null);
+            setSavedViewError("");
+            setSavedViewLoading(false);
+            const nextName = searchParams.get("q") || "";
+            setNameInput(nextName);
+            setNameFilter(nextName);
+            setCategoryFilter(searchParams.get("category") || "");
+            setSubcategoryFilter(searchParams.get("subcategory") || "");
+            setAuthorFilter(searchParams.get("author") || "");
+            setSortOrder(searchParams.get("sort") === "oldest" ? "oldest" : "newest");
+            setViewMode(searchParams.get("view") === "calendar" ? "calendar" : "list");
+            setPage(Math.max(1, Number(searchParams.get("page")) || 1));
+            return;
+        }
+
+        let cancelled = false;
+        setSavedView(null);
+        setSavedViewLoading(true);
+        setSavedViewError("");
+        setPage(Math.max(1, Number(searchParams.get("page")) || 1));
+        getEventView(eventViewSlug)
+            .then((res) => {
+                if (cancelled) return;
+                const view = res.data;
+                setSavedView(view);
+                const nextName = searchParams.get("q") ?? view.name_filter ?? "";
+                setNameInput(nextName);
+                setNameFilter(nextName);
+                setCategoryFilter(searchParams.get("category") ?? view.category ?? "");
+                setSubcategoryFilter(searchParams.get("subcategory") ?? view.subcategory ?? "");
+                setAuthorFilter(searchParams.get("author") ?? view.author ?? "");
+                setSortOrder(searchParams.get("sort") ?? view.event_sort ?? "newest");
+                setViewMode(searchParams.get("view") ?? view.view_mode ?? "list");
+            })
+            .catch((err) => {
+                if (!cancelled) setSavedViewError(err.response?.status === 404
+                    ? "This filtered event page is unavailable."
+                    : "Could not load this filtered event page.");
+            })
+            .finally(() => {
+                if (!cancelled) setSavedViewLoading(false);
+            });
+        return () => {
+            cancelled = true;
+        };
+        // The URL values are intentionally read once when a saved view is resolved.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [eventViewSlug]);
+
     // Keep pagination and calendar state in the URL so refreshes, shared links,
     // and back-navigation restore the same events view.
     useEffect(() => {
         setSearchParams(
             (prev) => {
                 const next = new URLSearchParams(prev);
+                const defaultViewMode = savedView?.view_mode || "list";
                 if (viewMode === "calendar") {
-                    next.set("view", "calendar");
+                    if (defaultViewMode === "calendar") next.delete("view");
+                    else next.set("view", "calendar");
                     next.set("month", formatDateKey(calendarStart));
                     next.delete("page");
                 } else {
-                    next.delete("view");
+                    if (defaultViewMode === "calendar") next.set("view", "list");
+                    else next.delete("view");
                     next.delete("month");
                     if (page > 1) next.set("page", String(page));
                     else next.delete("page");
                 }
+
+                const defaults = savedView || {};
+                const setOverride = (key, value, defaultValue = "") => {
+                    if (value !== defaultValue) next.set(key, value);
+                    else next.delete(key);
+                };
+                setOverride("q", nameFilter, defaults.name_filter || "");
+                setOverride("category", categoryFilter, defaults.category || "");
+                setOverride("subcategory", subcategoryFilter, defaults.subcategory || "");
+                setOverride("author", authorFilter, defaults.author || "");
+                setOverride("sort", sortOrder, defaults.event_sort || "newest");
                 return next;
             },
             { replace: true }
         );
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [viewMode, calendarStart, page]);
+    }, [viewMode, calendarStart, page, nameFilter, categoryFilter, subcategoryFilter, authorFilter, sortOrder, savedView]);
 
     const [jumpPage, setJumpPage] = useState("");
     const [lastPage, setLastPage] = useState(null);
@@ -238,6 +310,7 @@ export default function Events() {
     }
 
     const load = useCallback(async () => {
+        if (savedViewLoading || savedViewError) return;
         const requestId = ++requestIdRef.current;
 
         // Clear stale events immediately so switching months/pages never
@@ -264,10 +337,9 @@ export default function Events() {
             console.error("Load events failed:", err);
             if (requestIdRef.current === requestId) setEvents([]);
         }
-    }, [viewMode, fetchCalendarEvents, fetchBaseEvents, page]);
+    }, [viewMode, fetchCalendarEvents, fetchBaseEvents, page, savedViewLoading, savedViewError]);
 
     useEffect(() => {
-        // eslint-disable-next-line react-hooks/set-state-in-effect
         load();
     }, [load]);
 
@@ -288,7 +360,6 @@ export default function Events() {
         };
         if (!filtersChanged) return;
 
-        // eslint-disable-next-line react-hooks/set-state-in-effect
         setLastPage(null);
         setPage(1);
         setJumpPage("");
@@ -310,7 +381,7 @@ export default function Events() {
         <div className="home-container">
             <div className="home-header">
                 <h1 style={{ marginBottom: "0.2rem" }}>ViewMim</h1>
-                <h1 style={{ marginTop: "0.2rem" }}>🤎Events🤍</h1>
+                <h1 style={{ marginTop: "0.2rem" }}>🤎{savedView?.title || "Events"}🤍</h1>
                 <p>Event timeline (fan meets, shows, lives, etc.)</p>
                 <p><strong>- solo events in 2025: work in progress - </strong></p>
                 <small style={{ opacity: 0.7 }}>
@@ -321,6 +392,12 @@ export default function Events() {
                 </small>
                 <hr />
             </div>
+
+            {savedViewLoading && <p>Loading filtered event page...</p>}
+            {savedViewError && <p role="alert">{savedViewError}</p>}
+
+            {!savedViewLoading && !savedViewError && (
+                <>
 
             <div className="events-view-toggle" aria-label="Events view">
                 <button
@@ -384,15 +461,15 @@ export default function Events() {
                             }}
                         >
                             <option value="">-- All --</option>
-                            {EVENT_CATEGORIES.flatMap((category) => {
-                                const subcategories = EVENT_SUBCATEGORIES[category.value] || [];
+                            {eventCategories.flatMap((category) => {
+                                const subcategories = category.subcategories || [];
                                 return [
                                     <option key={category.value} value={category.value}>
                                         {category.label}
                                     </option>,
                                     ...subcategories.map((subcategory) => (
-                                        <option key={`${category.value}:${subcategory}`} value={`${category.value}:${subcategory}`}>
-                                            {category.label} - {formatEventSubcategory(subcategory)}
+                                        <option key={`${category.value}:${subcategory.value}`} value={`${category.value}:${subcategory.value}`}>
+                                            {category.label} - {subcategory.label}
                                         </option>
                                     )),
                                 ];
@@ -411,6 +488,8 @@ export default function Events() {
                     </div>
                 </div>
             </div>
+
+            <EventViewNavigation activeSlug={eventViewSlug} />
 
             {viewMode === "calendar" ? (
                 <div className="events-calendar">
@@ -563,6 +642,8 @@ export default function Events() {
                 <Link to={ROUTES.createEvent}>
                     <button className="fab-button">+</button>
                 </Link>
+            )}
+                </>
             )}
         </div>
     );

@@ -70,6 +70,22 @@
     font-weight: 700;
 }
 
+.eventcard-title-link {
+    color: inherit;
+    font: inherit;
+    text-decoration: none;
+}
+
+.eventcard-title-link:hover {
+    color: inherit;
+    text-decoration: none;
+}
+
+.eventcard-title-link:focus,
+.eventcard-title-link:focus-visible {
+    outline: none;
+}
+
 .eventcard-english-title {
     margin-top: 3px;
     color: #5f554f;

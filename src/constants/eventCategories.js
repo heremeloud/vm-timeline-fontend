@@ -23,3 +23,13 @@ export function formatEventSubcategory(value) {
     if (value === "gmmtv") return "GMMTV";
     return value.replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
+
+export const DEFAULT_EVENT_CATEGORY_OPTIONS = EVENT_CATEGORIES.map((category, categoryIndex) => ({
+    ...category,
+    sort_order: categoryIndex,
+    subcategories: (EVENT_SUBCATEGORIES[category.value] || []).map((value, subcategoryIndex) => ({
+        value,
+        label: formatEventSubcategory(value),
+        sort_order: subcategoryIndex,
+    })),
+}));
