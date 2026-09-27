@@ -94,6 +94,14 @@ export default function PostCard({
                     }
                     return;
                 }
+                if (Array.isArray(post.comments) && Array.isArray(post.childrenPosts)) {
+                    if (!cancelled) {
+                        setComments(post.comments);
+                        setChildrenPosts(post.childrenPosts);
+                    }
+                    if (isTwitter) setTimeout(() => window.twttr?.widgets?.load(), 150);
+                    return;
+                }
 
                 // Always load PostText (used by IG + TikTok)
                 const cRes = await getTextsByPost(post.id);
@@ -124,7 +132,7 @@ export default function PostCard({
         return () => {
             cancelled = true;
         };
-    }, [post.id, isTwitter, showReplies, isAdmin]);
+    }, [post.id, post.comments, post.childrenPosts, isTwitter, showReplies, isAdmin]);
 
     // IG replies: flat list (translation + note live on the same record)
     const igReplies = useMemo(() => {

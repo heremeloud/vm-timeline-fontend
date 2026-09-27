@@ -320,12 +320,6 @@
     text-align: center;
 }
 
-.event-related-posts-empty {
-    margin: 0;
-    color: #776f69;
-    text-align: center;
-}
-
 /* Break out of the app's narrow #root/content max-width so the calendar can
    use the full window on laptops/monitors, instead of staying capped to the
    same column width as the rest of the (narrower) page content. */

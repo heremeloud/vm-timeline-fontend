@@ -289,16 +289,6 @@ export default function EventCard({ event }) {
                                 to={ROUTES.projectDetail(event.project_id)}
                                 className="eventcard-project-link"
                             >
-                                {event.project_thumbnail_url && (
-                                    <img
-                                        src={event.project_thumbnail_url}
-                                        alt=""
-                                        className="eventcard-project-thumb"
-                                        style={{
-                                            objectPosition: `${event.project_thumbnail_focal_x ?? 50}% ${event.project_thumbnail_focal_y ?? 50}%`,
-                                        }}
-                                    />
-                                )}
                                 {projectEmoji(event.project_category)} {event.project_title}
                             </Link>
                         )}

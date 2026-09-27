@@ -70,18 +70,16 @@ export default function EventDetail() {
                 ← Back to Events
             </button>
             <EventCard event={event} />
-            <section className="event-related-posts" aria-labelledby="event-related-posts-title">
-                <h2 id="event-related-posts-title">Related posts</h2>
-                {relatedPosts.length > 0 ? (
+            {relatedPosts.length > 0 && (
+                <section className="event-related-posts" aria-labelledby="event-related-posts-title">
+                    <h2 id="event-related-posts-title">Related posts</h2>
                     <div className="timeline-container">
                         {relatedPosts.map((post) => (
                             <PostCard key={post.id} post={post} eventTagIndex={eventTagIndex} />
                         ))}
                     </div>
-                ) : (
-                    <p className="event-related-posts-empty">No related posts yet.</p>
-                )}
-            </section>
+                </section>
+            )}
         </div>
     );
 }

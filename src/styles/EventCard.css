@@ -211,14 +211,6 @@
     background: rgba(166, 124, 82, 0.16);
 }
 
-.eventcard-project-thumb {
-    width: 14px;
-    height: 14px;
-    border-radius: 2px;
-    object-fit: cover;
-    flex-shrink: 0;
-}
-
 
 /* ============================= */
 /* META */

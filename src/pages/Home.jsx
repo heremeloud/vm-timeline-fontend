@@ -257,8 +257,8 @@ export default function Home() {
     return (
         <div className="home-container">
             <div className="home-header">
-                <h1 style={{ marginBottom: "0.2rem" }}>ViewMim Interaction</h1>
-                <h1 style={{ marginTop: "0.2rem" }}>🤎Timeline🤍</h1>
+                <h1 style={{ marginBottom: "0.05rem" }}>ViewMim Interaction</h1>
+                <h1 style={{ marginTop: "0.05rem" }}>🤎Timeline🤍</h1>
                 <p>Collecting ViewMim social media interactions</p>
                 {lastUpdated && <p>Last update: {lastUpdated}</p>}
                 <p><strong>99% of 2024 IGS are included
