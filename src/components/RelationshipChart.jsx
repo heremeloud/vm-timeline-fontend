@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import "../styles/RelationshipChart.css";
 import { getAuthors } from "../api/authorsService";
 import VisibilityToggle from "./VisibilityToggle";
+import { Button } from "../ui";
 import { relationshipsAtEpisode, charactersAtEpisode, characterDebutEpisode, setCharacterDebut, setCharacterEpisodeHidden, connectionPointAt, isRelationshipChartEpisodePublic, visibleRelationshipChartEpisodes, characterCardInsets, characterCardBox, characterCardSpans, characterCardSize, CARD_COMPACT_SCALE, CARD_SIZE_KEYS, CARD_SIZE_LABELS, relationshipChartEpisodes, relationshipChartEpisodeLabel, relationshipChartImageName, fitRelationshipChartPositions, relationshipChartTexts, characterGroupBounds, relationshipChartLineDash, relationshipChartDirection, newRelationshipChange, nextRelationshipColor, arrowheadPoints, resolvePortraitColor, SWATCH_PRESETS, LABEL_SYMBOLS, toggleLabelSymbol, snapPosition, GROUP_PADDING_MIN, GROUP_PADDING_MAX, CANVAS_HEIGHT_MIN, CANVAS_HEIGHT_MAX } from "../utils/relationshipChart";
 
 const LINE_STYLES = ["solid", "dashed", "dotted"];
@@ -209,7 +210,7 @@ function ConnectionPopover({ data, onChange, connection, episode, episodes, onCl
             : null}
         <div className="relationship-chart-editor-actions">
             <button type="button" className="relationship-chart-form-remove" onClick={deleteState}>{relationship.changes.length <= 1 ? "Delete relationship" : "Delete this state"}</button>
-            {relationship.changes.length > 1 && <button type="button" onClick={() => { onChange({ ...data, relationships: data.relationships.filter((item) => item.id !== relationship.id) }); onClose(); }}>Delete whole relationship</button>}
+            {relationship.changes.length > 1 && <button type="button" className="relationship-chart-form-remove" onClick={() => { onChange({ ...data, relationships: data.relationships.filter((item) => item.id !== relationship.id) }); onClose(); }}>Delete whole relationship</button>}
         </div>
     </PopoverShell>;
 }
@@ -750,7 +751,7 @@ export default function RelationshipChart({ data, onChange, projectTitle, episod
                 onChange={(event) => onEpisodePublicChange(episode, event.target.checked)} />}
             {seesEveryEpisode && episodeHidden}
             </div>
-            {editable && <button type="button" disabled={data.characters.length >= 40} onClick={addCharacter}>+ Add character</button>}
+            {editable && <Button variant="add" size="small" disabled={data.characters.length >= 40} onClick={addCharacter}>+ Add character</Button>}
         </div>
         <div className="relationship-chart-workspace">
         <div className="relationship-chart-viewport">

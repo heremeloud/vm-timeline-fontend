@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { createAuthor, getAuthors, updateAuthor } from "../api/authorsService";
 import Avatar from "../components/Avatar";
 import VisibilityToggle from "../components/VisibilityToggle";
+import { ToggleButton, ToggleGroup } from "../ui";
 import "../styles/EventForm.css";
 
 const CATEGORY_OPTIONS = [
@@ -285,29 +286,25 @@ export default function ManageAuthors() {
                 </div>
             </div>
 
-            <div className="manage-authors-filter-tabs" role="tablist" aria-label="Filter by category">
-                <button
-                    type="button"
+            <ToggleGroup className="manage-authors-filter-tabs" role="tablist" aria-label="Filter by category">
+                <ToggleButton
                     role="tab"
-                    aria-selected={categoryFilter === "all"}
-                    className={`manage-authors-filter-tab${categoryFilter === "all" ? " is-active" : ""}`}
+                    active={categoryFilter === "all"}
                     onClick={() => setCategoryFilter("all")}
                 >
                     All <span className="manage-authors-filter-count">{categoryCounts.all}</span>
-                </button>
+                </ToggleButton>
                 {CATEGORY_OPTIONS.map((opt) => (
-                    <button
+                    <ToggleButton
                         key={opt.value}
-                        type="button"
                         role="tab"
-                        aria-selected={categoryFilter === opt.value}
-                        className={`manage-authors-filter-tab${categoryFilter === opt.value ? " is-active" : ""}`}
+                        active={categoryFilter === opt.value}
                         onClick={() => setCategoryFilter(opt.value)}
                     >
                         {opt.label} <span className="manage-authors-filter-count">{categoryCounts[opt.value] || 0}</span>
-                    </button>
+                    </ToggleButton>
                 ))}
-            </div>
+            </ToggleGroup>
 
             {reorderLocked && (
                 <p className="manage-authors-lock-note">Clear the search and set the category filter to "All" to drag-reorder authors.</p>

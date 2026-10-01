@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Button } from "../ui";
 
 const emptyQ = () => ({ q_number: "", filming_date: "", hashtag: "", keyword: "" });
 const emptyEpisode = (episodeNumber = "") => ({ episode_number: String(episodeNumber), air_date: "", title: "", hashtag: "", keyword: "" });
@@ -35,11 +36,9 @@ function updateIndexedNumber(rows, setRows, index, numberField, value, prefix) {
 
 function RemoveButton({ onClick }) {
     return (
-        <button type="button" className="form-remove-button series-metadata-remove" onClick={onClick} aria-label="Remove row" title="Remove row">
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M6 6l12 12M18 6L6 18" />
-            </svg>
-        </button>
+        <Button variant="danger" size="small" className="series-metadata-remove" onClick={onClick} aria-label="Remove row" title="Remove row">
+            ✕
+        </Button>
     );
 }
 
@@ -171,7 +170,7 @@ export default function SeriesMetadataFields({
                         <label>Filming Q Days <span className="form-optional">(optional)</span></label>
                         <p>Add the filming Q days. Enter hashtags without #.</p>
                     </div>
-                    <button type="button" onClick={() => {
+                    <Button variant="add" size="small" onClick={() => {
                         const qNumber = nextQNumber(filmingDays);
                         if (qNumber > 99) {
                             alert("Q number cannot be greater than 99.");
@@ -186,7 +185,7 @@ export default function SeriesMetadataFields({
                                 hashtag: defaultQHashtag(primaryHashtag, qNumber),
                             },
                         ]);
-                    }} className="series-metadata-add">+ Add Q Day</button>
+                    }}>+ Add Q Day</Button>
                 </div>
                 {filmingDays.map((row, index) => (
                     <div className="series-metadata-row" key={`q-${index}`}>
@@ -208,7 +207,7 @@ export default function SeriesMetadataFields({
                     <div className="series-metadata-actions">
                         <div className="series-metadata-action-buttons">
                             <button type="button" className="series-metadata-generate" onClick={generateEpisodeDefaults}>Generate Defaults</button>
-                            <button type="button" onClick={() => {
+                            <Button variant="add" size="small" onClick={() => {
                                 const episodeNumber = nextEpisodeNumber(episodes);
                                 setEpisodes([
                                     ...episodes,
@@ -218,7 +217,7 @@ export default function SeriesMetadataFields({
                                         hashtag: defaultEpisodeHashtag(primaryHashtag, episodeNumber, episodeCount),
                                     },
                                 ]);
-                            }} className="series-metadata-add">+ Add Episode</button>
+                            }}>+ Add Episode</Button>
                         </div>
                         <div className="series-metadata-toggles">
                             <label className="series-metadata-toggle">

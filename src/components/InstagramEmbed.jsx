@@ -3,6 +3,8 @@ import { isVideo, isImage } from "../utils/media";
 import { getMediaDownloadUrl } from "../api/mediaService";
 import Avatar from "./Avatar";
 import "../styles/PostCard.css";
+import "../styles/MediaCarousel.css";
+import { CarouselControls } from "../ui";
 
 // -------------------------------------------------------
 // Single media item (image or video)
@@ -54,48 +56,14 @@ function MediaCarousel({ items, caption, idx, setIdx, postLayout = false }) {
 
     return (
         <div>
-            <div style={{ position: "relative" }}>
+            <div className="media-carousel">
                 <MediaItem url={displayUrl} caption={caption} postLayout={postLayout} />
 
                 {postLayout && total > 1 && (
                     <div className="ig-archive-count" aria-live="polite">{idx + 1}/{total}</div>
                 )}
 
-                {total > 1 && (
-                    <>
-                        {idx > 0 && (
-                            <button
-                                type="button"
-                                onClick={() => setIdx((i) => i - 1)}
-                                style={navBtn("left")}
-                                aria-label="Previous"
-                            >
-                                ‹
-                            </button>
-                        )}
-                        {idx < total - 1 && (
-                            <button
-                                type="button"
-                                onClick={() => setIdx((i) => i + 1)}
-                                style={navBtn("right")}
-                                aria-label="Next"
-                            >
-                                ›
-                            </button>
-                        )}
-                        <div style={dotsWrap}>
-                            {items.map((_, i) => (
-                                <button
-                                    type="button"
-                                    key={i}
-                                    onClick={() => setIdx(i)}
-                                    style={dotStyle(i === idx)}
-                                    aria-label={`Slide ${i + 1}`}
-                                />
-                            ))}
-                        </div>
-                    </>
-                )}
+                <CarouselControls index={idx} total={total} onChange={setIdx} itemLabel="Story" />
             </div>
 
             <a className="ig-media-download" href={getMediaDownloadUrl(displayUrl)}>
@@ -112,41 +80,6 @@ function MediaCarousel({ items, caption, idx, setIdx, postLayout = false }) {
         </div>
     );
 }
-
-const navBtn = (side) => ({
-    position: "absolute",
-    top: "50%",
-    [side]: 8,
-    transform: "translateY(-50%)",
-    background: "rgba(0,0,0,0.45)",
-    color: "#fff",
-    border: "none",
-    borderRadius: "50%",
-    width: 32,
-    height: 32,
-    fontSize: 20,
-    lineHeight: "30px",
-    cursor: "pointer",
-    padding: 0,
-    zIndex: 2,
-});
-
-const dotsWrap = {
-    display: "flex",
-    justifyContent: "center",
-    gap: 6,
-    marginTop: 8,
-};
-
-const dotStyle = (active) => ({
-    width: 8,
-    height: 8,
-    borderRadius: "50%",
-    background: active ? "#888" : "#ccc",
-    border: "none",
-    padding: 0,
-    cursor: "pointer",
-});
 
 function instagramUsername(profileUrl, fallbackName) {
     try {

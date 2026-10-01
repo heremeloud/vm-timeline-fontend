@@ -4,6 +4,7 @@ import { getAdminProjects, getProjects, updateProject } from "../api/projectsSer
 import { ROUTES } from "../routes";
 import Avatar from "../components/Avatar";
 import { PROJECT_CATEGORIES } from "../constants/projectCategories";
+import { CardGrid, FilterBar, FilterField, Select } from "../ui";
 import { formatCardDateRange } from "../utils/cardDate";
 import "../styles/Home.css";
 import "../styles/Projects.css";
@@ -67,20 +68,19 @@ export default function Projects() {
             </div>
 
             {/* Filter */}
-            <div className="filter-bar">
-                <div className="filter-group">
-                    <label>Category</label>
-                    <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)}>
+            <FilterBar>
+                <FilterField label="Category">
+                    <Select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)}>
                         <option value="">-- All --</option>
                         {PROJECT_CATEGORIES.map((c) => (
                             <option key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</option>
                         ))}
-                    </select>
-                </div>
-            </div>
+                    </Select>
+                </FilterField>
+            </FilterBar>
 
             {/* Project Cards Grid */}
-            <div className="projects-grid">
+            <CardGrid>
                 {projects.map((p) => (
                     <div key={p.id} className={`project-card-shell ${isAdmin ? "project-card-shell--admin" : ""}`.trim()}>
                     <div className="project-card">
@@ -150,7 +150,7 @@ export default function Projects() {
                     </div>
                     </div>
                 ))}
-            </div>
+            </CardGrid>
 
             {isAdmin && (
                 <Link to={ROUTES.createProject}>

@@ -278,7 +278,7 @@
 .archive-save-btn {
     flex: 1;
     padding: 8px;
-    background: #955803;
+    background: var(--ui-color-accent, #9a7448);
     color: #fff;
     border: none;
     border-radius: 8px;
@@ -289,7 +289,8 @@
 }
 
 .archive-save-btn:hover:not(:disabled) {
-    opacity: 0.85;
+    background: var(--ui-color-accent-strong, #765a37);
+    opacity: 1;
 }
 
 .archive-save-btn:disabled {

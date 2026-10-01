@@ -2,6 +2,7 @@ import { useState } from "react";
 import { relationshipChartEpisodes, addRelationshipChartEpisode, removeRelationshipChartEpisode, relationshipChartEpisodeLabel, relationshipChartTexts, isRelationshipChartEpisodePublic, setRelationshipChartEpisodePublic, GROUP_PADDING_MIN, GROUP_PADDING_MAX, SWATCH_PRESETS } from "../utils/relationshipChart";
 import RelationshipChart from "./RelationshipChart";
 import VisibilityToggle from "./VisibilityToggle";
+import { Button } from "../ui";
 
 export default function RelationshipChartEditor({ data, onChange, visible, onVisibleChange, projectTitle, episodeCount, useLoafFrame = false }) {
     const defaultTexts = relationshipChartTexts(projectTitle);
@@ -50,7 +51,7 @@ export default function RelationshipChartEditor({ data, onChange, visible, onVis
                     <button type="button" className="relationship-chart-form-remove" onClick={() => onChange({ ...data, groups: data.groups.filter((item) => item.id !== group.id) })}>Remove group</button>
                 </fieldset>;
             })}
-            <button type="button" className="series-metadata-add" disabled={(data.groups || []).length >= 20} onClick={() => onChange({ ...data, groups: [...(data.groups || []), { id: crypto.randomUUID(), label: 'New group', thai_name: '', description: '', shape: 'rectangle', color: '#a67c52', label_position: 'top', character_ids: [] }] })}>+ Add group</button>
+            <Button variant="add" size="small" disabled={(data.groups || []).length >= 20} onClick={() => onChange({ ...data, groups: [...(data.groups || []), { id: crypto.randomUUID(), label: 'New group', thai_name: '', description: '', shape: 'rectangle', color: '#a67c52', label_position: 'top', character_ids: [] }] })}>+ Add group</Button>
         </details>
         <details className="series-metadata-section" open><summary>Episodes ({episodes.length})</summary>
             <div className="relationship-chart-episode-list">
@@ -62,19 +63,19 @@ export default function RelationshipChartEditor({ data, onChange, visible, onVis
                         onChange={(event) => onChange(setRelationshipChartEpisodePublic({ ...data, episodes }, number, event.target.checked))} />
                     <button type="button" className="series-metadata-add" aria-label={`Move ${relationshipChartEpisodeLabel(data, number)} up`} disabled={index === 0} onClick={() => { const order = [...episodes]; [order[index - 1], order[index]] = [order[index], order[index - 1]]; onChange({ ...data, episodes: order }); }}>↑</button>
                     <button type="button" className="series-metadata-add" aria-label={`Move ${relationshipChartEpisodeLabel(data, number)} down`} disabled={index === episodes.length - 1} onClick={() => { const order = [...episodes]; [order[index + 1], order[index]] = [order[index], order[index + 1]]; onChange({ ...data, episodes: order }); }}>↓</button>
-                    <button type="button" className="form-remove-button" aria-label={`Remove ${relationshipChartEpisodeLabel(data, number)}`} onClick={() => {
+                    <Button variant="danger" size="small" className="form-remove-button" aria-label={`Remove ${relationshipChartEpisodeLabel(data, number)}`} onClick={() => {
                         if (confirm(`Remove ${relationshipChartEpisodeLabel(data, number)} and its relationship changes? Connections with no remaining changes will also be removed. Save to apply, or Cancel to undo.`)) {
                             const updated = removeRelationshipChartEpisode(data, episodes, number);
                             updated.episode_labels = { ...data.episode_labels };
                             delete updated.episode_labels[number];
                             onChange(updated);
                         }
-                    }}>×</button>
+                    }}>×</Button>
                 </div>)}
             </div>
             <div className="relationship-chart-fields"><label>New episode or chapter label<input maxLength={120} value={episodeInput} placeholder="Episode 4, Novel chapter 5…" onChange={(event) => setEpisodeInput(event.target.value)} /></label>
                 {episodes.length > 0 && <label>Build on<select value={selectedBase} onChange={(event) => setBaseEpisode(event.target.value)}>{episodes.map((number) => <option key={number} value={number}>{relationshipChartEpisodeLabel(data, number)}</option>)}</select></label>}
-                <button type="button" className="series-metadata-add" disabled={!canAddEpisode} onClick={() => { onChange(addRelationshipChartEpisode(data, episodes, nextEpisode, episodeInput.trim() || `Episode ${nextEpisode}`, selectedBase)); setEpisodeInput(""); setBaseEpisode(""); }}>+ Add episode / chapter</button>
+                <Button variant="add" size="small" disabled={!canAddEpisode} onClick={() => { onChange(addRelationshipChartEpisode(data, episodes, nextEpisode, episodeInput.trim() || `Episode ${nextEpisode}`, selectedBase)); setEpisodeInput(""); setBaseEpisode(""); }}>+ Add episode / chapter</Button>
             </div>
         </details>
         <h4>Relationship chart ({data.characters.length} character{data.characters.length === 1 ? "" : "s"}, {data.relationships.length} relationship{data.relationships.length === 1 ? "" : "s"})</h4>

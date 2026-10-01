@@ -32,8 +32,14 @@
     height: 12px;
     min-height: 12px;
     margin: 0;
-    accent-color: #8b623d;
+    accent-color: var(--ui-toggle-success, #207a4b);
     cursor: pointer;
+}
+
+.visibility-toggle:has(input:checked) {
+    border-color: var(--ui-toggle-success, #207a4b);
+    background: var(--ui-toggle-success-tint, #eaf7f0);
+    color: var(--ui-toggle-success, #207a4b);
 }
 
 .visibility-toggle:has(input:disabled) {

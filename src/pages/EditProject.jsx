@@ -5,8 +5,8 @@ import { getAuthors } from "../api/authorsService";
 import { ROUTES } from "../routes";
 import { PROJECT_CATEGORIES } from "../constants/projectCategories";
 import { cleanPastedSocialUrls, cleanPastedYouTubeUrl, normalizeSocialPostUrl, normalizeYouTubeVideoUrl } from "../utils/postUrls";
-import FocalPointPicker from "../components/FocalPointPicker";
 import SeriesMetadataFields from "../components/SeriesMetadataFields";
+import { Button, FocalPointPicker } from "../ui";
 import "../styles/EventForm.css";
 
 function slugify(value) {
@@ -108,7 +108,9 @@ export default function EditProject() {
             const url = new URL(input.trim());
             const list = url.searchParams.get("list");
             if (list) return list;
-        } catch {}
+        } catch {
+            // A bare playlist ID is valid input and is returned unchanged below.
+        }
         return input.trim();
     }
 
@@ -343,19 +345,22 @@ export default function EditProject() {
                                 style={{ flex: 1 }}
                             />
                             {playlists.length > 1 && (
-                                <button
-                                    type="button"
+                                <Button
+                                    variant="danger"
+                                    size="small"
                                     onClick={() => setPlaylists(playlists.filter((_, j) => j !== i))}
-                                    style={{ color: "red", background: "none", border: "1px solid red", borderRadius: 4, cursor: "pointer", padding: "0 8px", flexShrink: 0 }}
-                                >✕</button>
+                                    style={{ flexShrink: 0 }}
+                                    aria-label={`Remove playlist ${i + 1}`}
+                                >✕</Button>
                             )}
                         </div>
                     ))}
-                    <button
-                        type="button"
+                    <Button
+                        variant="add"
+                        size="small"
                         onClick={() => setPlaylists([...playlists, { name: "", id: "" }])}
-                        style={{ fontSize: "0.85rem", marginTop: 2, cursor: "pointer" }}
-                    >+ Add playlist</button>
+                        style={{ marginTop: 2 }}
+                    >+ Add playlist</Button>
                 </div>
 
                 <div className="eventform-section">
@@ -402,7 +407,7 @@ export default function EditProject() {
                 </div>
 
                 <div className="eventform-section">
-                    <button type="submit" className="form-primary-submit">Save Changes</button>
+                    <Button type="submit" variant="save" size="large">Save Changes</Button>
                 </div>
 
             </form>

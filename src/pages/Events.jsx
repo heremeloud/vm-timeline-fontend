@@ -9,6 +9,7 @@ import EventViewNavigation from "../components/EventViewNavigation";
 import "../styles/Home.css";
 import useEventCategories from "../hooks/useEventCategories";
 import { getEventStartDate } from "../utils/eventDateRange";
+import { FilterBar, FilterDivider, FilterField, FilterRow, Select, TextInput, ToggleButton, ToggleGroup } from "../ui";
 
 const CALENDAR_LIMIT = 500;
 const LIMIT = 10;
@@ -399,29 +400,26 @@ export default function Events() {
             {!savedViewLoading && !savedViewError && (
                 <>
 
-            <div className="events-view-toggle" aria-label="Events view">
-                <button
-                    type="button"
-                    className={viewMode === "list" ? "active" : ""}
+            <ToggleGroup segmented className="events-view-toggle" aria-label="Events view">
+                <ToggleButton
+                    active={viewMode === "list"}
                     onClick={() => setViewMode("list")}
                 >
                     List
-                </button>
-                <button
-                    type="button"
-                    className={viewMode === "calendar" ? "active" : ""}
+                </ToggleButton>
+                <ToggleButton
+                    active={viewMode === "calendar"}
                     onClick={() => setViewMode("calendar")}
                 >
                     Calendar
-                </button>
-            </div>
+                </ToggleButton>
+            </ToggleGroup>
 
             {/* Filters */}
-            <div className="filter-bar filter-bar--two-row filter-bar--events">
-                <div className="filter-row">
-                    <div className="filter-group">
-                        <label>Search</label>
-                        <input
+            <FilterBar className="filter-bar--two-row filter-bar--events">
+                <FilterRow className="filter-row">
+                    <FilterField label="Search">
+                        <TextInput
                             type="text"
                             value={nameInput}
                             onChange={(e) => setNameInput(e.target.value)}
@@ -433,26 +431,24 @@ export default function Events() {
                             }}
                             placeholder="Name, #, KW"
                         />
-                    </div>
+                    </FilterField>
 
-                    <div className="filter-divider" />
+                    <FilterDivider />
 
-                    <div className="filter-group">
-                        <label>Artist</label>
-                        <select value={authorFilter} onChange={(e) => setAuthorFilter(e.target.value)}>
+                    <FilterField label="Artist">
+                        <Select value={authorFilter} onChange={(e) => setAuthorFilter(e.target.value)}>
                             <option value="">-- All --</option>
                             <option value="viewmim">ViewMim</option>
                             <option value="view">View</option>
                             <option value="mim">Mim</option>
                             <option value="vimmy">Vimmy</option>
-                        </select>
-                    </div>
-                </div>
+                        </Select>
+                    </FilterField>
+                </FilterRow>
 
-                <div className="filter-row">
-                    <div className="filter-group">
-                        <label>Category</label>
-                        <select
+                <FilterRow className="filter-row">
+                    <FilterField label="Category">
+                        <Select
                             value={subcategoryFilter ? `${categoryFilter}:${subcategoryFilter}` : categoryFilter}
                             onChange={(e) => {
                                 const [nextCategory, nextSubcategory = ""] = e.target.value.split(":");
@@ -474,20 +470,19 @@ export default function Events() {
                                     )),
                                 ];
                             })}
-                        </select>
-                    </div>
+                        </Select>
+                    </FilterField>
 
-                    <div className="filter-divider" />
+                    <FilterDivider />
 
-                    <div className="filter-group">
-                        <label>Sort</label>
-                        <select value={sortOrder} onChange={(e) => setSortOrder(e.target.value)}>
+                    <FilterField label="Sort">
+                        <Select value={sortOrder} onChange={(e) => setSortOrder(e.target.value)}>
                             <option value="newest">Newest First</option>
                             <option value="oldest">Oldest First</option>
-                        </select>
-                    </div>
-                </div>
-            </div>
+                        </Select>
+                    </FilterField>
+                </FilterRow>
+            </FilterBar>
 
             <EventViewNavigation activeSlug={eventViewSlug} />
 
@@ -583,17 +578,8 @@ export default function Events() {
                     </div>
 
                     {/* Pagination + Jump */}
-                    <div
-                        className="pagination-bar"
-                        style={{
-                            display: "flex",
-                            flexDirection: "column",
-                            alignItems: "center",
-                            gap: "10px",
-                            marginTop: "20px",
-                        }}
-                    >
-                        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                    <div className="pagination-bar">
+                        <div className="pagination-controls">
                             <button
                                 className="pagination-btn"
                                 onClick={() => setPage((p) => Math.max(1, p - 1))}
@@ -616,8 +602,8 @@ export default function Events() {
                             </button>
                         </div>
 
-                        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                            <span style={{ fontSize: "0.85rem", opacity: 0.7 }}>Jump to:</span>
+                        <div className="pagination-jump">
+                            <span className="pagination-jump-label">Jump to:</span>
                             <input
                                 type="number"
                                 min="1"

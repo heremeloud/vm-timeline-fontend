@@ -18,7 +18,7 @@ const PHYSICAL_EVENT_CATEGORIES = new Set([
 const NEARBY_EVENT_WINDOW_MS = 14 * 24 * 60 * 60 * 1000;
 
 function normalizeTag(tag = "") {
-    return tag.trim().replace(/^#/, "").toLocaleLowerCase();
+    return String(tag || "").trim().replace(/^#/, "").toLocaleLowerCase();
 }
 
 function parseDate(value) {
@@ -45,12 +45,27 @@ export function buildEventTagIndex(events = []) {
     const index = new Map();
 
     events.forEach((event) => {
+        const tagsByName = new Map();
+        const globalTags = new Set();
         (event.tags || []).forEach((tag) => {
             const normalized = normalizeTag(tag);
-            if (!normalized || EXCLUDED_IDENTITY_TAGS.has(normalized)) return;
+            if (normalized) {
+                globalTags.add(normalized);
+                tagsByName.set(normalized, event.dates || []);
+            }
+        });
+        (event.date_items || []).forEach((item) => {
+            const normalized = normalizeTag(item.hashtag);
+            if (!normalized || globalTags.has(normalized)) return;
+            const dates = tagsByName.get(normalized) || [];
+            tagsByName.set(normalized, [...dates, item.date].filter(Boolean));
+        });
+
+        tagsByName.forEach((dates, normalized) => {
+            if (EXCLUDED_IDENTITY_TAGS.has(normalized)) return;
 
             const matches = index.get(normalized) || [];
-            matches.push(event);
+            matches.push(dates.length ? { ...event, dates: [...new Set(dates)] } : event);
             index.set(normalized, matches);
         });
     });

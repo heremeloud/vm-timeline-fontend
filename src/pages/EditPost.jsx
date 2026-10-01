@@ -14,6 +14,7 @@ import { deleteMediaObject } from "../api/mediaService";
 import { bangkokDateTimeToUtc, cleanPastedPostUrl, detectMediaAuthor, detectMediaDate, detectPostDateTime, extractTikTokPostId, isInstagramChannelUrl, isInstagramPostUrl, normalizePostUrl, utcToBangkokDateTime } from "../utils/postUrls";
 import { isFromR2 } from "../utils/media";
 import { appendUploadedUrls, nextMediaSequence } from "../utils/mediaItemOrder";
+import { Button } from "../ui";
 import "../styles/EventForm.css";
 
 const emptyStoryItem = () => ({ url: "", text: "", translation: "", note: "", attachment_type: "screenshot", deleteFromR2: false });
@@ -644,8 +645,9 @@ export default function EditPost() {
                                                 <span>R2</span>
                                             </label>
                                         )}
-                                        <button
-                                            type="button"
+                                        <Button
+                                            variant="danger"
+                                            size="small"
                                             onClick={() => removeMediaItem(i)}
                                             className="form-remove-button"
                                             aria-label={`Remove media ${i + 1}`}
@@ -654,7 +656,7 @@ export default function EditPost() {
                                             <svg viewBox="0 0 24 24" aria-hidden="true">
                                                 <path d="M6 6l12 12M18 6L6 18" />
                                             </svg>
-                                        </button>
+                                        </Button>
                                     </div>
                                     {item.deleteFromR2 && (
                                         <div className="r2-delete-warning">
@@ -708,13 +710,14 @@ export default function EditPost() {
                                     />
                                 </div>
                             ))}
-                            <button
-                                type="button"
+                            <Button
+                                variant="add"
+                                size="small"
                                 onClick={() => addStoryItems(1)}
-                                style={{ fontSize: "0.85rem", marginTop: 2, cursor: "pointer" }}
+                                style={{ marginTop: 2 }}
                             >
                                 + Add another {contentType === "broadcast" ? "message" : "story item"}
-                            </button>
+                            </Button>
                             {contentType === "story" && <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8, flexWrap: "wrap" }}>
                                 <input
                                     type="number"
@@ -725,13 +728,13 @@ export default function EditPost() {
                                     style={{ width: 90 }}
                                     aria-label="Story item quantity"
                                 />
-                                <button
-                                    type="button"
+                                <Button
+                                    variant="add"
+                                    size="small"
                                     onClick={() => addStoryItems(storyItemQuantity)}
-                                    style={{ fontSize: "0.85rem", cursor: "pointer" }}
                                 >
                                     + Add story items
-                                </button>
+                                </Button>
                                 <button
                                     type="button"
                                     onClick={generateStoryItemUrls}
@@ -790,7 +793,7 @@ export default function EditPost() {
                 </div>
 
                 <div className="eventform-section">
-                    <button type="submit" className="form-primary-submit">Save Changes</button>
+                    <Button type="submit" variant="save" size="large">Save Changes</Button>
                 </div>
 
             </form>

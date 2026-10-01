@@ -3,9 +3,12 @@ import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import Avatar from "./Avatar";
 import "../styles/EventCard.css";
+import "../styles/MediaCarousel.css";
+import { CarouselControls } from "../ui";
 import { deleteEvent, updateEvent } from "../api/eventsService";
 import { ROUTES } from "../routes";
 import { formatEventDateRange, getEventStartDate } from "../utils/eventDateRange";
+import { getEventDateItemForPhoto } from "../utils/eventDateItems";
 
 function orderViewMimFirst(authors = []) {
     if (!Array.isArray(authors)) return [];
@@ -156,6 +159,7 @@ export default function EventCard({ event }) {
     const returnTo = `${location.pathname}${location.search}`;
     const editEventUrl = `${ROUTES.editEvent(event.id)}?returnTo=${encodeURIComponent(returnTo)}`;
     const tags = event.tags || [];
+    const dateItems = event.date_items || [];
     const authors = orderViewMimFirst(event.authors || []);
     const isAdmin = !!localStorage.getItem("jwt");
 
@@ -165,6 +169,7 @@ export default function EventCard({ event }) {
     const photos = normalizeEventPhotos(event);
     const activePhotoIdx = photos.length ? photoIdx % photos.length : 0;
     const activePhoto = photos[activePhotoIdx];
+    const activeDateItem = getEventDateItemForPhoto(dateItems, activePhoto);
     const [isPublic, setIsPublic] = useState(event.is_visible !== false);
     const [savingVisibility, setSavingVisibility] = useState(false);
     const eventDateLabel = formatEventDateRange(event);
@@ -207,7 +212,7 @@ export default function EventCard({ event }) {
     const currentLiveMedia = liveMediaItems[liveIdx] || {};
 
     return (
-        <div className="eventcard-wrapper">
+        <div className="eventcard-wrapper ui-content-card ui-content-card--event">
             <div className="eventcard-inner">
                 {(event.category || isAdmin) && (
                     <div className="eventcard-topline">
@@ -343,30 +348,33 @@ export default function EventCard({ event }) {
                     </div>
                 )}
 
+                {activeDateItem && (
+                    <div className="eventcard-date-badges" aria-label="Keywords and hashtags for the displayed event date">
+                        <div className="eventcard-date-badge-row">
+                            {activeDateItem.keyword && (
+                                <div className="eventcard-badges">
+                                    <CopyBadge term={activeDateItem.keyword} startDate={activeDateItem.date} endDate={activeDateItem.date} onCopy={handleCopy} />
+                                </div>
+                            )}
+                            {activeDateItem.hashtag && (
+                                <div className="eventcard-badges">
+                                    <CopyBadge term={`#${activeDateItem.hashtag.replace(/^#/, "")}`} startDate={activeDateItem.date} endDate={activeDateItem.date} onCopy={handleCopy} />
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                )}
+
                 {activePhoto && (
-                    <div className="eventcard-media" role="region" aria-label="Event photos">
+                    <div className="eventcard-media media-carousel" role="region" aria-label="Event photos">
                         <img src={activePhoto.url} alt={`${displayName} — photo ${activePhotoIdx + 1}`}
                             className="eventcard-img" loading="lazy" />
-                        {photos.length > 1 && (
-                            <>
-                                {activePhotoIdx > 0 && (
-                                    <button type="button" className="eventcard-photo-arrow eventcard-photo-arrow--left"
-                                        aria-label="Previous photo" onClick={() => setPhotoIdx(activePhotoIdx - 1)}>‹</button>
-                                )}
-                                {activePhotoIdx < photos.length - 1 && (
-                                    <button type="button" className="eventcard-photo-arrow eventcard-photo-arrow--right"
-                                        aria-label="Next photo" onClick={() => setPhotoIdx(activePhotoIdx + 1)}>›</button>
-                                )}
-                                <div className="eventcard-photo-dots">
-                                    {photos.map((photo, index) => (
-                                        <button type="button" key={`${index}-${photo.url}`}
-                                            className={`eventcard-photo-dot${index === activePhotoIdx ? " active" : ""}`}
-                                            aria-label={`Photo ${index + 1}`} aria-current={index === activePhotoIdx ? "true" : undefined}
-                                            onClick={() => setPhotoIdx(index)} />
-                                    ))}
-                                </div>
-                            </>
-                        )}
+                        <CarouselControls
+                            index={activePhotoIdx}
+                            total={photos.length}
+                            onChange={setPhotoIdx}
+                            itemLabel="Photo"
+                        />
                     </div>
                 )}
 

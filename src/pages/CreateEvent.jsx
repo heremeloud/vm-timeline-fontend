@@ -11,6 +11,8 @@ import useEventCategories from "../hooks/useEventCategories";
 import { cleanPastedSocialUrls, normalizeSocialPostUrl } from "../utils/postUrls";
 import { formatEventDateRange } from "../utils/eventDateRange";
 import EventMediaFields, { cleanEventMediaItems, normalizeEventMediaItems } from "../components/EventMediaFields";
+import { cleanEventDateItems, emptyEventDateItem } from "../utils/eventDateItems";
+import { Button } from "../ui";
 
 const DEFAULT_TAG_OPTIONS = [
     { key: "viewmim", label: "ViewMim", value: "ViewMim", defaultChecked: true, row: "couple" },
@@ -51,8 +53,9 @@ export default function CreateEvent() {
     const [photos, setPhotos] = useState([{ url: "", focal_x: 50, focal_y: 50 }]);
     const [startDate, setStartDate] = useState("");
     const [endDate, setEndDate] = useState("");
-    const [dateMode, setDateMode] = useState("dates");
-    const [dates, setDates] = useState([""]);
+    const [dateMode, setDateMode] = useState("range");
+    const [dateItems, setDateItems] = useState(() => [emptyEventDateItem()]);
+    const dates = dateItems.map((item) => item.date);
     const [announcementURLsInput, setAnnouncementURLsInput] = useState("");
     const [privateNotes, setPrivateNotes] = useState("");
     const [liveMediaItems, setLiveMediaItems] = useState(() => normalizeEventMediaItems());
@@ -156,6 +159,7 @@ export default function CreateEvent() {
                 tags,
                 photo_items: cleanEventPhotos(photos),
                 dates: dateMode === "dates" ? dates.filter(Boolean) : [],
+                date_items: dateMode === "dates" ? cleanEventDateItems(dateItems) : [],
                 start_date: dateMode === "range" ? startDate || null : null,
                 end_date: dateMode === "range" ? endDate || null : null,
                 announcement_urls: announcementURLsInput.split("\n").map(normalizeSocialPostUrl).filter(Boolean),
@@ -205,14 +209,20 @@ export default function CreateEvent() {
                     </select>
                     {dateMode === "dates" ? (
                         <div>
-                            {dates.map((value, index) => (
-                                <div className="eventform-date-row" key={index}>
-                                    <input type="date" aria-label={`Event date ${index + 1}`} value={value}
-                                        onChange={e => setDates(dates.map((d, i) => i === index ? e.target.value : d))} />
-                                    <button type="button" onClick={() => setDates(dates.filter((_, i) => i !== index))}>Remove</button>
+                            {dateItems.map((item, index) => (
+                                <div className="eventform-date-row eventform-date-row--event-occurrence" key={index}>
+                                    <input type="date" aria-label={`Event date ${index + 1}`} value={item.date}
+                                        onChange={e => setDateItems(dateItems.map((row, i) => i === index ? { ...row, date: e.target.value } : row))} />
+                                    <input aria-label={`Keyword for event date ${index + 1}`} value={item.keyword}
+                                        placeholder="Keyword (optional)"
+                                        onChange={e => setDateItems(dateItems.map((row, i) => i === index ? { ...row, keyword: e.target.value } : row))} />
+                                    <input aria-label={`Hashtag for event date ${index + 1}`} value={item.hashtag}
+                                        placeholder="Hashtag (optional)"
+                                        onChange={e => setDateItems(dateItems.map((row, i) => i === index ? { ...row, hashtag: e.target.value } : row))} />
+                                    <Button variant="danger" size="small" onClick={() => setDateItems(dateItems.filter((_, i) => i !== index))}>Remove</Button>
                                 </div>
                             ))}
-                            <button type="button" onClick={() => setDates([...dates, ""])}>Add date</button>
+                            <Button variant="add" size="small" onClick={() => setDateItems([...dateItems, emptyEventDateItem()])}>+ Add date</Button>
                         </div>
                     ) : (
                     <div className="eventform-event-date-fields">
@@ -283,7 +293,7 @@ export default function CreateEvent() {
                 </div>
 
                 <div className="eventform-section">
-                    <label>Keyword <span className="form-optional">(optional)</span></label>
+                    <label>Event-wide Keyword <span className="form-optional">(optional fallback)</span></label>
                     <input
                         value={keyword}
                         onChange={(e) => setKeyword(e.target.value)}
@@ -291,7 +301,7 @@ export default function CreateEvent() {
                 </div>
 
                 <div className="eventform-section">
-                    <label>Tags <span className="form-optional">(optional, comma separated)</span></label>
+                    <label>Event-wide Hashtags <span className="form-optional">(optional fallback, comma separated)</span></label>
                     <input
                         value={tagsInput}
                         onChange={(e) => setTagsInput(e.target.value)}
@@ -371,7 +381,7 @@ export default function CreateEvent() {
                 </div>
 
                 <div className="eventform-section">
-                    <button type="submit" className="form-primary-submit">Save Event</button>
+                    <Button type="submit" variant="save" size="large">Save Event</Button>
                 </div>
 
             </form>

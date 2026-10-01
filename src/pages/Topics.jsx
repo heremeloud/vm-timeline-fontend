@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { getAdminTopics, getTopics, updateTopic } from "../api/topicsService";
 import { ROUTES } from "../routes";
+import { CardGrid } from "../ui";
 import { formatCardDateRange } from "../utils/cardDate";
 import "../styles/Home.css";
 import "../styles/Topics.css";
@@ -50,7 +51,7 @@ export default function Topics() {
                 <hr />
             </div>
 
-            <div className="topic-grid">
+            <CardGrid>
                 {topics.map((topic) => (
                     <div key={topic.id} className={`topic-card-shell ${isAdmin ? "topic-card-shell--admin" : ""}`.trim()}>
                     <Link to={ROUTES.topicDetail(topic.slug || topic.id)} className="topic-card">
@@ -84,7 +85,7 @@ export default function Topics() {
                     )}
                     </div>
                 ))}
-            </div>
+            </CardGrid>
 
             {isAdmin && (
                 <Link to={ROUTES.createTopic}>

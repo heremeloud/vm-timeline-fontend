@@ -6,6 +6,7 @@ import { createTopic, getAdminTopic, updateTopic } from "../api/topicsService";
 import { ROUTES } from "../routes";
 import { bangkokDateTimeToUtc, cleanPastedPostUrl, detectMediaAuthor, detectMediaDate, detectPostDateTime, extractTikTokPostId, normalizePostUrl } from "../utils/postUrls";
 import { isImage, isVideo } from "../utils/media";
+import { Button, DragHandle } from "../ui";
 import "../styles/EventForm.css";
 import "../styles/Topics.css";
 
@@ -303,7 +304,6 @@ export default function TopicForm() {
                 let postId = Number(item.post_id);
 
                 if (item.source === "new") {
-                    // eslint-disable-next-line no-await-in-loop
                     postId = await createInlinePost(item);
                 }
 
@@ -477,8 +477,8 @@ export default function TopicForm() {
                                 )}
                                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, flexWrap: "wrap" }}>
                                     <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                                        <div
-                                            draggable
+                                        <DragHandle
+                                            label="Drag to change timeline order"
                                             onDragStart={(e) => {
                                                 setDraggedItemKey(item.client_key);
                                                 e.dataTransfer.effectAllowed = "move";
@@ -488,52 +488,46 @@ export default function TopicForm() {
                                                 setDraggedItemKey(null);
                                                 setDragTarget(null);
                                             }}
-                                            title="Drag to change timeline order"
-                                            aria-label="Drag to change timeline order"
-                                            style={{
-                                                cursor: "grab",
-                                                color: "#8a7768",
-                                                fontSize: "1.2rem",
-                                                lineHeight: 1,
-                                                letterSpacing: 3,
-                                                userSelect: "none",
-                                                padding: "4px 16px",
-                                                border: "1px solid rgba(138, 119, 104, 0.28)",
-                                                borderRadius: 999,
-                                                background: "rgba(255, 248, 239, 0.9)",
-                                            }}
-                                        >
-                                            ⋮⋮
-                                        </div>
+                                        />
                                         <strong>Item {index + 1}</strong>
                                     </div>
                                     <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                                        <button
-                                            type="button"
+                                        <Button
+                                            variant="insert"
+                                            size="medium"
                                             onClick={() => insertTimelineItem(index, "above")}
                                         >
                                             Insert above
-                                        </button>
-                                        <button
-                                            type="button"
+                                        </Button>
+                                        <Button
+                                            variant="insert"
+                                            size="medium"
                                             onClick={() => insertTimelineItem(index, "below")}
                                         >
                                             Insert below
-                                        </button>
-                                        <button
-                                            type="button"
+                                        </Button>
+                                        <Button
+                                            variant="primary"
+                                            size="medium"
+                                            className="ui-button--icon"
                                             onClick={() => moveTimelineItem(index, -1)}
                                             disabled={index === 0}
+                                            aria-label={`Move item ${index + 1} up`}
+                                            title="Move up"
                                         >
-                                            Move up
-                                        </button>
-                                        <button
-                                            type="button"
+                                            ↑
+                                        </Button>
+                                        <Button
+                                            variant="primary"
+                                            size="medium"
+                                            className="ui-button--icon"
                                             onClick={() => moveTimelineItem(index, 1)}
                                             disabled={index === items.length - 1}
+                                            aria-label={`Move item ${index + 1} down`}
+                                            title="Move down"
                                         >
-                                            Move down
-                                        </button>
+                                            ↓
+                                        </Button>
                                     </div>
                                 </div>
 
@@ -898,13 +892,14 @@ export default function TopicForm() {
                         );
                     })}
 
-                    <button
-                        type="button"
+                    <Button
+                        variant="add"
+                        size="small"
                         onClick={() => setItems((current) => [...current, createEmptyItem(current.length)])}
                         style={{ marginTop: 12 }}
                     >
-                        Add timeline item
-                    </button>
+                        + Add timeline item
+                    </Button>
                 </div>
 
                 <div className="eventform-section">

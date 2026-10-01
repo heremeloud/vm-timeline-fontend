@@ -53,13 +53,22 @@ button {
   background-color: #1a1a1a;
   cursor: pointer;
   transition: border-color 0.25s;
+  -webkit-tap-highlight-color: transparent;
 }
 button:hover {
-  border-color: #646cff;
+  border-color: var(--ui-color-accent, #9a7448);
 }
-button:focus,
+button:focus {
+  outline: none;
+}
 button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
+  outline: 2px solid var(--ui-color-accent, #9a7448);
+  outline-offset: 2px;
+}
+
+input[type="checkbox"],
+input[type="radio"] {
+  accent-color: var(--ui-color-accent, #9a7448);
 }
 
 @media (prefers-color-scheme: light) {

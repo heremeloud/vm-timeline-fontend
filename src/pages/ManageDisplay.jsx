@@ -15,6 +15,7 @@ import TweetEmbed from "../components/TweetEmbed";
 import InstagramEmbed from "../components/InstagramEmbed";
 import TikTokEmbed from "../components/TikTokEmbed";
 import VisibilityToggle from "../components/VisibilityToggle";
+import { Button, DragHandle, ToggleButton, ToggleGroup } from "../ui";
 import "../styles/EventForm.css";
 
 const LIMIT = 25;
@@ -456,27 +457,28 @@ export default function ManageDisplay() {
     function renderPaginationControls(position) {
         const inputId = `manage-display-page-jump-${position}`;
         return (
-            <div className="manage-display-pagination">
-                <div className="manage-display-page-controls">
-                    <div className="manage-display-page-navigation">
+            <div className={`pagination-bar pagination-bar--inline manage-display-pagination manage-display-pagination--${position}`}>
+                    <div className="pagination-controls">
                         <button
                             type="button"
+                            className="ui-button pagination-btn"
                             onClick={() => setPage((current) => Math.max(1, current - 1))}
                             disabled={page === 1}
                         >
                             ‹ Prev
                         </button>
-                        <strong>Page {page} / {lastPage}</strong>
+                        <span>Page {page} / {lastPage}</span>
                         <button
                             type="button"
+                            className="ui-button pagination-btn"
                             onClick={() => setPage((current) => current + 1)}
                             disabled={nextDisabled}
                         >
                             Next ›
                         </button>
                     </div>
-                    <div className="manage-display-page-jump">
-                        <label htmlFor={inputId}>Jump to page</label>
+                    <div className="pagination-jump">
+                        <label className="pagination-jump-label" htmlFor={inputId}>Jump to:</label>
                         <input
                             id={inputId}
                             type="number"
@@ -487,10 +489,12 @@ export default function ManageDisplay() {
                             onKeyDown={(e) => {
                                 if (e.key === "Enter") jumpToPage();
                             }}
+                            onBlur={() => {
+                                if (jumpPage) jumpToPage();
+                            }}
+                            className="jump-to-input"
                         />
-                        <button type="button" onClick={jumpToPage}>Go</button>
                     </div>
-                </div>
             </div>
         );
     }
@@ -502,20 +506,18 @@ export default function ManageDisplay() {
                 Control which saved content appears in public-facing lists.
             </p>
 
-            <div className="manage-authors-filter-tabs" role="tablist" aria-label="Manage display section">
+            <ToggleGroup className="manage-authors-filter-tabs" role="tablist" aria-label="Manage display section">
                 {TABS.map((tab) => (
-                    <button
+                    <ToggleButton
                         key={tab}
-                        type="button"
                         role="tab"
-                        aria-selected={activeTab === tab}
-                        className={`manage-authors-filter-tab${activeTab === tab ? " is-active" : ""}`}
+                        active={activeTab === tab}
                         onClick={() => setActiveTab(tab)}
                     >
                         {tabLabel(tab)}
-                    </button>
+                    </ToggleButton>
                 ))}
-            </div>
+            </ToggleGroup>
 
             {activeTab !== "authors" && activeTab !== "event-settings" && (
                 <div className="eventform-section eventform-form" style={{ width: "min(100%, 240px)", marginTop: 14 }}>
@@ -804,7 +806,7 @@ function EventCategoryManager({ categories, loading, reload }) {
                     New category
                     <input value={newCategory} onChange={(e) => setNewCategory(e.target.value)} placeholder="e.g. Concert" />
                 </label>
-                <button className="event-setup-add-button" type="submit" disabled={saving || !newCategory.trim()}>+ Add category</button>
+                <Button variant="add" size="large" className="event-setup-add-button" type="submit" disabled={saving || !newCategory.trim()}>+ Add category</Button>
             </form>
             <div className="manage-authors-list">
                 {loading ? <p>Loading...</p> : categories.map((category) => {
@@ -823,26 +825,21 @@ function EventCategoryManager({ categories, loading, reload }) {
                             }}
                         >
                             {position && draggedId !== category.id && <div aria-hidden="true" style={{ position: "absolute", left: 8, right: 8, [position === "before" ? "top" : "bottom"]: -5, height: 4, borderRadius: 999, background: "#a76719", boxShadow: "0 0 0 2px #fff8ef", zIndex: 5, pointerEvents: "none" }} />}
-                            <button
-                                type="button"
-                                className="manage-authors-drag-handle"
-                                draggable
+                            <DragHandle
                                 onDragStart={(event) => {
                                     setDraggedId(category.id);
                                     event.dataTransfer.effectAllowed = "move";
                                     event.dataTransfer.setData("text/plain", String(category.id));
                                 }}
                                 onDragEnd={() => { setDraggedId(null); setDropTarget(null); }}
-                                title="Drag to reorder"
-                                aria-label={`Drag ${category.label} to reorder`}
-                                style={{ cursor: "grab" }}
-                            >⋮⋮</button>
+                                label={`Drag ${category.label} to reorder`}
+                            />
                             <div className="manage-authors-row-info">
                                 <strong>{category.label}</strong>
                                 <div className="manage-authors-row-sub">{category.subcategories?.length || 0} subcategories · stored as “{category.value}”</div>
                             </div>
                             <button type="button" className="manage-authors-row-edit" onClick={() => setSelectedCategoryId(category.id)}>Edit</button>
-                            <button type="button" disabled={saving} className="btn-delete manage-display-delete" onClick={() => removeCategory(category)}>Delete</button>
+                            <Button variant="danger" size="small" disabled={saving} className="manage-display-delete" onClick={() => removeCategory(category)}>Delete</Button>
                         </div>
                     </div>;
                 })}
@@ -945,30 +942,25 @@ function EventCategoryEditor({ category, saving, run }) {
                                 }}
                             >
                                 {position && draggedId !== subcategory.id && <div aria-hidden="true" style={{ position: "absolute", left: 8, right: 8, [position === "before" ? "top" : "bottom"]: -5, height: 4, borderRadius: 999, background: "#a76719", boxShadow: "0 0 0 2px #fff8ef", zIndex: 5, pointerEvents: "none" }} />}
-                                <button
-                                    type="button"
-                                    className="manage-authors-drag-handle"
-                                    draggable
+                                <DragHandle
                                     onDragStart={(event) => {
                                         setDraggedId(subcategory.id);
                                         event.dataTransfer.effectAllowed = "move";
                                         event.dataTransfer.setData("text/plain", String(subcategory.id));
                                     }}
                                     onDragEnd={() => { setDraggedId(null); setDropTarget(null); }}
-                                    title="Drag to reorder"
-                                    aria-label={`Drag ${subcategory.label} to reorder`}
-                                    style={{ cursor: "grab" }}
-                                >⋮⋮</button>
+                                    label={`Drag ${subcategory.label} to reorder`}
+                                />
                                 <div className="manage-authors-row-info">
                                     <strong>{subcategory.label}</strong>
                                     <div className="manage-authors-row-sub">stored as “{subcategory.value}”</div>
                                 </div>
                                 <button type="button" className="manage-authors-row-edit" onClick={() => setEditingSubcategoryId(editing ? null : subcategory.id)}>{editing ? "Close" : "Edit"}</button>
-                                <button type="button" disabled={saving} className="btn-delete manage-display-delete" onClick={async () => {
+                                <Button variant="danger" size="small" disabled={saving} className="manage-display-delete" onClick={async () => {
                                     if (!confirm(`Delete the “${subcategory.label}” subcategory? Subcategories used by events cannot be deleted.`)) return;
                                     const removed = await run(() => deleteEventSubcategory(subcategory.id));
                                     if (removed) setEditingSubcategoryId(null);
-                                }}>Delete</button>
+                                }}>Delete</Button>
                             </div>
                             {editing && <EventSubcategoryEditor key={`${subcategory.id}-${subcategory.value}-${subcategory.label}`} subcategory={subcategory} saving={saving} run={run} />}
                         </div>;
@@ -980,7 +972,7 @@ function EventCategoryEditor({ category, saving, run }) {
                         New subcategory
                         <input value={newSubcategory} onChange={(e) => setNewSubcategory(e.target.value)} placeholder="e.g. Fan meeting" />
                     </label>
-                    <button className="event-setup-add-button" type="submit" disabled={saving || !newSubcategory.trim()}>+ Add subcategory</button>
+                    <Button variant="add" size="large" className="event-setup-add-button" type="submit" disabled={saving || !newSubcategory.trim()}>+ Add subcategory</Button>
                 </form>
             </div>
         </div>
@@ -1174,7 +1166,7 @@ function FilteredEventPages({ categories }) {
                         Give a saved combination of event filters its own public URL.
                     </p>
                 </div>
-                {!draft && <button type="button" onClick={startCreate}>+ Add page</button>}
+                {!draft && <Button variant="add" size="small" onClick={startCreate}>+ Add page</Button>}
             </div>
 
             {error && <p role="alert" style={{ color: "#9a3412" }}>{error}</p>}
@@ -1294,10 +1286,7 @@ function FilteredEventPages({ categories }) {
                         }}
                     >
                         {position && draggedId !== view.id && <div aria-hidden="true" style={{ position: "absolute", left: 8, right: 8, [position === "before" ? "top" : "bottom"]: -5, height: 4, borderRadius: 999, background: "#a76719", boxShadow: "0 0 0 2px #fff8ef", zIndex: 5, pointerEvents: "none" }} />}
-                        <button
-                            type="button"
-                            className="manage-authors-drag-handle"
-                            draggable
+                        <DragHandle
                             disabled={saving}
                             onDragStart={(event) => {
                                 setDraggedId(view.id);
@@ -1305,10 +1294,8 @@ function FilteredEventPages({ categories }) {
                                 event.dataTransfer.setData("text/plain", String(view.id));
                             }}
                             onDragEnd={() => { setDraggedId(null); setDropTarget(null); }}
-                            title="Drag to reorder"
-                            aria-label={`Drag ${view.title} to reorder`}
-                            style={{ cursor: "grab" }}
-                        >⋮⋮</button>
+                            label={`Drag ${view.title} to reorder`}
+                        />
                         <div className="manage-authors-row-info">
                             <strong>{view.title}</strong>
                             <div className="manage-authors-row-sub">/events/view/{view.slug}</div>
@@ -1316,7 +1303,7 @@ function FilteredEventPages({ categories }) {
                         <span style={{ whiteSpace: "nowrap", color: view.is_visible ? "#2f7d32" : "#9a3412" }}>{view.is_visible ? "public" : "hidden"}</span>
                         {view.is_visible && <Link to={ROUTES.eventView(view.slug)} target="_blank" rel="noopener noreferrer">View</Link>}
                         <button type="button" className="manage-authors-row-edit" onClick={() => startEdit(view)}>Edit</button>
-                        <button type="button" className="btn-delete manage-display-delete" onClick={() => removeView(view)}>Delete</button>
+                        <Button variant="danger" size="small" className="manage-display-delete" onClick={() => removeView(view)}>Delete</Button>
                     </div>;
                 })}
                 {!loading && views.length === 0 && !draft && <p>No filtered event pages yet.</p>}
@@ -1377,7 +1364,7 @@ function DisplayRow({ tab, item, author, isSearchResult = false, saving, returnT
                 paddingTop: 12,
                 paddingRight: 12,
                 paddingBottom: 12,
-                paddingLeft: canDrag ? 72 : 12,
+                paddingLeft: canDrag ? 92 : 12,
                 display: "grid",
                 gap: 8,
                 position: "relative",
@@ -1406,14 +1393,10 @@ function DisplayRow({ tab, item, author, isSearchResult = false, saving, returnT
                 />
             )}
             {canDrag && (
-                <button
-                    type="button"
-                    className="manage-authors-drag-handle"
-                    draggable
+                <DragHandle
                     onDragStart={onDragStart}
                     onDragEnd={onDragEnd}
-                    title="Drag to change post display order"
-                    aria-label="Drag to change post display order"
+                    label="Drag to change post display order"
                     style={{
                         position: "absolute",
                         top: "50%",
@@ -1422,9 +1405,7 @@ function DisplayRow({ tab, item, author, isSearchResult = false, saving, returnT
                         cursor: "grab",
                         zIndex: 2,
                     }}
-                >
-                    ⋮⋮
-                </button>
+                />
             )}
             <div className="manage-display-card-header" style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "flex-start" }}>
                 <div className="manage-display-entry-summary">
@@ -1465,15 +1446,16 @@ function DisplayRow({ tab, item, author, isSearchResult = false, saving, returnT
                 )}
 
                 {tab === "posts" && (
-                    <button
-                        type="button"
-                        className="btn-delete manage-display-delete"
+                    <Button
+                        variant="danger"
+                        size="small"
+                        className="manage-display-delete"
                         disabled={saving}
                         onClick={onDelete}
                         style={{ display: onDelete ? undefined : "none" }}
                     >
                         Delete
-                    </button>
+                    </Button>
                 )}
             </div>
         </div>

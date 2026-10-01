@@ -1,4 +1,4 @@
-import FocalPointPicker from "./FocalPointPicker";
+import { Button, FocalPointPicker } from "../ui";
 
 export default function EventPhotoFields({ photos, onChange, dates = [], dateMode = "dates", startDate = "", endDate = "" }) {
     const dateOptions = [...new Set(dates.filter(Boolean))].sort();
@@ -18,8 +18,8 @@ export default function EventPhotoFields({ photos, onChange, dates = [], dateMod
                         <input id={`event-photo-${index}`} value={photo.url}
                             onChange={e => updatePhoto(index, { url: e.target.value })}
                             placeholder="https://..." />
-                        <button type="button" aria-label={`Remove photo ${index + 1}`}
-                            onClick={() => onChange(photos.filter((_, i) => i !== index))}>Remove</button>
+                        <Button variant="danger" size="small" aria-label={`Remove photo ${index + 1}`}
+                            onClick={() => onChange(photos.filter((_, i) => i !== index))}>Remove</Button>
                     </div>
                     <label htmlFor={`event-photo-date-${index}`}>Calendar date</label>
                     {dateMode === "dates" ? (
@@ -40,7 +40,7 @@ export default function EventPhotoFields({ photos, onChange, dates = [], dateMod
                         onChange={(focal_x, focal_y) => updatePhoto(index, { focal_x, focal_y })} />
                 </div>
             ))}
-            <button type="button" onClick={() => onChange([...photos, { url: "", focal_x: 50, focal_y: 50 }])}>Add photo</button>
+            <Button variant="add" size="small" onClick={() => onChange([...photos, { url: "", focal_x: 50, focal_y: 50 }])}>+ Add photo</Button>
         </div>
     );
 }

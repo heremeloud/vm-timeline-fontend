@@ -153,24 +153,28 @@
 }
 
 .focal-point-presets {
-    display: flex;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 7px;
-    flex-wrap: wrap;
 }
 
-.eventform-form .focal-point-reset {
-    padding: 6px 9px;
+.eventform-form button.focal-point-reset {
+    width: 100%;
+    min-width: 0;
+    padding: 6px 4px;
     border: 1px solid #a67c52;
     border-radius: 7px;
-    background: transparent;
-    color: #79512e;
-    font-size: 0.78rem;
+    background: var(--ui-color-accent, #9a7448);
+    color: #fff;
+    font-size: clamp(0.7rem, 1.7vw, 0.78rem);
     font-weight: 600;
+    white-space: nowrap;
+    box-sizing: border-box;
 }
 
-.eventform-form .focal-point-reset:hover {
-    background: rgba(166, 124, 82, 0.12);
-    color: #5f3d20;
+.eventform-form button.focal-point-reset:hover {
+    background: var(--ui-color-accent-hover, #b58a58);
+    color: #fff;
     opacity: 1;
 }
 

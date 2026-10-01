@@ -22,6 +22,7 @@ import EventLinkedText from "./EventLinkedText";
 import IGReply from "./IGReply";
 import TweetReply from "./TweetReply";
 import TikTokReply from "./TikTokReply";
+import { Button } from "../ui";
 
 export default function PostCard({
     post,
@@ -35,6 +36,13 @@ export default function PostCard({
     const isBroadcast = isInstagram && post.content_type === "broadcast";
     const isTwitter = post.platform === "x" || post.platform === "twitter";
     const isTikTok = post.platform === "tt" || post.platform === "tiktok";
+    const platformTone = isBroadcast
+        ? "broadcast"
+        : isInstagram
+          ? "instagram"
+          : isTwitter
+            ? "x"
+            : "tiktok";
     const rendersAdultFallback = Boolean(post.is_adult);
     const eventTagLinks = useMemo(
         () => getEventTagLinks(post, eventTagIndex),
@@ -147,7 +155,7 @@ export default function PostCard({
     }, [comments, isTikTok]);
 
     return (
-        <div className="post-wrapper">
+        <div className={`post-wrapper ui-content-card ui-content-card--post ui-platform-${platformTone}`}>
             {isAdmin && (
                 <label
                     className="post-visibility-toggle"
@@ -169,16 +177,7 @@ export default function PostCard({
             )}
             {post.posted_at && (
                 <div className="post-date">
-                    <span
-                        className="post-platform-dot"
-                        style={{
-                            background: isInstagram
-                                ? "#e1306c"
-                                : isTwitter
-                                  ? "#1d9bf0"
-                                  : "#010101",
-                        }}
-                    />
+                    <span className={`post-platform-dot post-platform-dot--${platformTone}`} />
                     <span className="post-platform-name">
                         {isBroadcast
                             ? "Instagram Broadcast Channel"
@@ -452,25 +451,27 @@ export default function PostCard({
                         to={ROUTES.addReply(post.id)}
                         state={{ returnTo }}
                         onClick={saveReturnScroll}
+                        className="ui-button ui-button--add ui-button--medium"
                     >
-                        <button>
-                            {isInstagram
-                                ? "Add IG Reply"
-                                : isTikTok
-                                  ? "Add TikTok Reply"
-                                  : "Add Tweet Reply"}
-                        </button>
+                        {isInstagram
+                            ? "+ Add IG Reply"
+                            : isTikTok
+                              ? "+ Add TikTok Reply"
+                              : "+ Add Tweet Reply"}
                     </Link>
 
                     <Link
                         to={ROUTES.editPost(post.id)}
                         state={{ returnTo }}
                         onClick={saveReturnScroll}
+                        className="ui-button ui-button--primary ui-button--medium"
                     >
-                        <button className="btn-edit">Edit Post</button>
+                        Edit Post
                     </Link>
 
-                    <button
+                    <Button
+                        variant="danger"
+                        size="medium"
                         onClick={async () => {
                             if (confirm("Delete this post?")) {
                                 try {
@@ -486,10 +487,9 @@ export default function PostCard({
                                 }
                             }
                         }}
-                        className="btn-delete"
                     >
                         Delete Post
-                    </button>
+                    </Button>
                 </div>
             )}
         </div>

@@ -1,7 +1,10 @@
 import { cleanPastedYouTubeUrl, normalizeYouTubeVideoUrl } from "../utils/postUrls";
+import { Button } from "../ui";
 
 const emptyMediaItem = () => ({ url: "", keyword: "", hashtag: "" });
 
+// Shared with event form loaders; keeping it beside the field shape prevents drift.
+// eslint-disable-next-line react-refresh/only-export-components
 export function normalizeEventMediaItems(items = []) {
     const normalized = items
         .map((item) => typeof item === "string" ? { ...emptyMediaItem(), url: item } : ({
@@ -12,6 +15,7 @@ export function normalizeEventMediaItems(items = []) {
     return normalized.length ? normalized : [emptyMediaItem()];
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function cleanEventMediaItems(items = []) {
     return items
         .map((item) => ({
@@ -47,10 +51,10 @@ export default function EventMediaFields({ items, onChange }) {
                         />
                         <input value={item.keyword} onChange={(e) => update(index, "keyword", e.target.value)} placeholder="Keyword (optional)" />
                         <input value={item.hashtag} onChange={(e) => update(index, "hashtag", e.target.value)} placeholder="Hashtag without # (optional)" />
-                        <button type="button" onClick={() => remove(index)}>Remove media</button>
+                        <Button variant="danger" size="small" onClick={() => remove(index)}>Remove media</Button>
                     </div>
                 ))}
-                <button type="button" onClick={() => onChange([...items, emptyMediaItem()])}>+ Add media</button>
+                <Button variant="add" size="small" onClick={() => onChange([...items, emptyMediaItem()])}>+ Add media</Button>
             </div>
         </div>
     );

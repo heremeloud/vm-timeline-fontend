@@ -6,6 +6,7 @@ import { ROUTES } from "../routes";
 import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import PostCard from "../components/PostCard";
 import { buildEventTagIndex } from "../utils/eventTagLinks";
+import { FilterBar, FilterDivider, FilterField, FilterRow, Select } from "../ui";
 
 export default function Home() {
     const navigate = useNavigate();
@@ -271,10 +272,10 @@ export default function Home() {
             </div>
 
             {/* Filters */}
-            <div className="filter-bar filter-bar--two-row">
-                <div className="filter-group">
-                    <label>Platform</label>
-                    <select
+            <FilterBar className="filter-bar--two-row">
+                <FilterRow className="filter-row">
+                    <FilterField label="Platform">
+                    <Select
                         value={platformFilter}
                         onChange={(e) => changePlatformFilter(e.target.value)}
                     >
@@ -283,22 +284,22 @@ export default function Home() {
                         <option value="bc">Broadcast Channel</option>
                         <option value="x">X (Twitter)</option>
                         <option value="tt">TikTok</option>
-                    </select>
-                </div>
+                    </Select>
+                    </FilterField>
 
-                <div className="filter-divider" />
+                    <FilterDivider />
 
-                <div className="filter-group">
-                    <label>Sort</label>
-                    <select
+                    <FilterField label="Sort">
+                    <Select
                         value={sortOrder}
                         onChange={(e) => changeSortOrder(e.target.value)}
                     >
                         <option value="newest">Newest First</option>
                         <option value="oldest">Oldest First</option>
-                    </select>
-                </div>
-            </div>
+                    </Select>
+                    </FilterField>
+                </FilterRow>
+            </FilterBar>
 
             {/* Posts Page */}
             <div className="timeline-container">
@@ -315,18 +316,9 @@ export default function Home() {
             </div>
 
             {/* Pagination + Jump */}
-            <div
-                className="pagination-bar"
-                style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "center",
-                    gap: "10px",
-                    marginTop: "20px",
-                }}
-            >
+            <div className="pagination-bar">
                 {/* Pagination Controls */}
-                <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                <div className="pagination-controls">
                     <button
                         className="pagination-btn"
                         onClick={() => setTimelinePage(page - 1)}
@@ -350,8 +342,8 @@ export default function Home() {
                 </div>
 
                 {/* Jump to page (no button) */}
-                <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                    <span style={{ fontSize: "0.85rem", opacity: 0.7 }}>
+                <div className="pagination-jump">
+                    <span className="pagination-jump-label">
                         Jump to:
                     </span>
 

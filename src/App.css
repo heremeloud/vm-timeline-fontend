@@ -198,8 +198,7 @@ button {
 }
 
 button:hover {
-  background: linear-gradient(135deg, #955803 0%, #fff8ef 100%);
-  color: #4f2f05;
+  background: var(--ui-color-accent-hover, #b58a58);
 }
 
 /* FORM INPUTS */
@@ -283,7 +282,6 @@ textarea {
 
 /* One consistent edit-action color across the app. */
 .btn-edit,
-.btn-edit:hover,
 .btn-edit:focus,
 .btn-edit:focus-visible,
 .btn-edit:disabled {
@@ -292,17 +290,26 @@ textarea {
   text-decoration: none;
 }
 
+.btn-edit:hover:not(:disabled) {
+  background: var(--ui-color-accent-hover, #b58a58) !important;
+  color: #fff !important;
+}
+
 .btn-edit:disabled {
   opacity: 0.55;
 }
 
 /* One consistent destructive-action color across the app. */
 .btn-delete,
-.btn-delete:hover,
 .btn-delete:focus,
 .btn-delete:focus-visible,
 .btn-delete:disabled {
-  background: #e32636 !important;
+  background: var(--ui-color-danger-action, #e32636) !important;
+  color: #fff !important;
+}
+
+.btn-delete:hover:not(:disabled) {
+  background: var(--ui-color-danger-action-hover, #bd1d2d) !important;
   color: #fff !important;
 }
 
