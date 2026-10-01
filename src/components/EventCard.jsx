@@ -170,6 +170,8 @@ export default function EventCard({ event }) {
     const activePhotoIdx = photos.length ? photoIdx % photos.length : 0;
     const activePhoto = photos[activePhotoIdx];
     const activeDateItem = getEventDateItemForPhoto(dateItems, activePhoto);
+    const hasKeywords = Boolean(event.keyword || activeDateItem?.keyword);
+    const hasHashtags = tags.length > 0 || Boolean(activeDateItem?.hashtag);
     const [isPublic, setIsPublic] = useState(event.is_visible !== false);
     const [savingVisibility, setSavingVisibility] = useState(false);
     const eventDateLabel = formatEventDateRange(event);
@@ -317,51 +319,52 @@ export default function EventCard({ event }) {
                     </div>
                 )}
 
-                {(event.keyword || tags.length > 0) && (
-                    <div className="eventcard-badges-area">
-                        {event.keyword && (
-                            <div className="eventcard-badges">
-                                <CopyBadge
-                                    term={event.keyword}
-                                    startDate={eventStartDate}
-                                    endDate={event.end_date}
-                                    onCopy={handleCopy}
-                                />
-                            </div>
-                        )}
-                        {tags.length > 0 && (
-                            <div className="eventcard-badges">
-                            {tags.map((t) => {
-                                const term = `#${t}`;
-                                return (
+                {(hasKeywords || hasHashtags) && (
+                    <div className="eventcard-badges-area" aria-label="Keywords and hashtags for the event">
+                        {hasKeywords && (
+                            <div className="eventcard-badges eventcard-keyword-row">
+                                {event.keyword && (
                                     <CopyBadge
-                                        key={t}
-                                        term={term}
+                                        term={event.keyword}
                                         startDate={eventStartDate}
                                         endDate={event.end_date}
                                         onCopy={handleCopy}
                                     />
-                                );
-                            })}
+                                )}
+                                {activeDateItem?.keyword && (
+                                    <CopyBadge
+                                        term={activeDateItem.keyword}
+                                        startDate={activeDateItem.date}
+                                        endDate={activeDateItem.date}
+                                        onCopy={handleCopy}
+                                    />
+                                )}
                             </div>
                         )}
-                    </div>
-                )}
-
-                {activeDateItem && (
-                    <div className="eventcard-date-badges" aria-label="Keywords and hashtags for the displayed event date">
-                        <div className="eventcard-date-badge-row">
-                            {activeDateItem.keyword && (
-                                <div className="eventcard-badges">
-                                    <CopyBadge term={activeDateItem.keyword} startDate={activeDateItem.date} endDate={activeDateItem.date} onCopy={handleCopy} />
-                                </div>
-                            )}
-                            {activeDateItem.hashtag && (
-                                <div className="eventcard-badges">
-                                    <CopyBadge term={`#${activeDateItem.hashtag.replace(/^#/, "")}`} startDate={activeDateItem.date} endDate={activeDateItem.date} onCopy={handleCopy} />
-                                </div>
-                            )}
-                        </div>
+                        {hasHashtags && (
+                            <div className="eventcard-badges eventcard-hashtag-row">
+                                {tags.map((t) => {
+                                    const term = `#${t}`;
+                                    return (
+                                        <CopyBadge
+                                            key={t}
+                                            term={term}
+                                            startDate={eventStartDate}
+                                            endDate={event.end_date}
+                                            onCopy={handleCopy}
+                                        />
+                                    );
+                                })}
+                                {activeDateItem?.hashtag && (
+                                    <CopyBadge
+                                        term={`#${activeDateItem.hashtag.replace(/^#/, "")}`}
+                                        startDate={activeDateItem.date}
+                                        endDate={activeDateItem.date}
+                                        onCopy={handleCopy}
+                                    />
+                                )}
+                            </div>
+                        )}
                     </div>
                 )}
 
