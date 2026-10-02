@@ -113,7 +113,7 @@
 .relationship-chart-group-label.top { top: -12px; }
 .relationship-chart-group-label.bottom { bottom: -12px; }
 .relationship-chart-group-label:hover { text-decoration: none; }
-.relationship-chart-group-handle { position: absolute; right: -8px; bottom: -8px; z-index: 3; box-sizing: border-box; width: calc(16px * var(--card-scale, 1)); height: calc(16px * var(--card-scale, 1)); padding: 0; border: 2px solid var(--ui-chart-surface); border-radius: 50%; background: var(--group-color); box-shadow: 0 1px 3px var(--ui-chart-shadow); cursor: nwse-resize; pointer-events: auto; }
+.relationship-chart-group-handle { position: absolute; right: -14px; bottom: -14px; z-index: 4; box-sizing: border-box; width: 28px; height: 28px; padding: 0; border: 0; background: transparent; cursor: nwse-resize; pointer-events: auto; }
 .relationship-chart-canvas-resize { position: absolute; left: 50%; bottom: 4px; z-index: 4; transform: translateX(-50%); width: 64px; height: 16px; padding: 0; border: 0; background: transparent; cursor: ns-resize; }
 .relationship-chart-canvas-resize::before { content: ""; display: block; margin: 6px auto 0; width: 100%; height: 4px; border-radius: 4px; background: #d8c4ad; }
 .relationship-chart-canvas-resize:hover::before, .relationship-chart-canvas-resize:focus-visible::before { background: #a67c52; }
@@ -143,12 +143,18 @@
 .relationship-chart-popover input, .relationship-chart-popover select, .relationship-chart-popover textarea { font-family: inherit; font-size: .95rem; line-height: 1.4; }
 .relationship-chart-popover .relationship-chart-editor-actions button, .relationship-chart-inline-editor > fieldset > .relationship-chart-editor-actions button { font-family: inherit; font-size: .95rem; }
 .relationship-chart-person .relationship-chart-thai-name { font-family: inherit; font-size: max(12px, calc(var(--card-role) * var(--card-scale))); }
-.relationship-chart .relationship-chart-group-edge { position: absolute; z-index: 4; padding: 0; border: 2px solid var(--ui-chart-surface); border-radius: 6px; background: var(--group-color); pointer-events: auto; touch-action: none; box-shadow: 0 1px 3px var(--ui-chart-shadow); }
-.relationship-chart-group-edge.top, .relationship-chart-group-edge.bottom { width: 32px; height: 12px; left: 25%; transform: translateX(-50%); cursor: ns-resize; }
-.relationship-chart-group-edge.top { top: -6px; }.relationship-chart-group-edge.bottom { bottom: -6px; }
-.relationship-chart-group-edge.left, .relationship-chart-group-edge.right { width: 12px; height: 32px; top: 50%; transform: translateY(-50%); cursor: ew-resize; }
-.relationship-chart-group-edge.left { left: -6px; }.relationship-chart-group-edge.right { right: -6px; }
-.relationship-chart-group-handle { touch-action: none; }
+.relationship-chart .relationship-chart-group-edge { position: absolute; z-index: 4; box-sizing: border-box; width: 28px; height: 28px; padding: 0; border: 0; background: transparent; pointer-events: auto; touch-action: none; }
+.eventform-form .relationship-chart button.relationship-chart-group-edge, .eventform-form .relationship-chart button.relationship-chart-group-handle, .eventform-form .relationship-chart button.relationship-chart-group-edge:hover, .eventform-form .relationship-chart button.relationship-chart-group-handle:hover { padding: 0; border: 0; border-radius: 0; background: transparent; color: inherit; box-shadow: none; opacity: 1; }
+.relationship-chart-group-edge::before, .relationship-chart-group-handle::before { content: ""; position: absolute; left: 50%; top: 50%; box-sizing: border-box; width: 20px; height: 9px; transform: translate(-50%, -50%) rotate(var(--handle-rotation, 0deg)); border: 2px solid var(--group-color); border-radius: 999px; background: var(--ui-chart-surface); box-shadow: 0 1px 2px var(--ui-chart-shadow); transition: background-color .15s, transform .15s; }
+.relationship-chart-group-edge:hover::before, .relationship-chart-group-edge:focus-visible::before, .relationship-chart-group-handle:hover::before, .relationship-chart-group-handle:focus-visible::before { transform: translate(-50%, -50%) rotate(var(--handle-rotation, 0deg)) scale(1.15); background: color-mix(in srgb, var(--group-color) 18%, var(--ui-chart-surface)); }
+.relationship-chart .relationship-chart-group-edge:focus-visible, .relationship-chart .relationship-chart-group-handle:focus-visible { outline: none; }
+.relationship-chart-group-edge:focus-visible::before, .relationship-chart-group-handle:focus-visible::before { box-shadow: 0 0 0 3px var(--ui-chart-focus); }
+.relationship-chart-group-edge.top, .relationship-chart-group-edge.bottom { left: 25%; transform: translateX(-50%); cursor: ns-resize; }
+.relationship-chart-group-edge.top { top: -14px; }.relationship-chart-group-edge.bottom { bottom: -14px; }
+.relationship-chart-group-edge.left, .relationship-chart-group-edge.right { top: 50%; transform: translateY(-50%); cursor: ew-resize; }
+.relationship-chart-group-edge.left, .relationship-chart-group-edge.right { --handle-rotation: 90deg; }
+.relationship-chart-group-edge.left { left: -14px; }.relationship-chart-group-edge.right { right: -14px; }
+.relationship-chart-group-handle { --handle-rotation: 45deg; touch-action: none; }
 .relationship-chart-story-label { white-space: nowrap; flex-shrink: 0; }
 .relationship-chart-episode-controls > label:first-child { min-width: 0; }
 .relationship-chart-line-legend { display: flex; flex-wrap: wrap; gap: 8px 18px; padding: 0; margin: 0; list-style: none; font-size: .85rem; line-height: 1.4; color: var(--ui-chart-text); }

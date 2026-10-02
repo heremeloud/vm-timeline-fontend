@@ -160,16 +160,21 @@ export default function EventCard({ event }) {
     const editEventUrl = `${ROUTES.editEvent(event.id)}?returnTo=${encodeURIComponent(returnTo)}`;
     const tags = event.tags || [];
     const dateItems = event.date_items || [];
+    const datedItems = dateItems.filter((item) => item.date);
+    const populatedDateItems = dateItems.filter((item) => item.date && (item.keyword || item.hashtag));
+    const hasDateSwitcher = populatedDateItems.length > 1;
     const authors = orderViewMimFirst(event.authors || []);
     const isAdmin = !!localStorage.getItem("jwt");
+    const photos = normalizeEventPhotos(event);
 
     const [copied, setCopied] = useState(false);
     const [liveIdx, setLiveIdx] = useState(0);
     const [photoIdx, setPhotoIdx] = useState(0);
-    const photos = normalizeEventPhotos(event);
+    const [selectedDate, setSelectedDate] = useState("");
     const activePhotoIdx = photos.length ? photoIdx % photos.length : 0;
     const activePhoto = photos[activePhotoIdx];
-    const activeDateItem = getEventDateItemForPhoto(dateItems, activePhoto);
+    const selectedDateItem = datedItems.find((item) => item.date === selectedDate);
+    const activeDateItem = selectedDateItem || getEventDateItemForPhoto(dateItems, activePhoto);
     const hasKeywords = Boolean(event.keyword || activeDateItem?.keyword);
     const hasHashtags = tags.length > 0 || Boolean(activeDateItem?.hashtag);
     const [isPublic, setIsPublic] = useState(event.is_visible !== false);
@@ -203,6 +208,25 @@ export default function EventCard({ event }) {
         } finally {
             setSavingVisibility(false);
         }
+    }
+
+    function selectDateItem(item) {
+        setSelectedDate(item.date);
+
+        const datedPhotoIndex = photos.findIndex((photo) => photo.date === item.date);
+        if (datedPhotoIndex >= 0) {
+            setPhotoIdx(datedPhotoIndex);
+            return;
+        }
+
+        const defaultPhotoIndex = photos.findIndex((photo) => !photo.date);
+        if (defaultPhotoIndex >= 0) setPhotoIdx(defaultPhotoIndex);
+    }
+
+    function selectPhoto(nextIndex) {
+        setPhotoIdx(nextIndex);
+        const nextDateItem = getEventDateItemForPhoto(dateItems, photos[nextIndex]);
+        if (photos[nextIndex]?.date && nextDateItem) setSelectedDate(nextDateItem.date);
     }
 
     const liveMediaItems = (event.live_media_items?.length
@@ -311,10 +335,27 @@ export default function EventCard({ event }) {
                     </div>
                 ) : null}
 
-                {(eventDateLabel || event.location) && (
+                {hasDateSwitcher && (
+                    <div className="eventcard-date-switcher" role="group" aria-label="Choose a date's keywords and hashtags">
+                        <span className="eventcard-date-switcher-icon" aria-hidden="true">📅</span>
+                        {datedItems.map((item) => (
+                            <button
+                                type="button"
+                                key={item.date}
+                                className={item.date === activeDateItem?.date ? "active" : ""}
+                                aria-pressed={item.date === activeDateItem?.date}
+                                onClick={() => selectDateItem(item)}
+                            >
+                                {item.date}
+                            </button>
+                        ))}
+                    </div>
+                )}
+
+                {((eventDateLabel && !hasDateSwitcher) || event.location) && (
                     <div className="eventcard-meta">
-                        {eventDateLabel ? `📅 ${eventDateLabel}` : null}
-                        {eventDateLabel && event.location ? "  •  " : null}
+                        {eventDateLabel && !hasDateSwitcher ? `📅 ${eventDateLabel}` : null}
+                        {eventDateLabel && !hasDateSwitcher && event.location ? "  •  " : null}
                         {event.location ? `📍 ${event.location}` : null}
                     </div>
                 )}
@@ -343,6 +384,14 @@ export default function EventCard({ event }) {
                         )}
                         {hasHashtags && (
                             <div className="eventcard-badges eventcard-hashtag-row">
+                                {activeDateItem?.hashtag && (
+                                    <CopyBadge
+                                        term={`#${activeDateItem.hashtag.replace(/^#/, "")}`}
+                                        startDate={activeDateItem.date}
+                                        endDate={activeDateItem.date}
+                                        onCopy={handleCopy}
+                                    />
+                                )}
                                 {tags.map((t) => {
                                     const term = `#${t}`;
                                     return (
@@ -355,14 +404,6 @@ export default function EventCard({ event }) {
                                         />
                                     );
                                 })}
-                                {activeDateItem?.hashtag && (
-                                    <CopyBadge
-                                        term={`#${activeDateItem.hashtag.replace(/^#/, "")}`}
-                                        startDate={activeDateItem.date}
-                                        endDate={activeDateItem.date}
-                                        onCopy={handleCopy}
-                                    />
-                                )}
                             </div>
                         )}
                     </div>
@@ -375,7 +416,7 @@ export default function EventCard({ event }) {
                         <CarouselControls
                             index={activePhotoIdx}
                             total={photos.length}
-                            onChange={setPhotoIdx}
+                            onChange={selectPhoto}
                             itemLabel="Photo"
                         />
                     </div>

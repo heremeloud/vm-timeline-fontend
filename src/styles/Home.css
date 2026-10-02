@@ -370,27 +370,27 @@
 }
 
 @media (max-width: 768px) {
-    .ui-filter-bar.filter-bar--events {
+    .ui-filter-bar.filter-bar--two-row {
         grid-template-columns: 1fr auto 1fr;
         width: 100%;
         box-sizing: border-box;
         padding: 0 16px;
     }
 
-    .filter-bar--events .filter-row .ui-filter-field:first-child label,
-    .filter-bar--events .filter-row .ui-filter-field:last-child label {
+    .filter-bar--two-row .filter-row .ui-filter-field:first-child label,
+    .filter-bar--two-row .filter-row .ui-filter-field:last-child label {
         min-width: unset;
     }
 
-    .filter-bar--events .filter-row .ui-filter-field:first-child input,
-    .filter-bar--events .filter-row .ui-filter-field:first-child select,
-    .filter-bar--events .filter-row .ui-filter-field:last-child select {
+    .filter-bar--two-row .filter-row .ui-filter-field:first-child input,
+    .filter-bar--two-row .filter-row .ui-filter-field:first-child select,
+    .filter-bar--two-row .filter-row .ui-filter-field:last-child select {
         width: 100%;
         min-width: 0;
         flex: 1;
     }
 
-    .filter-bar--events .ui-filter-field {
+    .filter-bar--two-row .ui-filter-field {
         width: 100%;
     }
 

@@ -122,6 +122,7 @@
     min-width: 0;
     flex-direction: column;
     gap: 14px;
+    container: focal-point-controls / inline-size;
 }
 
 .eventform-form .focal-point-sliders label {
@@ -166,7 +167,7 @@
     border-radius: 7px;
     background: var(--ui-color-accent, #9a7448);
     color: #fff;
-    font-size: clamp(0.7rem, 1.7vw, 0.78rem);
+    font-size: clamp(0.65rem, 3.5cqw, 0.78rem);
     font-weight: 600;
     white-space: nowrap;
     box-sizing: border-box;

@@ -231,6 +231,55 @@
     margin-top: 6px;
 }
 
+.eventcard-date-switcher {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    max-width: 100%;
+    margin-top: 8px;
+    padding-bottom: 2px;
+    overflow-x: auto;
+    scrollbar-width: thin;
+}
+
+.eventcard-date-switcher-icon {
+    flex: 0 0 auto;
+    margin-right: 1px;
+    font-size: 0.9rem;
+    line-height: 1;
+}
+
+.eventcard-date-switcher button {
+    flex: 0 0 auto;
+    appearance: none;
+    padding: 4px 9px;
+    border: 1px solid rgba(149, 88, 3, 0.25);
+    border-radius: 999px;
+    background: #fff;
+    color: #765a37;
+    font: inherit;
+    font-size: 0.74rem;
+    font-weight: 600;
+    line-height: 1.3;
+    cursor: pointer;
+}
+
+.eventcard-date-switcher button:hover {
+    border-color: rgba(149, 88, 3, 0.5);
+    background: #faf3eb;
+}
+
+.eventcard-date-switcher button.active {
+    border-color: #955803;
+    background: #955803;
+    color: #fff;
+}
+
+.eventcard-date-switcher button:focus-visible {
+    outline: 2px solid rgba(149, 88, 3, 0.45);
+    outline-offset: 2px;
+}
+
 .eventcard-live-badge-groups {
     margin-top: 10px;
 }
