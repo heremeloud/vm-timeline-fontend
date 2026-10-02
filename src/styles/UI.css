@@ -63,6 +63,8 @@
     --ui-color-border: #d9d2ca;
     --ui-color-surface: #fff;
     --ui-color-surface-muted: #f7f4ef;
+    --ui-color-drop-indicator: #a76719;
+    --ui-color-drop-indicator-halo: #fff8ef;
     --ui-focus-ring: 0 0 0 3px rgba(154, 116, 72, 0.28);
     --ui-radius-sm: 6px;
     --ui-radius-md: 9px;
@@ -85,6 +87,7 @@
     font: inherit;
     font-weight: 650;
     line-height: 1.2;
+    text-decoration: none;
     cursor: pointer;
     transition: background 0.15s, border-color 0.15s, color 0.15s, box-shadow 0.15s;
 }
@@ -165,6 +168,15 @@
 .ui-button--ghost:hover {
     border-color: var(--ui-color-accent);
     background: var(--ui-color-surface-muted);
+}
+
+/* Links styled as buttons must not pick up the global `a:hover` color. */
+.ui-button--secondary:hover {
+    color: var(--ui-color-text);
+}
+
+.ui-button--ghost:hover {
+    color: var(--ui-color-accent-strong);
 }
 
 .ui-button--ghost {
@@ -750,5 +762,58 @@
         grid-template-columns: 1fr;
         gap: 16px;
         padding: 0 16px;
+    }
+}
+
+/* Insertion bar shown on a row while another row is dragged over it. */
+.ui-drop-indicator {
+    position: absolute;
+    right: var(--ui-space-2);
+    left: var(--ui-space-2);
+    z-index: 5;
+    height: 4px;
+    border-radius: 999px;
+    background: var(--ui-color-drop-indicator);
+    box-shadow: 0 0 0 2px var(--ui-color-drop-indicator-halo);
+    pointer-events: none;
+}
+
+.ui-drop-indicator--before { top: -10px; }
+.ui-drop-indicator--after { bottom: -10px; }
+.ui-drop-indicator--compact.ui-drop-indicator--before { top: -5px; }
+.ui-drop-indicator--compact.ui-drop-indicator--after { bottom: -5px; }
+
+/* Floating "+" create control, pinned to the right edge of the viewport. */
+.ui-fab {
+    position: fixed;
+    top: calc(50% + 38px);
+    right: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    width: 60px;
+    height: 60px;
+    padding: 0;
+    border: none;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #955803 0%, #fff8ef 100%);
+    box-shadow: 0 4px 12px rgba(80, 47, 5, 0.28);
+    color: #4f2f05;
+    font-size: 30px;
+    line-height: 1;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.ui-fab:hover {
+    background: linear-gradient(135deg, #7a4300 0%, #ffffff 100%);
+    box-shadow: 0 6px 16px rgba(80, 47, 5, 0.34);
+    color: #3c2303;
+}
+
+@media (max-width: 480px) {
+    .ui-fab {
+        right: 14px;
     }
 }

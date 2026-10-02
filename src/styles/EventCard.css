@@ -431,14 +431,7 @@
     text-decoration: none;
 }
 
-.eventcard-btn {
-    background: #955803;
-    cursor: pointer;
-}
 
-.eventcard-btn:hover {
-    background: #eaeaea;
-}
 
 
 /* ============================= */
@@ -557,7 +550,3 @@
     background: #888;
 }
 
-.btn-delete {
-    background: red;
-    color: white;
-}

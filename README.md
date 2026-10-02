@@ -1,22 +1,24 @@
-# React + Vite
+# ViewMim timeline frontend
 
-## Event page navigation
+React 19 + Vite + TypeScript (strict). Talks to the FastAPI backend in `../vm-timeline-backend`.
 
-Public filtered event pages are shown as a “Browse event pages” chip row on `/events`.
-To hide the row without removing the filtered event pages or their routes, set
-`VITE_SHOW_EVENT_VIEW_NAVIGATION=false` when building the frontend.
+```bash
+npm install
+npm run dev          # http://localhost:5173 (API: VITE_API_URL, default http://localhost:8000)
+npm run typecheck    # tsc -b
+npm run lint
+npm test             # node --test on src/**/*.test.ts
+npm run build        # typecheck + vite build
+```
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+## Docs
 
-Currently, two official plugins are available:
+- [`docs/frontend-rules.md`](docs/frontend-rules.md) — architecture, TypeScript/API/styling conventions (**read first**, also for AI assistants)
+- [`src/ui/README.md`](src/ui/README.md) — UI primitive catalogue and rules
+- [`docs/ui-library.md`](docs/ui-library.md) — detailed visual rules
+- [`docs/content-card-ui.md`](docs/content-card-ui.md), [`docs/relationship-chart-ui.md`](docs/relationship-chart-ui.md) — composite patterns
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## Environment
 
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+- `VITE_API_URL` — backend base URL (default `http://localhost:8000`).
+- `VITE_SHOW_EVENT_VIEW_NAVIGATION=false` — hide the "Browse event pages" chip row on `/events` (routes keep working).

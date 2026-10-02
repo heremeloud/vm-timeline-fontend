@@ -234,11 +234,22 @@
 }
 
 .topic-item-row {
+    position: relative;
+    box-sizing: border-box;
     border: 1px solid rgba(0, 0, 0, 0.15);
     border-radius: 8px;
     padding: 12px;
     display: grid;
     gap: 10px;
+    transition: opacity 140ms ease;
+}
+
+/* The row being dragged collapses to a compact placeholder. */
+.topic-item-row.is-dragging {
+    height: 58px;
+    min-height: 58px;
+    overflow: hidden;
+    opacity: 0.55;
 }
 
 @media (max-width: 720px) {
@@ -261,4 +272,14 @@
     .topic-timeline-time {
         position: static;
     }
+}
+
+.topic-time-editor-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--ui-space-2);
+}
+
+.topic-time-edit-button {
+    margin-top: 6px;
 }

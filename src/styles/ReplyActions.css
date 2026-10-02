@@ -1,13 +1,33 @@
-.reply-admin-actions {
+.reply-admin-actions,
+.reply-edit-actions {
     display: flex;
-    gap: 5px;
-    margin-top: 8px;
+    gap: var(--ui-space-2);
+    margin-top: var(--ui-space-2);
 }
 
-button.reply-action-button {
-    min-height: 24px;
-    padding: 3px 8px;
-    border-radius: 5px;
-    font-size: 0.72rem;
-    line-height: 1.2;
+/* Inline reply editors stack their fields with the shared form-field rhythm. */
+.reply-edit {
+    display: grid;
+    gap: var(--ui-space-3);
+    margin-top: var(--ui-space-3);
+}
+
+.tweet-reply {
+    padding: 14px 0;
+    border-bottom: 1px solid #eee;
+}
+
+.tweet-reply__translation {
+    margin-top: 6px;
+    word-break: break-word;
+}
+
+.tweet-reply__media {
+    max-width: 100%;
+    margin-top: 10px;
+}
+
+.reply-edit__adult {
+    font-weight: 600;
+    color: #b00;
 }

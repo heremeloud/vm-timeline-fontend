@@ -1,5 +1,7 @@
 # Local UI library
 
+Quick component map and authoring rules: [`src/ui/README.md`](../src/ui/README.md). Project-wide conventions: [`frontend-rules.md`](frontend-rules.md). All components are TypeScript with exported prop types.
+
 The app's reusable interface primitives live in `src/ui`. New screens should use these components and the shared tokens in `src/styles/UI.css` before adding page-specific styles.
 
 ## Principles
@@ -12,12 +14,12 @@ The app's reusable interface primitives live in `src/ui`. New screens should use
 
 ## Button
 
-```jsx
+```tsx
 import { Button } from "../ui";
 
 <Button variant="primary" type="submit">Save event</Button>
 <Button variant="secondary" onClick={onCancel}>Cancel</Button>
-<Button variant="ghost" size="small" onClick={onEdit}>Edit</Button>
+<Button variant="primary" size="small" onClick={onEdit}>Edit</Button>
 <Button variant="danger" size="small" onClick={onDelete}>Delete</Button>
 ```
 
@@ -44,7 +46,7 @@ Action meaning determines color; location determines only size. The same action 
 
 All four intents share the same interaction rules: solid default, a brighter hover, a subtle pressed offset, matching keyboard focus, and reduced-opacity disabled state. Hover and pressed states do not change the label color. Never choose a different color because a button is smaller. Use `size="small"`, `"medium"`, or `"large"` independently, and use one size for every action in the same row.
 
-```jsx
+```tsx
 <Button variant="danger" size="small">Remove</Button>
 <Button variant="add" size="medium">+ Add date</Button>
 <Button variant="insert" size="small">Insert photo</Button>
@@ -59,7 +61,7 @@ Do not remove `:focus-visible` without supplying another visible keyboard-focus 
 
 Use `ToggleButton` and `ToggleGroup` for choices that switch immediately. The `active` prop supplies `aria-pressed`; when `role="tab"` is used, it supplies `aria-selected` instead. Use `segmented` for mutually exclusive choices such as List/Calendar.
 
-```jsx
+```tsx
 import { ToggleButton, ToggleGroup } from "../ui";
 
 <ToggleGroup segmented aria-label="View">
@@ -85,7 +87,7 @@ Do not use green merely because a choice is selected or red merely to attract at
 
 Use `FormField` to connect labels, hints, validation messages, required state, and controls. Use `TextInput`, `Select`, `Textarea`, and `Checkbox` instead of styling native controls per page.
 
-```jsx
+```tsx
 import { Button, FormField, Select, Stack, TextInput } from "../ui";
 
 <Stack gap="4">
@@ -118,7 +120,7 @@ Display Focus preset labels use compact responsive type and 4px horizontal paddi
 
 Use `FilterBar`, `FilterRow`, `FilterField`, and `FilterDivider`. Filters use compact versions of the normal controls, stack on narrow screens, and remain visually open without a background or enclosing box. The Events filter is the baseline: `FilterField` owns its label typography and the 6px label-to-control spacing, while `FilterBar` owns the 8px group spacing and 24px spacing below the filters. On narrow screens, every label/control pair remains grouped and centered; do not push the label and control to opposite page edges. Do not restyle those details per page. If a page truly needs a contained filter panel, compose it inside `Card` explicitly.
 
-```jsx
+```tsx
 import { FilterBar, FilterDivider, FilterField, Select, TextInput } from "../ui";
 
 <FilterBar>
@@ -141,7 +143,7 @@ The Events page is the reference implementation.
 
 `Badge` is for short, read-only metadata and status—not actions. Variants are `neutral`, `accent`, `info`, `success`, `warning`, and `danger`.
 
-```jsx
+```tsx
 <Badge variant="accent">FAN EVENT</Badge>
 <Badge variant="success">Public</Badge>
 <Badge variant="warning">Draft</Badge>
@@ -153,7 +155,7 @@ Clickable keyword and hashtag badges remain a specialized event component becaus
 
 Use `Card` for a bordered surface, `CardGrid` for responsive collection pages, `Stack` for vertical rhythm, and `Inline` for wrapping horizontal groups.
 
-```jsx
+```tsx
 <Card>
   <Stack gap="3">
     <h2>Event title</h2>
@@ -171,7 +173,7 @@ Supported gaps are `1` (4px), `2` (8px), `3` (12px), and `4` (16px).
 
 Use `CardGrid` for grids of Projects-sized cards. Projects is the reference implementation and defines the universal card sizing and page-edge rhythm: three columns with a 20px gap, two columns with a 14px gap at 640px and below, and one column with a 16px gap at 320px and below. Grid padding is 16px on desktop, 12px on standard mobile, and 16px in the single-column layout.
 
-```jsx
+```tsx
 import { CardGrid } from "../ui";
 
 <CardGrid>
@@ -185,7 +187,7 @@ Do not create a page-specific `auto-fill` grid for these cards; it causes card w
 
 Use `Alert` for inline information, success, warnings, and errors. Use `EmptyState` when a whole list or section has no content.
 
-```jsx
+```tsx
 <Alert variant="error" title="Could not save">Try again in a moment.</Alert>
 
 <EmptyState
@@ -201,7 +203,7 @@ Use `Alert` for inline information, success, warnings, and errors. Use `EmptySta
 
 Wrap the media and controls in `.media-carousel`. The component owns arrows, dots, boundary behavior, labels, focus, and active state.
 
-```jsx
+```tsx
 import { CarouselControls } from "../ui";
 import "../styles/MediaCarousel.css";
 
@@ -228,13 +230,13 @@ See [relationship-chart-ui.md](relationship-chart-ui.md) for the canonical palet
 
 Event cards, PostCard, the X/Twitter embed and fallback, the Instagram archive/post mimic, and the Instagram Broadcast Channel mimic are reusable composite patterns. They share the universal content-card shell while preserving authentic platform-specific anatomy and colors.
 
-Import them from `src/ui/patterns/contentCards.js`. See [content-card-ui.md](content-card-ui.md) for ownership boundaries, tokens, anatomy, responsive behavior, and platform rules.
+Import them from `src/ui/patterns/contentCards.ts`. See [content-card-ui.md](content-card-ui.md) for ownership boundaries, tokens, anatomy, responsive behavior, and platform rules.
 
 ## Drag to reorder
 
 Use `DragHandle` as the visible and accessible drag affordance. Its compact warm, fully rounded outlined pill is based on the original Specials timeline control and is the app default, including Manage Display. It opts out of generic form-button styling. Its background, border, and text colors remain unchanged on hover, press, and drag; only the cursor changes. Use `reorderItems` to perform immutable list movement.
 
-```jsx
+```tsx
 import { DragHandle, reorderItems } from "../ui";
 
 <DragHandle
@@ -255,6 +257,13 @@ Timeline, Events, and Manage Display share `pagination-bar`, `pagination-control
 
 When a drag handle is positioned inside a card, reserve the handle width plus at least 16px of clear space before a thumbnail or other card content. The handle must never overlap or visually touch the thumbnail.
 
+## Navigation, pagination and floating actions
+
+- `ButtonLink` is a router `Link` styled as a `Button` (same `variant`/`size`). Never wrap a `<button>` in a `Link`.
+- `Pagination` renders the shared `pagination-bar`; pages pass state and handlers, not markup. Use `inline` for the one-row form.
+- `FloatingActionButton` / `FloatingActionLink` are the round "+" create controls; always pass `label`.
+- `DropIndicator` is the insertion bar for drag-to-reorder rows (use `compact` for tight lists).
+
 ## Tokens
 
 Shared colors, spacing, radii, focus rings, and shadows are CSS custom properties prefixed with `--ui-` in `src/styles/UI.css`. Prefer those tokens in new component styles.
@@ -265,10 +274,12 @@ Migrate existing classes incrementally when touching their screens:
 
 | Existing pattern | Replacement |
 | --- | --- |
-| `.btn-edit`, `.manage-authors-row-edit` | `<Button variant="ghost" size="small">` |
+| `.btn-edit`, `.manage-authors-row-edit` | `<Button variant="primary" size="small">` (every "Edit" action is `primary`; size follows its row) |
 | `.btn-delete`, `.manage-display-delete` | `<Button variant="danger" size="small">` |
 | `.form-primary-submit`, `.archive-save-btn` | `<Button variant="primary" type="submit">` |
-| `.pagination-btn`, `.archive-cancel-btn` | `<Button variant="secondary">` |
+| `.archive-cancel-btn` | `<Button variant="secondary">` (`.pagination-btn` lives only inside `<Pagination>`) |
+| `<Link><button/></Link>`, `.fab-button` | `<ButtonLink>`, `<FloatingActionLink>` / `<FloatingActionButton>` |
+| Per-page drop bars, pagination markup | `<DropIndicator>`, `<Pagination>` |
 | Form labels, inputs, hints, validation text | `<FormField>` + a shared control |
 | `.filter-bar`, `.filter-group`, `.filter-divider` | `<FilterBar>`, `<FilterField>`, `<FilterDivider>` |
 | Read-only category/status pills | `<Badge>` |

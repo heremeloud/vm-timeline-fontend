@@ -1,0 +1,940 @@
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import type { CSSProperties, PointerEvent as ReactPointerEvent, ReactNode, RefObject } from "react";
+import { createPortal } from "react-dom";
+import "../styles/RelationshipChart.css";
+import { getAuthors } from "../api/authorsService";
+import VisibilityToggle from "./VisibilityToggle";
+import { Button } from "../ui";
+import type { Author } from "../types/models";
+import type { ActiveRelationship, CanvasSize, CardExtent, CardExtents, CardSizeKey, CharacterGroup, Point, RelationshipChartCharacter, RelationshipChartData } from "../utils/relationshipChart";
+import { relationshipsAtEpisode, charactersAtEpisode, characterDebutEpisode, setCharacterDebut, setCharacterEpisodeHidden, connectionPointAt, isRelationshipChartEpisodePublic, visibleRelationshipChartEpisodes, characterCardInsets, characterCardBox, characterCardSpans, characterCardSize, CARD_COMPACT_SCALE, CARD_SIZE_KEYS, CARD_SIZE_LABELS, relationshipChartEpisodes, relationshipChartEpisodeLabel, relationshipChartImageName, fitRelationshipChartPositions, relationshipChartTexts, characterGroupBounds, relationshipChartLineDash, relationshipChartDirection, newRelationshipChange, nextRelationshipColor, arrowheadPoints, resolvePortraitColor, SWATCH_PRESETS, LABEL_SYMBOLS, toggleLabelSymbol, snapPosition, GROUP_PADDING_MIN, GROUP_PADDING_MAX, CANVAS_HEIGHT_MIN, CANVAS_HEIGHT_MAX } from "../utils/relationshipChart";
+
+const LINE_STYLES = ["solid", "dashed", "dotted"];
+
+type Box = { left: number; right: number; top: number; bottom: number };
+type MeasuredExtent = Required<CardExtent>;
+type LabelSizes = Record<string, { width: number; height: number }>;
+type SelectionKind = "character" | "group" | "relationship";
+type GroupEdge = "top" | "bottom" | "left" | "right";
+type PaddingKey = `padding_${GroupEdge}`;
+type ExportMargins = { marginLeft: number; marginRight: number; marginTop: number; marginBottom: number };
+type CssVars = CSSProperties & Record<`--${string}`, string | number | undefined>;
+const MIN_CANVAS_HEIGHT = 490;
+const HEIGHT_PER_CHARACTER = 56;
+const HEIGHT_OFFSET = 220;
+
+function canvasHeightFor(characterCount: number) {
+    return Math.max(MIN_CANVAS_HEIGHT, characterCount * HEIGHT_PER_CHARACTER + HEIGHT_OFFSET);
+}
+
+const LABEL_SIDE_MARGIN = 12;
+const LABEL_MIN_WIDTH = 56;
+const LABEL_ROOMY_WIDTH = 150;
+const LABEL_MAX_WIDTH = 190;
+const LABEL_MAX_HEIGHT = 64;
+const LABEL_POSITIONS = [0.5, 0.38, 0.62, 0.28, 0.72];
+const EXPORT_ASPECT = 4 / 3;
+const EXPORT_WIDTH = 2400;
+const EXPORT_CARD_SCALE_MAX = 3;
+const EXPORT_CARD_SCALE_MIN = 1;
+const EXPORT_EDGE_PADDING = 40;
+
+function useCanvasSize(ref: RefObject<HTMLElement | null>) {
+    const [size, setSize] = useState<CanvasSize | null>(null);
+    const apply = (width: number, height: number) => setSize((current) =>
+        current && Math.abs(current.width - width) < 0.5 && Math.abs(current.height - height) < 0.5 ? current : { width, height });
+    useLayoutEffect(() => {
+        const node = ref.current;
+        if (!node || typeof ResizeObserver === "undefined") return;
+        const observer = new ResizeObserver(([entry]) => {
+            const { width, height } = entry.contentRect;
+            apply(width, height);
+        });
+        observer.observe(node);
+        return () => observer.disconnect();
+    }, [ref]);
+    // Reading straight from the node, for the moments a resize has not been reported yet.
+    const refresh = () => {
+        const node = ref.current;
+        if (!node) return;
+        const box = node.getBoundingClientRect();
+        apply(box.width, box.height);
+    };
+    return [size, refresh] as const;
+}
+
+function useCompactCards() {
+    const [compact, setCompact] = useState(false);
+    useEffect(() => {
+        const query = window.matchMedia("(max-width: 520px)");
+        const update = () => setCompact(query.matches);
+        update();
+        query.addEventListener("change", update);
+        return () => query.removeEventListener("change", update);
+    }, []);
+    return compact;
+}
+
+function overlaps(a: Box, b: Box) {
+    return a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom;
+}
+
+// A relationship keeps its label on the line while it fits the line and clears the cards and the labels already placed.
+function labelSpan(connection: Pick<ActiveRelationship, "start" | "end">, canvas: CanvasSize) {
+    const scaleX = canvas.width / 100, scaleY = canvas.height / 100;
+    return Math.hypot((connection.end.x - connection.start.x) * scaleX, (connection.end.y - connection.start.y) * scaleY);
+}
+
+// How wide a label may grow before it must wrap: the room the line itself offers.
+function labelBudgets(connections: ActiveRelationship[], canvas: CanvasSize | null, scale = 1, roomy = false) {
+    const budgets: Record<string, number> = {};
+    if (!canvas?.width || !canvas?.height) return budgets;
+    // On the printed sheet a name always shows, so give it room to stay on one or two lines
+    // rather than stacking into a narrow tower on a short line.
+    const floor = (roomy ? LABEL_ROOMY_WIDTH : LABEL_MIN_WIDTH) * scale;
+    for (const connection of connections) {
+        budgets[connection.id] = Math.max(floor,
+            Math.min(LABEL_MAX_WIDTH * scale, labelSpan(connection, canvas) - LABEL_SIDE_MARGIN * scale));
+    }
+    return budgets;
+}
+
+// Keeps every relationship name on its line where one will fit, sliding it along the line before giving up.
+function inlineLabelPositions(connections: ActiveRelationship[], characters: RelationshipChartCharacter[], canvas: CanvasSize | null, cardScale: number, labelSizes: LabelSizes, cardExtents: CardExtents, scale = 1, always = false) {
+    const placed = new Map<string, Point>();
+    if (!canvas?.width || !canvas?.height) return placed;
+    const scaleX = canvas.width / 100, scaleY = canvas.height / 100;
+    const taken = characters.map((character) => {
+        const card = characterCardBox(character, cardScale, cardExtents);
+        const centerX = character.x * scaleX, centerY = character.y * scaleY;
+        return { left: centerX - card.width / 2, right: centerX + card.width / 2, top: centerY - card.height / 2,
+            bottom: centerY + card.height / 2 + card.textAllowance };
+    });
+    for (const connection of connections) {
+        const size = labelSizes[connection.id];
+        if (!size?.width || !connection.label.trim()) continue;
+        if (!always) {
+            if (size.height > LABEL_MAX_HEIGHT * scale) continue;
+            if (size.width + LABEL_SIDE_MARGIN * scale > labelSpan(connection, canvas)) continue;
+        }
+        let fallback: { spot: Point; box: Box } | null = null;
+        for (const t of LABEL_POSITIONS) {
+            const spot = connectionPointAt(connection, t);
+            const centerX = spot.x * scaleX, centerY = spot.y * scaleY;
+            const box = { left: centerX - size.width / 2 - 3, right: centerX + size.width / 2 + 3, top: centerY - size.height / 2 - 2, bottom: centerY + size.height / 2 + 2 };
+            const insideCanvas = box.left >= 0 && box.right <= canvas.width && box.top >= 0 && box.bottom <= canvas.height;
+            if (insideCanvas && !fallback) fallback = { spot, box };
+            if (!insideCanvas || taken.some((item) => overlaps(box, item))) continue;
+            taken.push(box);
+            placed.set(connection.id, spot);
+            fallback = null;
+            break;
+        }
+        // The printed sheet always names every relationship, even where the best spot is crowded.
+        if (always && fallback && !placed.has(connection.id)) {
+            taken.push(fallback.box);
+            placed.set(connection.id, fallback.spot);
+        }
+    }
+    return placed;
+}
+
+function CharacterPortrait({ character, crossOrigin }: { character: RelationshipChartCharacter; crossOrigin?: "anonymous" | "use-credentials" }) {
+    const [failedUrl, setFailedUrl] = useState<string | null>(null);
+    return character.photo && character.photo !== failedUrl
+        ? <img className="relationship-chart-portrait" src={character.photo} alt="" crossOrigin={crossOrigin} onError={() => setFailedUrl(character.photo ?? null)} />
+        : <Portrait tone={character.tone} />;
+}
+
+function Portrait({ tone }: { tone?: string }) {
+    return <svg className="relationship-chart-portrait" style={{ color: resolvePortraitColor(tone) }} viewBox="0 0 100 100" preserveAspectRatio="xMidYMax meet" aria-hidden="true">
+        <circle cx="50" cy="50" r="48" fill="currentColor" opacity=".12" />
+        <path d="M20 97c0-25 12-36 30-36s30 11 30 36" fill="currentColor" opacity=".55" />
+        <path d="M29 45c0-22 9-30 21-30s23 9 23 31l-5 26H31Z" fill="currentColor" opacity=".7" />
+        <ellipse cx="50" cy="44" rx="16" ry="21" fill="#fff4e8" />
+        <path d="M32 39c1-18 11-24 20-22 13 1 20 11 18 23-11-3-16-10-19-15-3 8-9 12-19 14Z" fill="currentColor" />
+    </svg>;
+}
+
+function ChartIcon({ paths }: { paths: string[] }) {
+    return <svg className="relationship-chart-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9"
+        strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false">
+        {paths.map((d) => <path key={d} d={d} />)}
+    </svg>;
+}
+
+const ICON_EXPAND = ["M3 12h18", "M7 8l-4 4 4 4", "M17 8l4 4-4 4"];
+const ICON_COLLAPSE = ["M3 12h18", "M8 8l4 4-4 4", "M16 8l-4 4 4 4"];
+const ICON_DOWNLOAD = ["M12 3v11", "M7.5 10.5L12 15l4.5-4.5", "M4 20h16"];
+
+function PopoverShell({ label, onClose, children }: { label: string; onClose: () => void; children: ReactNode }) {
+    return <aside className="relationship-chart-popover relationship-chart-side-panel" aria-label={label}>
+        <button type="button" className="relationship-chart-close" aria-label="Close editor" onClick={onClose}>×</button>
+        {children}
+        <div className="relationship-chart-side-save">
+            <Button type="submit" variant="save">Save relationship chart</Button>
+            <Button variant="secondary" onClick={onClose}>Close panel</Button>
+        </div>
+    </aside>;
+}
+
+interface ConnectionPopoverProps {
+    data: RelationshipChartData;
+    onChange: (data: RelationshipChartData) => void;
+    connection: ActiveRelationship;
+    episode: number | undefined;
+    episodes: number[];
+    onClose: () => void;
+}
+
+function ConnectionPopover({ data, onChange, connection, episode, episodes, onClose }: ConnectionPopoverProps) {
+    const found = data.relationships.find((item) => item.id === connection.id);
+    if (!found) return null;
+    const relationship = found;
+    function updateActive(patch: Partial<Omit<ActiveRelationship, "source" | "target">>) {
+        onChange({ ...data, relationships: data.relationships.map((item) => item.id === relationship.id
+            ? { ...item, changes: item.changes.map((change) => change.episode === connection.episode ? { ...change, ...patch } : change) }
+            : item) });
+    }
+    function forkHere() {
+        if (episode === undefined) return;
+        onChange({ ...data, relationships: data.relationships.map((item) => item.id === relationship.id
+            ? { ...item, changes: [...item.changes, newRelationshipChange(episode, { label: connection.label, description: connection.description, color: connection.color, line_style: connection.line_style, curved: connection.curved, arrow_start: connection.arrow_start, arrow_end: connection.arrow_end })] }
+            : item) });
+    }
+    function deleteState() {
+        const whole = relationship.changes.length <= 1;
+        if (!confirm(whole ? "Delete this relationship?" : "Delete this state of the relationship?")) return;
+        if (relationship.changes.length <= 1) { onChange({ ...data, relationships: data.relationships.filter((item) => item.id !== relationship.id) }); onClose(); return; }
+        onChange({ ...data, relationships: data.relationships.map((item) => item.id === relationship.id
+            ? { ...item, changes: item.changes.filter((change) => change.episode !== connection.episode) } : item) });
+    }
+    return <PopoverShell label={`Edit relationship between ${connection.source.name} and ${connection.target.name}`} onClose={onClose}>
+        <p className="relationship-chart-popover-title">{connection.source.name} &amp; {connection.target.name}</p>
+        <label>Text on the line<input maxLength={80} value={connection.label} onChange={(event) => updateActive({ label: event.target.value })} /></label>
+        <div className="relationship-chart-swatches" role="group" aria-label="Insert a symbol">
+            {LABEL_SYMBOLS.map((symbol) => <button key={symbol} type="button" className={`relationship-chart-symbol${connection.label.startsWith(symbol) ? " is-selected" : ""}`} onClick={() => updateActive({ label: toggleLabelSymbol(connection.label, symbol) })}>{symbol}</button>)}
+        </div>
+        <div className="relationship-chart-fields">
+            <label>Line color<input type="color" value={connection.color} onChange={(event) => updateActive({ color: event.target.value })} /></label>
+            <label>Line style<select value={connection.line_style} onChange={(event) => updateActive({ line_style: event.target.value })}>{LINE_STYLES.map((style) => <option key={style} value={style}>{style}</option>)}</select></label>
+        </div>
+        <div className="relationship-chart-swatches" role="group" aria-label="Quick colors">
+            {SWATCH_PRESETS.map((preset) => <button key={preset.label} type="button" className={connection.color === preset.color ? "is-selected" : ""} style={{ '--swatch-color': preset.color } as CssVars} title={preset.label} aria-label={preset.label} onClick={() => updateActive({ color: preset.color })} />)}
+        </div>
+        <div className="relationship-chart-fields">
+            <label className="relationship-chart-visibility"><input type="checkbox" checked={connection.arrow_start} onChange={(event) => updateActive({ arrow_start: event.target.checked })} /> Arrow toward {connection.source.name}</label>
+            <label className="relationship-chart-visibility"><input type="checkbox" checked={connection.arrow_end} onChange={(event) => updateActive({ arrow_end: event.target.checked })} /> Arrow toward {connection.target.name}</label>
+        </div>
+        <label className="relationship-chart-visibility"><input type="checkbox" checked={!!connection.curved} onChange={(event) => updateActive({ curved: event.target.checked })} /> Curve this line</label>
+        <label>Details<textarea maxLength={5000} value={connection.description} onChange={(event) => updateActive({ description: event.target.value })} /></label>
+        <label className="relationship-chart-visibility"><input type="checkbox" checked={connection.hidden} onChange={(event) => updateActive({ hidden: event.target.checked })} /> Hide this connection from here</label>
+        {connection.episode !== episode
+            ? <p className="eventform-field-note">State: {relationshipChartEpisodeLabel(data, connection.episode)}
+                {episode !== undefined && episodes.includes(episode) && <button type="button" onClick={forkHere}> New state at {relationshipChartEpisodeLabel(data, episode)}</button>}</p>
+            : null}
+        <div className="relationship-chart-editor-actions">
+            <Button variant="danger" size="small" onClick={deleteState}>{relationship.changes.length <= 1 ? "Delete relationship" : "Delete this state"}</Button>
+            {relationship.changes.length > 1 && <Button variant="danger" size="small" onClick={() => { if (!confirm("Delete this whole relationship, including all of its states?")) return; onChange({ ...data, relationships: data.relationships.filter((item) => item.id !== relationship.id) }); onClose(); }}>Delete whole relationship</Button>}
+        </div>
+    </PopoverShell>;
+}
+
+function authorDisplayName(author: Pick<Author, "name" | "nickname" | "full_name">) {
+    return [author.nickname, author.full_name].filter(Boolean).join(" ") || author.name;
+}
+
+interface CharacterEditPopoverProps {
+    data: RelationshipChartData;
+    onChange: (data: RelationshipChartData) => void;
+    character: RelationshipChartCharacter;
+    authors: Author[];
+    authorsLoading: boolean;
+    episode: number | undefined;
+    episodes: number[];
+    onStartLink: () => void;
+    onRemove: () => void;
+    onClose: () => void;
+}
+
+function CharacterEditPopover({ data, onChange, character, authors, authorsLoading, episode, episodes, onStartLink, onRemove, onClose }: CharacterEditPopoverProps) {
+    function update(patch: Partial<RelationshipChartCharacter>) {
+        onChange({ ...data, characters: data.characters.map((item) => item.id === character.id ? { ...item, ...patch } : item) });
+    }
+    return <PopoverShell label={`Edit ${character.name || "character"}`} onClose={onClose}>
+        <p className="relationship-chart-popover-title">{character.name || "New character"}</p>
+        <div className="relationship-chart-fields">
+            <label>Name<input required maxLength={120} value={character.name} onChange={(event) => update({ name: event.target.value })} /></label>
+            <label>Thai name<input lang="th" maxLength={120} value={character.thai_name || ""} onChange={(event) => update({ thai_name: event.target.value })} /></label>
+        </div>
+        <div className="relationship-chart-fields">
+            <label>Short role<input maxLength={200} value={character.role} onChange={(event) => update({ role: event.target.value })} /></label>
+            <label>Played by<select value={character.author_id ?? "manual"} onChange={(event) => {
+                const author = authors.find((item) => String(item.id) === event.target.value);
+                update(author ? { author_id: author.id, actor: authorDisplayName(author) } : { author_id: null });
+            }}>
+                <option value="manual">Enter name manually</option>
+                {authorsLoading && <option disabled>Loading authors…</option>}
+                {character.author_id && !authors.some((author) => author.id === character.author_id) && <option value={character.author_id}>{character.actor || "Selected author"} (saved)</option>}
+                {authors.map((author) => <option key={author.id} value={author.id}>{author.name}</option>)}
+            </select></label>
+        </div>
+        {!character.author_id && <label>Actor name<input maxLength={120} value={character.actor || ""} onChange={(event) => update({ actor: event.target.value })} /></label>}
+        <label>Card size<select value={characterCardSize(character)} onChange={(event) => update({ size: event.target.value as CardSizeKey })}>
+            {CARD_SIZE_KEYS.map((key) => <option key={key} value={key}>{CARD_SIZE_LABELS[key]}</option>)}
+        </select></label>
+        <label>Portrait URL<input placeholder="https://…" value={character.photo || ""} onChange={(event) => update({ photo: event.target.value.trim() })} /></label>
+        <label>Introduction<textarea maxLength={5000} value={character.description} onChange={(event) => update({ description: event.target.value })} /></label>
+        {!!episodes.length && <>
+            <div className="relationship-chart-fields">
+                <label>First appears in<select value={characterDebutEpisode(data, character) ?? ""}
+                    onChange={(event) => onChange(setCharacterDebut(data, character.id, event.target.value === "" ? null : Number(event.target.value)))}>
+                    <option value="">Every entry</option>
+                    {episodes.map((number) => <option key={number} value={number}>{relationshipChartEpisodeLabel(data, number)}</option>)}
+                </select></label>
+            </div>
+            {episode !== undefined && <label className="relationship-chart-visibility">
+                <input type="checkbox" checked={!!(character.changes || []).find((change) => change.episode === episode)?.hidden}
+                    onChange={(event) => onChange(setCharacterEpisodeHidden(data, character.id, episode, event.target.checked))} />
+                Written out from {relationshipChartEpisodeLabel(data, episode)} onward
+            </label>}
+        </>}
+        <p className="eventform-field-note">Portrait color</p>
+        <div className="relationship-chart-swatches" role="group" aria-label="Portrait color">
+            {SWATCH_PRESETS.map((preset) => <button key={preset.label} type="button" className={resolvePortraitColor(character.tone) === preset.color ? "is-selected" : ""} style={{ '--swatch-color': preset.color } as CssVars} title={preset.label} aria-label={preset.label} onClick={() => update({ tone: preset.color })} />)}
+        </div>
+        <div className="relationship-chart-editor-actions">
+            <button type="button" className="series-metadata-add" onClick={onStartLink}>Connect to another character →</button>
+            <Button variant="danger" size="small" onClick={onRemove}>Remove character</Button>
+        </div>
+    </PopoverShell>;
+}
+
+interface GroupEditPopoverProps {
+    data: RelationshipChartData;
+    onChange: (data: RelationshipChartData) => void;
+    group: CharacterGroup;
+    onRemove: () => void;
+    onClose: () => void;
+}
+
+function GroupEditPopover({ data, onChange, group, onRemove, onClose }: GroupEditPopoverProps) {
+    function update(patch: Partial<CharacterGroup>) {
+        onChange({ ...data, groups: (data.groups || []).map((item) => item.id === group.id ? { ...item, ...patch } : item) });
+    }
+    return <PopoverShell label={`Edit ${group.label || "group"}`} onClose={onClose}>
+        <p className="relationship-chart-popover-title">{group.label || "New group"}</p>
+        <div className="relationship-chart-fields">
+            <label>Group name<input maxLength={120} value={group.label} onChange={(event) => update({ label: event.target.value })} /></label>
+            <label>Thai name<input lang="th" maxLength={120} value={group.thai_name || ""} onChange={(event) => update({ thai_name: event.target.value })} /></label>
+            <label>Outline shape<select value={group.shape} onChange={(event) => update({ shape: event.target.value })}><option value="rectangle">Rectangle</option><option value="circle">Circle / oval</option></select></label>
+            <label>Outline line style<select value={group.line_style || "solid"} onChange={(event) => update({ line_style: event.target.value })}><option value="solid">Solid</option><option value="dashed">Dashed</option><option value="dotted">Dotted</option></select></label>
+            <label>Title position<select value={group.label_position || "top"} onChange={(event) => update({ label_position: event.target.value })}><option value="top">Top edge</option><option value="bottom">Bottom edge</option></select></label>
+        </div>
+        <label>Outline color<input type="color" value={group.color} onChange={(event) => update({ color: event.target.value })} /></label>
+        <div className="relationship-chart-swatches relationship-chart-outline-swatches" role="group" aria-label="Outline color presets">
+            {SWATCH_PRESETS.map((preset) => <button key={preset.label} type="button" className={group.color?.toLowerCase() === preset.color.toLowerCase() ? "is-selected" : ""} style={{ '--swatch-color': preset.color } as CssVars} title={preset.label} aria-label={preset.label} aria-pressed={group.color?.toLowerCase() === preset.color.toLowerCase()} onClick={() => update({ color: preset.color })} />)}
+        </div>
+        <label>Description<textarea maxLength={5000} value={group.description || ""} onChange={(event) => update({ description: event.target.value })} /></label>
+        <div className="relationship-chart-fields">
+            <label>Horizontal margin · {Math.round((group.padding_x ?? 15) * 10) / 10}%
+                <input type="range" min={GROUP_PADDING_MIN} max={GROUP_PADDING_MAX} step="0.5" value={group.padding_x ?? 15} onChange={(event) => update({ padding_x: Number(event.target.value), padding_left: null, padding_right: null })} />
+            </label>
+            <label>Vertical margin · {Math.round((group.padding_y ?? 22) * 10) / 10}%
+                <input type="range" min={GROUP_PADDING_MIN} max={GROUP_PADDING_MAX} step="0.5" value={group.padding_y ?? 22} onChange={(event) => update({ padding_y: Number(event.target.value), padding_top: null, padding_bottom: null })} />
+            </label>
+        </div>
+        <button type="button" className="series-metadata-add" onClick={() => update({ padding_x: 15, padding_y: 22, padding_top: null, padding_bottom: null, padding_left: null, padding_right: null })}>Reset group margins</button>
+        <div className="relationship-chart-members-heading">Members · {data.characters.filter(character => group.character_ids.includes(character.id)).length} selected</div>
+        <div className="relationship-chart-fields relationship-chart-members" role="group" aria-label={`${group.label || "Group"} members`} tabIndex={0}>
+            {data.characters.map((character) => <label key={character.id} className="relationship-chart-visibility">
+                <input type="checkbox" checked={group.character_ids.includes(character.id)}
+                    onChange={(event) => update({ character_ids: event.target.checked ? [...group.character_ids, character.id] : group.character_ids.filter((id) => id !== character.id) })} />
+                {character.name}
+            </label>)}
+        </div>
+        <div className="relationship-chart-editor-actions">
+            <Button variant="danger" size="small" onClick={onRemove}>Remove group</Button>
+        </div>
+    </PopoverShell>;
+}
+
+export interface RelationshipChartProps {
+    data: RelationshipChartData;
+    onChange?: (data: RelationshipChartData) => void;
+    projectTitle?: string | null;
+    episodeCount?: number | null;
+    editable?: boolean;
+    isAdmin?: boolean;
+    headerControls?: ReactNode;
+    onEpisodePublicChange?: ((episode: number, isPublic: boolean) => void) | null;
+    busy?: boolean;
+    exportView?: boolean;
+    forcedEpisode?: number | null;
+    measureNonce?: number;
+    useLoafFrame?: boolean;
+}
+
+export default function RelationshipChart({ data, onChange: onChangeProp, projectTitle, episodeCount = 0, editable = false, isAdmin = false, headerControls = null, onEpisodePublicChange = null, busy = false, exportView = false, forcedEpisode = null, measureNonce = 0, useLoafFrame = false }: RelationshipChartProps) {
+    // Only editable charts are given a handler; read-only views never call it.
+    const onChange = onChangeProp ?? (() => {});
+    const texts = { ...relationshipChartTexts(projectTitle), ...data.texts };
+    const [selectedEpisode, setEpisode] = useState<number | null>(null);
+    // Editing starts wide so character and group forms use the left sidebar.
+    const [expanded, setExpanded] = useState(() => editable && !exportView);
+    const [measureTick, setMeasureTick] = useState(0);
+    const [exportStage, setExportStage] = useState(false);
+    const [exportNonce, setExportNonce] = useState(0);
+    const stageRef = useRef<HTMLDivElement>(null);
+    const [exportMargins, setExportMargins] = useState<ExportMargins | null>(null);
+    const [downloading, setDownloading] = useState(false);
+    const [downloadError, setDownloadError] = useState("");
+    const sectionRef = useRef<HTMLElement>(null);
+    const seesEveryEpisode = isAdmin || editable;
+    const episodes = visibleRelationshipChartEpisodes(data, relationshipChartEpisodes(data, episodeCount), seesEveryEpisode);
+    const episode: number | undefined = exportView ? forcedEpisode ?? undefined : selectedEpisode !== null && episodes.includes(selectedEpisode) ? selectedEpisode : episodes[0];
+    const episodeHidden = episode !== undefined && !isRelationshipChartEpisodePublic(data, episode);
+    // Only the cast present in the entry being viewed.
+    const characters = useMemo(() => charactersAtEpisode(data, episode), [data, episode]);
+    const exportData = useMemo(() => fitRelationshipChartPositions({ ...data, characters }, exportMargins ?? undefined), [data, characters, exportMargins]);
+    const [selected, setSelected] = useState<{ kind: SelectionKind; id: string } | null>(null);
+    const [actorLinksOpen, setActorLinksOpen] = useState(false);
+    const actorWrapRef = useRef<HTMLSpanElement>(null);
+    const [linkingId, setLinkingId] = useState<string | null>(null);
+    const [editingConnectionId, setEditingConnectionId] = useState<string | null>(null);
+    const [editingCharacterId, setEditingCharacterId] = useState<string | null>(null);
+    const [editingGroupId, setEditingGroupId] = useState<string | null>(null);
+    const [hoverId, setHoverId] = useState<string | null>(null);
+    const [hoveredConnectionId, setHoveredConnectionId] = useState<string | null>(null);
+    const [authors, setAuthors] = useState<Author[]>([]);
+    const [authorsLoading, setAuthorsLoading] = useState(true);
+    const dialog = useRef<HTMLDialogElement>(null);
+    const canvasRef = useRef<HTMLDivElement>(null);
+    const dragRef = useRef<{ id: string; startX: number; startY: number; moved: boolean } | null>(null);
+    const groupResizeRef = useRef<{ groupId: string; extent: unknown; edge: GroupEdge | "corner"; startX: number; startY: number; group: CharacterGroup } | null>(null);
+    const canvasResizeRef = useRef<{ startY: number; startHeight: number } | null>(null);
+    const labelRefs = useRef(new Map<string, HTMLSpanElement>());
+    const personRefs = useRef(new Map<string, HTMLButtonElement>());
+    const [cardExtents, setCardExtents] = useState<Record<string, MeasuredExtent>>({});
+    const [renderScale, setRenderScale] = useState(1);
+    const [labelSizes, setLabelSizes] = useState<LabelSizes>({});
+    const [canvasSize, refreshCanvasSize] = useCanvasSize(canvasRef);
+    const compact = useCompactCards();
+    const cardScale = compact ? CARD_COMPACT_SCALE : 1;
+    const insets = useMemo(() => characterCardInsets(characters, canvasSize, cardScale, cardExtents), [characters, canvasSize, cardScale, cardExtents]);
+    const cardSpans = useMemo(() => characterCardSpans(characters, canvasSize, cardScale, cardExtents), [characters, canvasSize, cardScale, cardExtents]);
+    const connections = relationshipsAtEpisode(data, episode, insets);
+    const pxPerUnit = canvasSize ? { x: canvasSize.width / 100, y: canvasSize.height / 100 } : null;
+    const connectionSignature = connections.map((connection) => `${connection.id}:${connection.label}:${connection.start.x.toFixed(1)},${connection.start.y.toFixed(1)},${connection.end.x.toFixed(1)},${connection.end.y.toFixed(1)}`).join("|");
+    const canvasHeight = data.canvas_height ?? canvasHeightFor(data.characters.length);
+    const activeCharacter = selected?.kind === "character" ? characters.find((item) => item.id === selected.id) : undefined;
+    const activeGroup = selected?.kind === "group" ? (data.groups || []).find((item) => item.id === selected.id) : undefined;
+    const activeConnection = selected?.kind === "relationship" ? connections.find((item) => item.id === selected.id) : undefined;
+    const active = activeCharacter ?? activeGroup ?? activeConnection;
+    const activeDirection = activeConnection ? relationshipChartDirection(activeConnection) : null;
+    // Look this up live from the linked author instead of trusting the saved `actor`
+    // string, so it always reflects the author's current nickname + full name.
+    const activePlayedByAuthor = activeCharacter && activeCharacter.author_id
+        ? authors.find((author) => author.id === activeCharacter.author_id) || null
+        : null;
+    const activePlayedBy = activeCharacter
+        ? (activeCharacter.author_id ? authorDisplayName(activePlayedByAuthor || { name: activeCharacter.actor ?? "" }) : activeCharacter.actor)
+        : null;
+    const activePlayedByHasLinks = !!(activePlayedByAuthor && (activePlayedByAuthor.instagram_url || activePlayedByAuthor.twitter_url));
+    const editingConnection = editable ? connections.find((item) => item.id === editingConnectionId) : null;
+    const editingCharacter = editable ? characters.find((item) => item.id === editingCharacterId) : null;
+    const editingGroup = editable ? (data.groups || []).find((item) => item.id === editingGroupId) : null;
+    const focusId = linkingId || hoverId;
+    const touchesFocus = (connection: ActiveRelationship) => connection.source.id === focusId || connection.target.id === focusId;
+
+    useEffect(() => {
+        // Fetched for both editors (the "Played by" picker) and public viewers (to
+        // show the linked author's current nickname + full name in character details).
+        let stillMounted = true;
+        getAuthors().then((response) => { if (stillMounted) setAuthors(response.data || []); })
+            .catch(() => {})
+            .finally(() => { if (stillMounted) setAuthorsLoading(false); });
+        return () => { stillMounted = false; };
+    }, []);
+
+    useEffect(() => {
+        if (!actorLinksOpen) return;
+        const closeIfOutside = (event: PointerEvent) => {
+            if (actorWrapRef.current && !actorWrapRef.current.contains(event.target as Node)) setActorLinksOpen(false);
+        };
+        document.addEventListener("pointerdown", closeIfOutside);
+        return () => document.removeEventListener("pointerdown", closeIfOutside);
+    }, [actorLinksOpen]);
+
+    useEffect(() => {
+        const remeasure = () => setMeasureTick((value) => value + 1);
+        document.addEventListener("visibilitychange", remeasure);
+        document.fonts?.ready.then(remeasure).catch(() => {});
+        return () => document.removeEventListener("visibilitychange", remeasure);
+    }, []);
+    const characterSignature = characters.map((character) => `${character.id}:${character.name}:${character.role}:${character.thai_name || ""}:${characterCardSize(character)}`).join("|");
+    // Container queries resize cards after the canvas changes. Observe the cards and
+    // their text as well, so enclosure geometry never retains the previous scale.
+    useLayoutEffect(() => {
+        if (typeof ResizeObserver === "undefined") return;
+        let frame = 0;
+        const observer = new ResizeObserver(() => {
+            cancelAnimationFrame(frame);
+            frame = requestAnimationFrame(() => setMeasureTick(value => value + 1));
+        });
+        for (const node of personRefs.current.values()) {
+            observer.observe(node);
+            for (const child of node.children) observer.observe(child);
+        }
+        return () => { observer.disconnect(); cancelAnimationFrame(frame); };
+    }, [characterSignature]);
+    useLayoutEffect(() => {
+        refreshCanvasSize();
+        const measured: Record<string, MeasuredExtent> = {};
+        for (const [id, node] of personRefs.current) {
+            const box = node.getBoundingClientRect();
+            const frame = node.querySelector(".relationship-chart-frame")?.getBoundingClientRect() ?? box;
+            const parts = [...node.children].map((child) => child.getBoundingClientRect());
+            measured[id] = { width: frame.width, height: frame.height,
+                spanWidth: Math.max(frame.width, ...parts.map((part) => part.width)),
+                below: Math.max(0, ...parts.map((part) => part.bottom - box.bottom)) };
+        }
+        const applied = parseFloat(getComputedStyle(canvasRef.current ?? document.body).getPropertyValue("--card-scale"));
+        if (Number.isFinite(applied) && applied > 0) setRenderScale((current) => Math.abs(current - applied) < 0.001 ? current : applied);
+        setCardExtents((current) => {
+            const ids = Object.keys(measured);
+            const same = ids.length === Object.keys(current).length && ids.every((id) => current[id]
+                && Math.abs(current[id].width - measured[id].width) < 0.5
+                && Math.abs(current[id].height - measured[id].height) < 0.5
+                && Math.abs(current[id].spanWidth - measured[id].spanWidth) < 0.5
+                && Math.abs(current[id].below - measured[id].below) < 0.5);
+            return same ? current : measured;
+        });
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [characterSignature, canvasSize, compact, measureTick, measureNonce, expanded, editingCharacterId, editingConnectionId, editingGroupId]);
+    const budgets = useMemo(() => labelBudgets(connections, canvasSize, renderScale, exportView),
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        [connectionSignature, canvasSize, renderScale, exportView]);
+    useLayoutEffect(() => {
+        const measured: LabelSizes = {};
+        for (const [id, node] of labelRefs.current) {
+            const box = node.getBoundingClientRect();
+            measured[id] = { width: box.width, height: box.height };
+        }
+        setLabelSizes((current) => {
+            const ids = Object.keys(measured);
+            const same = ids.length === Object.keys(current).length
+                && ids.every((id) => current[id] && Math.abs(current[id].width - measured[id].width) < 0.5 && Math.abs(current[id].height - measured[id].height) < 0.5);
+            return same ? current : measured;
+        });
+    }, [connectionSignature, compact, canvasSize, measureTick, measureNonce]);
+    const inlineLabels = useMemo(() => inlineLabelPositions(connections, characters, canvasSize, cardScale, labelSizes, cardExtents, renderScale, exportView),
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        [connectionSignature, characters, canvasSize, cardScale, labelSizes, cardExtents, renderScale, exportView]);
+
+    function openDetails(kind: SelectionKind, id: string) {
+        setSelected({ kind, id });
+        setActorLinksOpen(false);
+        dialog.current?.showModal();
+    }
+
+    function startLinking(id: string) {
+        setEditingCharacterId(null);
+        setEditingConnectionId(null);
+        setEditingGroupId(null);
+        setLinkingId(id);
+    }
+
+    function completeLink(id: string) {
+        if (!linkingId || episode === undefined) return;
+        if (linkingId === id) { setLinkingId(null); return; }
+        const existing = data.relationships.find((relationship) => (relationship.source === linkingId && relationship.target === id) || (relationship.source === id && relationship.target === linkingId));
+        if (existing) {
+            const visible = connections.some((connection) => connection.id === existing.id);
+            if (!visible) onChange({ ...data, relationships: data.relationships.map((relationship) => relationship.id === existing.id
+                ? { ...relationship, changes: [...relationship.changes, newRelationshipChange(episode, { color: nextRelationshipColor(data) })] } : relationship) });
+            setEditingConnectionId(existing.id);
+        } else {
+            const newId = crypto.randomUUID();
+            onChange({ ...data, relationships: [...data.relationships, { id: newId, source: linkingId, target: id, changes: [newRelationshipChange(episode, { color: nextRelationshipColor(data) })] }] });
+            setEditingConnectionId(newId);
+        }
+        setLinkingId(null);
+    }
+
+    function handleCharacterClick(character: RelationshipChartCharacter) {
+        if (!editable) { openDetails("character", character.id); return; }
+        if (dragRef.current?.moved) { dragRef.current = null; return; }
+        dragRef.current = null;
+        if (linkingId) { completeLink(character.id); return; }
+        setEditingConnectionId(null);
+        setEditingGroupId(null);
+        setEditingCharacterId(character.id);
+    }
+
+    function handlePointerDown(event: ReactPointerEvent<HTMLElement>, character: RelationshipChartCharacter) {
+        if (!editable) return;
+        event.currentTarget.setPointerCapture(event.pointerId);
+        dragRef.current = { id: character.id, startX: event.clientX, startY: event.clientY, moved: false };
+    }
+
+    function handlePointerMove(event: ReactPointerEvent<HTMLElement>) {
+        if (!editable || !dragRef.current || !canvasRef.current) return;
+        const state = dragRef.current;
+        if (Math.hypot(event.clientX - state.startX, event.clientY - state.startY) > 4) state.moved = true;
+        if (!state.moved) return;
+        const rect = canvasRef.current.getBoundingClientRect();
+        const others = data.characters.filter((item) => item.id !== state.id);
+        const x = snapPosition(((event.clientX - rect.left) / rect.width) * 100, others.map((item) => item.x), 12, 88);
+        const y = snapPosition(((event.clientY - rect.top) / rect.height) * 100, others.map((item) => item.y), 18, 82);
+        onChange({ ...data, characters: data.characters.map((item) => item.id === state.id ? { ...item, x, y } : item) });
+    }
+
+    function handlePointerUp(event: ReactPointerEvent<HTMLElement>) {
+        if (!editable) return;
+        event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+
+    function handleGroupResizeDown(event: ReactPointerEvent<HTMLElement>, group: CharacterGroup, bounds: { extent: unknown }, edge: GroupEdge | "corner" = "corner") {
+        event.stopPropagation();
+        event.currentTarget.setPointerCapture(event.pointerId);
+        groupResizeRef.current = { groupId: group.id, extent: bounds.extent, edge, startX: event.clientX, startY: event.clientY, group };
+    }
+
+    function handleGroupResizeMove(event: ReactPointerEvent<HTMLElement>) {
+        const state = groupResizeRef.current;
+        if (!state || !canvasRef.current) return;
+        const rect = canvasRef.current.getBoundingClientRect();
+        const dx = ((event.clientX - state.startX) / rect.width) * 100;
+        const dy = ((event.clientY - state.startY) / rect.height) * 100;
+        const clamp = (value: number) => Math.min(GROUP_PADDING_MAX, Math.max(GROUP_PADDING_MIN, value));
+        const patch: Partial<CharacterGroup> = {};
+        if (state.edge === "top") patch.padding_top = clamp((state.group.padding_top ?? state.group.padding_y ?? 22) - dy);
+        if (state.edge === "left") patch.padding_left = clamp((state.group.padding_left ?? state.group.padding_x ?? 15) - dx);
+        if (state.edge === "bottom" || state.edge === "corner") patch.padding_bottom = clamp((state.group.padding_bottom ?? state.group.padding_y ?? 22) + dy);
+        if (state.edge === "right" || state.edge === "corner") patch.padding_right = clamp((state.group.padding_right ?? state.group.padding_x ?? 15) + dx);
+        onChange({ ...data, groups: (data.groups || []).map((item) => item.id === state.groupId ? { ...item, ...patch } : item) });
+    }
+
+    function handleGroupResizeUp(event: ReactPointerEvent<HTMLElement>) {
+        if (!groupResizeRef.current) return;
+        event.currentTarget.releasePointerCapture(event.pointerId);
+        groupResizeRef.current = null;
+    }
+
+    function handleCanvasResizeDown(event: ReactPointerEvent<HTMLElement>) {
+        event.currentTarget.setPointerCapture(event.pointerId);
+        canvasResizeRef.current = { startY: event.clientY, startHeight: canvasHeight };
+    }
+
+    function handleCanvasResizeMove(event: ReactPointerEvent<HTMLElement>) {
+        const state = canvasResizeRef.current;
+        if (!state) return;
+        // The canvas is drawn at renderScale, so a drag of N pixels is N / renderScale of stored height.
+        const dragged = (event.clientY - state.startY) / (renderScale || 1);
+        const height = Math.min(CANVAS_HEIGHT_MAX, Math.max(CANVAS_HEIGHT_MIN, state.startHeight + dragged));
+        onChange({ ...data, canvas_height: height });
+    }
+
+    function handleCanvasResizeUp(event: ReactPointerEvent<HTMLElement>) {
+        if (!canvasResizeRef.current) return;
+        event.currentTarget.releasePointerCapture(event.pointerId);
+        canvasResizeRef.current = null;
+    }
+
+    function connectionClick(connection: ActiveRelationship) {
+        if (!editable) { openDetails("relationship", connection.id); return; }
+        setEditingCharacterId(null);
+        setEditingGroupId(null);
+        setEditingConnectionId(connection.id);
+    }
+
+    function groupClick(group: CharacterGroup) {
+        if (!editable) { openDetails("group", group.id); return; }
+        setEditingCharacterId(null);
+        setEditingConnectionId(null);
+        setEditingGroupId(group.id);
+    }
+
+    function removeGroup(group: CharacterGroup) {
+        if (!confirm(`Remove the "${group.label || "group"}" outline? Its characters are not removed.`)) return;
+        onChange({ ...data, groups: (data.groups || []).filter((item) => item.id !== group.id) });
+        setEditingGroupId(null);
+    }
+
+    function addCharacter() {
+        const newId = crypto.randomUUID();
+        const tone = SWATCH_PRESETS[data.characters.length % SWATCH_PRESETS.length].color;
+        onChange({ ...data, characters: [...data.characters, { id: newId, name: "New character", role: "", actor: "", photo: "", description: "", tone, size: "medium", x: 50, y: 50,
+            changes: episodes.length && episode !== undefined ? [{ episode, hidden: false }] : [] }] });
+        setEditingCharacterId(newId);
+    }
+
+    function removeCharacter(character: RelationshipChartCharacter) {
+        if (!confirm(`Remove ${character.name} and their relationships from this draft?`)) return;
+        onChange({ ...data,
+            groups: (data.groups || []).map((group) => ({ ...group, character_ids: group.character_ids.filter((id) => id !== character.id) })),
+            characters: data.characters.filter((item) => item.id !== character.id),
+            relationships: data.relationships.filter((item) => item.source !== character.id && item.target !== character.id) });
+        setEditingCharacterId(null);
+    }
+
+    // Draws from a hidden copy of the chart at a fixed wide size, so the page never moves and a
+    // phone gets the same image a desktop does.
+    async function downloadImage() {
+        if (downloading) return;
+        setDownloading(true);
+        setDownloadError("");
+        setExportStage(true);
+        await new Promise((resolve) => setTimeout(resolve, 600));
+        const stage = stageRef.current;
+        const chart = stage?.firstElementChild as HTMLElement | null | undefined;
+        // The sheet itself is 4:3 — title, chart and footer fill it, with no bars down the sides.
+        // The canvas takes whatever height is left over, and the cards grow to match the new spacing.
+        const canvasNode = chart?.querySelector<HTMLElement>(".relationship-chart-canvas");
+        if (stage && chart && canvasNode) {
+            // Measure only after fonts settle, and fit long titles without wrapping.
+            await document.fonts.ready;
+            const title = chart.querySelector<HTMLElement>(".relationship-chart-heading h2");
+            if (title && title.scrollWidth > title.clientWidth) {
+                const fontSize = parseFloat(getComputedStyle(title).fontSize);
+                title.style.fontSize = `${fontSize * title.clientWidth / title.scrollWidth}px`;
+            }
+            const chrome = chart.offsetHeight - canvasNode.offsetHeight;
+            const canvasPx = Math.max(320, Math.round(EXPORT_WIDTH / EXPORT_ASPECT) - chrome);
+            const rows = [...new Set(exportData.characters.map((character) => character.y))].sort((a, b) => a - b);
+            const closestRows = rows.length > 1 ? Math.min(...rows.slice(1).map((y, index) => y - rows[index])) : 60;
+            // Measured card + caption height, back at scale 1, so the cards never grow into each other.
+            const exportCards = [...canvasNode.querySelectorAll<HTMLElement>(".relationship-chart-person")];
+            const initialScale = parseFloat(getComputedStyle(canvasNode).getPropertyValue("--card-scale")) || 1.7;
+            // Measure the actual export captions: the wider sheet wraps them differently
+            // from the phone/desktop chart and usually leaves more room for portraits.
+            const block = Math.max(...exportCards.map((node) => {
+                const parts = [node, ...node.children].map((part) => part.getBoundingClientRect());
+                return (Math.max(...parts.map((part) => part.bottom)) - Math.min(...parts.map((part) => part.top))) / initialScale;
+            }), ...(!exportCards.length ? [1] : []));
+            // A card plus its caption may fill the gap to the next row, less a small buffer.
+            const fits = 0.96 * (closestRows / 100) * canvasPx / block;
+            stage.style.setProperty("--export-canvas-height", `${canvasPx}px`);
+            stage.style.setProperty("--export-card-scale", Math.min(EXPORT_CARD_SCALE_MAX, Math.max(EXPORT_CARD_SCALE_MIN, fits)).toFixed(2));
+            await new Promise((resolve) => setTimeout(resolve, 450));
+            // Cards changed size, so the copy re-measures before its enclosures and labels are drawn.
+            setExportNonce((value) => value + 1);
+            await new Promise((resolve) => setTimeout(resolve, 350));
+            // The same gap in pixels on all four sides. Each edge follows the card that sits on it,
+            // since a wide caption reaches further out than a narrow one.
+            const canvasBox = canvasNode.getBoundingClientRect();
+            const padding = EXPORT_EDGE_PADDING * (EXPORT_WIDTH / 1600);
+            const edges = [...chart.querySelectorAll<HTMLElement>(".relationship-chart-person")].map((card, index) => {
+                const box = card.getBoundingClientRect();
+                const parts = [...card.children].map((child) => child.getBoundingClientRect());
+                const halfWidth = Math.max(...parts.map((part) => part.width), box.width) / 2;
+                const centerX = ((exportData.characters[index]?.x ?? 50) / 100) * canvasBox.width;
+                const centerY = ((exportData.characters[index]?.y ?? 50) / 100) * canvasBox.height;
+                return {
+                    halfWidth, halfHeight: box.height / 2,
+                    below: Math.max(...parts.map((part) => part.bottom)) - box.bottom,
+                    left: centerX - halfWidth, right: centerX + halfWidth,
+                    top: centerY - box.height / 2,
+                    bottom: centerY + box.height / 2 + (Math.max(...parts.map((part) => part.bottom)) - box.bottom),
+                };
+            });
+            if (edges.length) {
+                const onLeft = edges.reduce((a, b) => (b.left < a.left ? b : a));
+                const onRight = edges.reduce((a, b) => (b.right > a.right ? b : a));
+                const onTop = edges.reduce((a, b) => (b.top < a.top ? b : a));
+                const onBottom = edges.reduce((a, b) => (b.bottom > a.bottom ? b : a));
+                setExportMargins({
+                    marginLeft: ((padding + onLeft.halfWidth) / canvasBox.width) * 100,
+                    marginRight: ((padding + onRight.halfWidth) / canvasBox.width) * 100,
+                    marginTop: ((padding + onTop.halfHeight) / canvasBox.height) * 100,
+                    marginBottom: ((padding + onBottom.halfHeight + onBottom.below) / canvasBox.height) * 100,
+                });
+            }
+            await new Promise((resolve) => setTimeout(resolve, 450));
+            setExportNonce((value) => value + 1);
+            await new Promise((resolve) => setTimeout(resolve, 300));
+        }
+        const skipped = ["relationship-chart-heading-controls", "relationship-chart-edit-hint", "relationship-chart-hidden-note",
+            "relationship-chart-canvas-resize", "relationship-chart-group-handle", "relationship-chart-label-measure",
+            "relationship-chart-side-panel", "visibility-toggle"];
+        const options = { pixelRatio: 2, backgroundColor: "#fffcf6",
+            aspectRatio: EXPORT_ASPECT,
+            style: { margin: "0" },
+            // One portrait that will not embed should not lose the whole image.
+            onImageErrorHandler: () => {},
+            filter: (node: HTMLElement) => !skipped.some((name) => node.classList?.contains(name)) };
+        try {
+            if (!chart) throw new Error("the chart was not ready to draw");
+            const { elementToPngBlob, inlineImages } = await import("../utils/chartImage");
+            const portraits = await inlineImages(chart);
+            const blob = await elementToPngBlob(chart, { ...options, portraits });
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.download = `${relationshipChartImageName(projectTitle, episode ? relationshipChartEpisodeLabel(data, episode) : "")}.png`;
+            link.click();
+            setTimeout(() => URL.revokeObjectURL(link.href), 10000);
+        } catch (error) {
+            setDownloadError(`Could not save the image: ${error instanceof Error && error.message ? error.message : "unknown error"}.`);
+        } finally {
+            setExportStage(false);
+            setExportMargins(null);
+            setDownloading(false);
+        }
+    }
+
+    function clearHover(id: string) {
+        setHoverId((current) => current === id ? null : current);
+    }
+
+    return <section ref={sectionRef} className={`relationship-chart${useLoafFrame ? " frame-loaf" : ""}${editable && (editingCharacter || editingConnection || editingGroup) ? " has-side-editor" : ""}${expanded ? " is-expanded" : ""}${exportView ? " is-exporting" : ""}`} aria-labelledby="relationship-chart-heading">
+        <div className="relationship-chart-heading">
+            <div><span className="relationship-chart-eyebrow">{texts.eyebrow}</span>
+                <h2 id="relationship-chart-heading">{texts.heading}</h2>
+                <p>{texts.introduction}</p>
+                {exportView && texts.decoration && <span className="relationship-chart-export-subtitle">{texts.decoration}</span>}
+            </div>
+            {!exportView && <div className="relationship-chart-heading-controls">
+                <div className="relationship-chart-header-actions">
+                <button type="button" className="relationship-chart-expand" aria-label={expanded ? "Restore chart width" : "Expand chart width"} aria-pressed={expanded} title={expanded ? "Restore chart width" : "Expand chart width"} onClick={() => setExpanded((value) => !value)}><ChartIcon paths={expanded ? ICON_COLLAPSE : ICON_EXPAND} /></button>
+                <button type="button" className="relationship-chart-expand relationship-chart-download" disabled={downloading}
+                    aria-label="Download the chart as an image" title="Download the chart as an image" onClick={downloadImage}>{downloading ? <span className="relationship-chart-spinner" aria-hidden="true" /> : <ChartIcon paths={ICON_DOWNLOAD} />}</button>
+                </div>
+                {downloadError && <p className="relationship-chart-download-error" role="alert">{downloadError}</p>}
+                {headerControls}
+            </div>}
+        </div>
+        <div className="relationship-chart-toolbar">
+            <div className="relationship-chart-episode-controls">
+            <label><span className="relationship-chart-story-label">{texts.storyLabel}</span> <select disabled={!episodes.length} value={episode ?? ""} onChange={(event) => { setEpisode(Number(event.target.value)); setEditingConnectionId(null); }}>
+                {!episodes.length && <option value="">{texts.noEpisodes}</option>}
+                {episodes.map((number) => <option key={number} value={number}>{relationshipChartEpisodeLabel(data, number)}{seesEveryEpisode && !isRelationshipChartEpisodePublic(data, number) ? " · hidden" : ""}</option>)}
+            </select></label>
+            {onEpisodePublicChange && episode !== undefined && <VisibilityToggle checked={!episodeHidden} disabled={busy}
+                label={busy ? "Saving…" : "Public"}
+                title={episodeHidden ? "Hidden from the public — admins still see this entry" : "Visible to the public"}
+                ariaLabel={`Show ${relationshipChartEpisodeLabel(data, episode)} to the public`}
+                onChange={(event) => onEpisodePublicChange(episode, event.target.checked)} />}
+            {seesEveryEpisode && episodeHidden}
+            </div>
+            {editable && <Button variant="add" size="small" disabled={data.characters.length >= 40} onClick={addCharacter}>+ Add character</Button>}
+        </div>
+        <div className="relationship-chart-workspace">
+        <div className="relationship-chart-viewport">
+        <div className="relationship-chart-canvas" ref={canvasRef} style={{ "--canvas-height": `${canvasHeight}px` } as CssVars}>
+            {(data.groups || []).map((group) => {
+                const bounds = characterGroupBounds(group, characters, cardSpans);
+                if (!bounds) return null;
+                return <div key={group.id} className={`relationship-chart-group ${group.shape}`} style={{ left: `${bounds.left}%`, top: `${bounds.top}%`, width: `${bounds.width}%`, height: `${bounds.height}%`, '--group-color': group.color, borderStyle: group.line_style || 'solid' } as CssVars} role="group" aria-label={`${group.label}: ${characters.filter((character) => group.character_ids.includes(character.id)).map((character) => character.name).join(', ')}`}>
+                    <button type="button" className={`relationship-chart-group-label ${group.label_position === "bottom" ? "bottom" : "top"}`} onClick={() => groupClick(group)}>{group.label}</button>
+                    {editable && (["top", "bottom", "left", "right"] as const).map((edge) => <button key={edge} type="button" className={`relationship-chart-group-edge ${edge}`} aria-label={`Adjust ${group.label || "group"} ${edge} margin`} title={`Drag to adjust ${edge} margin`}
+                        onPointerDown={(event) => handleGroupResizeDown(event, group, bounds, edge)} onPointerMove={handleGroupResizeMove} onPointerUp={handleGroupResizeUp} onPointerCancel={handleGroupResizeUp}
+                        onKeyDown={(event) => {
+                            if (!["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(event.key)) return;
+                            event.preventDefault();
+                            const vertical = edge === "top" || edge === "bottom";
+                            const direction = event.key === "ArrowDown" || event.key === "ArrowRight" ? 1 : -1;
+                            const key: PaddingKey = `padding_${edge}`;
+                            const value = (group[key] ?? (vertical ? group.padding_y ?? 22 : group.padding_x ?? 15)) + direction * (edge === "top" || edge === "left" ? -1 : 1);
+                            onChange({ ...data, groups: (data.groups || []).map((item) => item.id === group.id ? { ...item, [key]: Math.min(GROUP_PADDING_MAX, Math.max(GROUP_PADDING_MIN, value)) } : item) });
+                        }} />)}
+                    {editable && <button type="button" className="relationship-chart-group-handle" aria-label={`Resize ${group.label || "group"} enclosure`}
+                        onPointerDown={(event) => handleGroupResizeDown(event, group, bounds)}
+                        onPointerMove={handleGroupResizeMove}
+                        onPointerUp={handleGroupResizeUp} onPointerCancel={handleGroupResizeUp} />}
+                </div>;
+            })}
+            {!editable && !exportView && <span className="relationship-chart-decoration" aria-hidden="true">{texts.decoration}</span>}
+            <svg className="relationship-chart-lines" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+                {connections.map((connection) => <path key={connection.id} d={connection.d} className={focusId && !touchesFocus(connection) ? "is-dimmed" : ""}
+                    fill="none" strokeWidth={2} vectorEffect="non-scaling-stroke"
+                    style={{ stroke: connection.color, strokeDasharray: relationshipChartLineDash(connection.line_style) }} />)}
+                {connections.map((connection) => <g key={`${connection.id}-arrows`} className={focusId && !touchesFocus(connection) ? "is-dimmed" : ""}>
+                    {pxPerUnit && connection.arrow_end && <polygon points={arrowheadPoints(connection.end.x, connection.end.y, connection.endDir, pxPerUnit)} style={{ fill: connection.color }} />}
+                    {pxPerUnit && connection.arrow_start && <polygon points={arrowheadPoints(connection.start.x, connection.start.y, connection.startDir, pxPerUnit)} style={{ fill: connection.color }} />}
+                </g>)}
+            </svg>
+            {characters.map((character) => {
+                const mainName = characterCardSize(character) === "large"
+                    ? character.name.match(/^(["“][^"”]+["”])\s+(.+)$/u)
+                    : null;
+                const dimmed = focusId && character.id !== focusId && !connections.some((connection) => touchesFocus(connection) && (connection.source.id === character.id || connection.target.id === character.id));
+                return <button key={character.id} type="button" ref={(node) => { if (node) personRefs.current.set(character.id, node); else personRefs.current.delete(character.id); }} className={`relationship-chart-person is-${characterCardSize(character)}${editable && linkingId === character.id ? " linking" : ""}${dimmed ? " is-dimmed" : ""}`} style={{ left: `${character.x}%`, top: `${character.y}%` }}
+                    onPointerDown={editable ? (event) => handlePointerDown(event, character) : undefined}
+                    onPointerMove={editable ? handlePointerMove : undefined}
+                    onPointerUp={editable ? handlePointerUp : undefined}
+                    onPointerEnter={() => !dragRef.current && setHoverId(character.id)}
+                    onPointerLeave={() => clearHover(character.id)}
+                    onClick={() => handleCharacterClick(character)} aria-label={editable ? `${character.name}: drag to move, tap to edit` : `View ${character.name} details`}>
+                    <span className="relationship-chart-frame"><CharacterPortrait character={character} crossOrigin={exportView ? "anonymous" : undefined} /></span>
+                    <strong>{mainName ? <>{mainName[1]}<br />{mainName[2]}</> : character.name}</strong>{character.thai_name && <span className="relationship-chart-thai-name" lang="th">{character.thai_name}</span>}<span>{character.role}</span>
+                </button>;
+            })}
+            <div className="relationship-chart-label-measure" aria-hidden="true">
+                {connections.map((connection) => <span key={connection.id} className="relationship-chart-connection-label" style={{ maxWidth: `${budgets[connection.id] || LABEL_MIN_WIDTH}px` }}
+                    ref={(node) => { if (node) labelRefs.current.set(connection.id, node); else labelRefs.current.delete(connection.id); }}>{connection.label}</span>)}
+            </div>
+            {connections.map((connection) => {
+                const revealed = focusId ? touchesFocus(connection) : hoveredConnectionId === connection.id;
+                const inline = inlineLabels.get(connection.id);
+                return <button key={connection.id} type="button" className={`relationship-chart-connection${inline ? " has-inline-label" : ""}${revealed ? " is-revealed" : ""}${focusId && !touchesFocus(connection) ? " is-dimmed" : ""}`} style={{ left: `${(inline || connection).x}%`, top: `${(inline || connection).y}%`, '--connection-color': connection.color, ...(inline ? { maxWidth: `${budgets[connection.id] || LABEL_MIN_WIDTH}px` } : {}) } as CssVars}
+                    onPointerEnter={() => setHoveredConnectionId(connection.id)}
+                    onPointerLeave={() => setHoveredConnectionId((current) => current === connection.id ? null : current)}
+                    onClick={() => connectionClick(connection)} aria-label={`${connection.label}: ${editable ? "edit" : "view"} relationship between ${connection.source.name} and ${connection.target.name}`}>
+                    <span className="relationship-chart-connection-label">{connection.label}</span>
+                </button>;
+            })}
+            {editable && <button type="button" className="relationship-chart-canvas-resize" aria-label="Drag to resize the chart's height"
+                onPointerDown={handleCanvasResizeDown}
+                onPointerMove={handleCanvasResizeMove}
+                onPointerUp={handleCanvasResizeUp} />}
+        </div>
+        </div>
+            {editingConnection && <ConnectionPopover data={data} onChange={onChange} connection={editingConnection} episode={episode} episodes={episodes} onClose={() => setEditingConnectionId(null)} />}
+            {editingCharacter && <CharacterEditPopover data={data} onChange={onChange} character={editingCharacter} authors={authors} authorsLoading={authorsLoading} episode={episode} episodes={episodes}
+                onStartLink={() => startLinking(editingCharacter.id)} onRemove={() => removeCharacter(editingCharacter)} onClose={() => setEditingCharacterId(null)} />}
+            {editingGroup && <GroupEditPopover data={data} onChange={onChange} group={editingGroup} onRemove={() => removeGroup(editingGroup)} onClose={() => setEditingGroupId(null)} />}
+        </div>
+        <p className="relationship-chart-note">{exportView ? [episode && `version based on ${relationshipChartEpisodeLabel(data, episode)}`, "© viewmim.info"].filter(Boolean).join(" · ")
+            : episode ? texts.footer.replaceAll('{episode}', relationshipChartEpisodeLabel(data, episode)) : texts.noEpisodes}</p>
+        {exportStage && createPortal(
+            // Outside the visible chart, so page-level rules for it cannot reach the copy.
+            <div className="relationship-chart-export-stage" ref={stageRef} aria-hidden="true">
+                <RelationshipChart data={exportData} projectTitle={projectTitle} episodeCount={episodeCount} exportView forcedEpisode={episode} measureNonce={exportNonce} useLoafFrame={useLoafFrame} />
+            </div>, document.body)}
+        <dialog ref={dialog} className="relationship-chart-dialog" aria-labelledby="relationship-chart-detail-title" onClick={(event) => { if (event.target === dialog.current) dialog.current?.close(); }}>
+            <button type="button" className="relationship-chart-close" aria-label="Close details" onClick={() => dialog.current?.close()}>×</button>
+            {active && <>
+                <span className="relationship-chart-eyebrow">{episode ? relationshipChartEpisodeLabel(data, episode) : texts.characterDetails}</span>
+                {activeCharacter && <CharacterPortrait character={activeCharacter} />}
+                <h3 id="relationship-chart-detail-title">{activeCharacter?.name || activeGroup?.label || activeConnection?.label}</h3>
+                {(activeCharacter ?? activeGroup)?.thai_name && <p lang="th" className="relationship-chart-thai-name">{(activeCharacter ?? activeGroup)?.thai_name}</p>}
+                <p className="relationship-chart-detail-subtitle">{activeCharacter ? activeCharacter.role
+                    : activeGroup ? characters.filter((character) => activeGroup.character_ids.includes(character.id)).map((character) => character.name).join(', ')
+                    : activeDirection ? `${activeDirection.from.name} ${activeDirection.arrow || "&"} ${activeDirection.to.name}` : ""}</p>
+                {activePlayedBy && (
+                    <p>
+                        {texts.playedBy}{" "}
+                        {activePlayedByHasLinks ? (
+                            <span className="relationship-chart-actor-wrap" ref={actorWrapRef}>
+                                <button type="button" className="relationship-chart-actor-link" aria-expanded={actorLinksOpen}
+                                    onClick={() => setActorLinksOpen((value) => !value)}>{activePlayedBy}</button>
+                                {actorLinksOpen && (
+                                    <span className="relationship-chart-actor-popover" role="group" aria-label={`${activePlayedBy}'s social links`}>
+                                        {activePlayedByAuthor?.instagram_url && <a href={activePlayedByAuthor.instagram_url} target="_blank" rel="noopener noreferrer" aria-label="Instagram" title="Instagram">
+                                            <img src="https://cdn.simpleicons.org/instagram" alt="" />
+                                        </a>}
+                                        {activePlayedByAuthor?.twitter_url && <a href={activePlayedByAuthor.twitter_url} target="_blank" rel="noopener noreferrer" aria-label="X / Twitter" title="X / Twitter">
+                                            <img src="https://cdn.simpleicons.org/x/000000" alt="" />
+                                        </a>}
+                                    </span>
+                                )}
+                            </span>
+                        ) : activePlayedBy}
+                    </p>
+                )}
+                <p>{active.description}</p>
+            </>}
+        </dialog>
+    </section>;
+}

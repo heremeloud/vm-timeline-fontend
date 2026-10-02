@@ -1,83 +1,16 @@
-/* Floating + button */
-.fab-button {
-    position: fixed;
-    top: calc(50% + 38px);
-    right: 20px;
-    bottom: auto;
-    transform: none;
-    width: 60px;
-    height: 60px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, #955803 0%, #fff8ef 100%);
-    color: #4f2f05;
-    font-size: 30px;
-    border: none;
-    cursor: pointer;
-    box-shadow: 0 4px 12px rgba(80, 47, 5, 0.28);
-}
-
-@media (max-width: 480px) {
-    .fab-button {
-        top: calc(50% + 38px);
-        right: 14px;
-        bottom: auto;
-    }
-}
-
-.fab-button:hover {
-    background: linear-gradient(135deg, #7a4300 0%, #ffffff 100%);
-    color: #3c2303;
-    box-shadow: 0 6px 16px rgba(80, 47, 5, 0.34);
-}
-
 /* Base button style */
-.btn {
-    padding: 6px 12px;
-    border-radius: 6px;
-    border: none;
-    cursor: pointer;
-    font-size: 14px;
-}
 
 /* Normal VM-pink button */
-.btn-primary {
-    background: #ff4f81;
-    color: white;
-}
 
-.btn-primary:hover {
-    background: #ff2a66;
-}
 
 /* Gray cancel button */
-.btn-secondary {
-    background: #888;
-    color: white;
-}
 
-.btn-secondary:hover {
-    background: #666;
-}
 
 /* Dark edit button */
-.btn-edit {
-    background: #444;
-    color: white;
-}
 
-.btn-edit:hover {
-    background: #222;
-}
 
 /* Delete button */
-.btn-delete {
-    background: #b00;
-    color: white;
-}
 
-.btn-delete:hover {
-    background: #900;
-}
 
 /* ============================= */
 /* FILTER BAR                    */

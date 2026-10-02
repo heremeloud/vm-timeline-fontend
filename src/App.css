@@ -4,45 +4,6 @@
   padding: 0 0 20px;
 }
 
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
-}
-
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
-}
-
-.logo.react:hover {
-  filter: drop-shadow(0 0 2em #61dafbaa);
-}
-
-@keyframes logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  a:nth-of-type(2) .logo {
-    animation: logo-spin infinite 20s linear;
-  }
-}
-
-.card {
-  padding: 2em;
-}
-
-.read-the-docs {
-  color: #888;
-}
-
 /* GLOBAL RESET AND LIGHT MODE */
 body {
   margin: 0;
@@ -280,39 +241,7 @@ textarea {
   max-height: 70px !important;
 }
 
-/* One consistent edit-action color across the app. */
-.btn-edit,
-.btn-edit:focus,
-.btn-edit:focus-visible,
-.btn-edit:disabled {
-  background: #955803 !important;
-  color: #fff !important;
-  text-decoration: none;
-}
-
-.btn-edit:hover:not(:disabled) {
-  background: var(--ui-color-accent-hover, #b58a58) !important;
-  color: #fff !important;
-}
-
-.btn-edit:disabled {
-  opacity: 0.55;
-}
-
-/* One consistent destructive-action color across the app. */
-.btn-delete,
-.btn-delete:focus,
-.btn-delete:focus-visible,
-.btn-delete:disabled {
-  background: var(--ui-color-danger-action, #e32636) !important;
-  color: #fff !important;
-}
-
-.btn-delete:hover:not(:disabled) {
-  background: var(--ui-color-danger-action-hover, #bd1d2d) !important;
-  color: #fff !important;
-}
-
-.btn-delete:disabled {
-  opacity: 0.55;
+/* Continues the route's quick-action column (3 buttons of 60px + 8px gaps from 50% - 100px) while the chart is edited. */
+.admin-quick-actions--chart {
+  top: calc(50% + 104px);
 }
