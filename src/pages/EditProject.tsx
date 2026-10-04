@@ -9,7 +9,7 @@ import { cleanPastedSocialUrls, cleanPastedYouTubeUrl, extractPlaylistId, normal
 import { slugify } from "../utils/slugify";
 import { errorDetail } from "../utils/errors";
 import SeriesMetadataFields from "../components/SeriesMetadataFields";
-import type { EpisodeRow, FilmingDayRow } from "../components/SeriesMetadataFields";
+import type { EpisodeRow, FilmingDayRow, FittingWorkshopRow } from "../components/SeriesMetadataFields";
 import type { Author, Id, Project } from "../types/models";
 import { Button, FocalPointPicker } from "../ui";
 import "../styles/EventForm.css";
@@ -32,6 +32,7 @@ export default function EditProject() {
     const [episodeCount, setEpisodeCount] = useState("");
     const [filmingDays, setFilmingDays] = useState<FilmingDayRow[]>([]);
     const [episodes, setEpisodes] = useState<EpisodeRow[]>([]);
+    const [fittingWorkshops, setFittingWorkshops] = useState<FittingWorkshopRow[]>([]);
     const [startDate, setStartDate] = useState("");
     const [endDate, setEndDate] = useState("");
     const [description, setDescription] = useState("");
@@ -81,6 +82,13 @@ export default function EditProject() {
                 episode_number: String(row.episode_number),
                 air_date: row.air_date || "",
                 title: row.title || "",
+                hashtag: row.hashtag || "",
+                keyword: row.keyword || "",
+            })));
+            setFittingWorkshops((p.fitting_workshops || []).map((row) => ({
+                kind: row.kind,
+                number: String(row.number),
+                date: row.date || "",
                 hashtag: row.hashtag || "",
                 keyword: row.keyword || "",
             })));
@@ -135,6 +143,7 @@ export default function EditProject() {
                 episode_count: category === "series" && episodeCount ? parseInt(episodeCount) : 0,
                 filming_days: category === "series" ? filmingDays.map((row) => ({ ...row, q_number: parseInt(row.q_number) })) : [],
                 episode_metadata: category === "series" ? episodes.map((row) => ({ ...row, episode_number: parseInt(row.episode_number) })) : [],
+                fitting_workshops: category === "series" ? fittingWorkshops.map((row) => ({ ...row, number: parseInt(row.number) })) : [],
                 start_date: startDate || null,
                 end_date: endDate || null,
                 description: description || null,
@@ -259,6 +268,8 @@ export default function EditProject() {
                         setFilmingDays={setFilmingDays}
                         episodes={episodes}
                         setEpisodes={setEpisodes}
+                        fittingWorkshops={fittingWorkshops}
+                        setFittingWorkshops={setFittingWorkshops}
                         episodeCount={episodeCount}
                         primaryHashtag={hashtag}
                         startDate={startDate}

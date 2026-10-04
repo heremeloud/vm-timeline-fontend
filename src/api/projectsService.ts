@@ -1,5 +1,5 @@
 import api from "./api";
-import type { CountResponse, Id, Playlist, Project, ProjectEpisode, ProjectFilmingDay } from "../types/models";
+import type { CountResponse, Id, Playlist, Project, ProjectEpisode, ProjectFilmingDay, ProjectFittingWorkshop } from "../types/models";
 import type { RelationshipChartData } from "../utils/relationshipChart";
 
 export interface ProjectInput {
@@ -34,6 +34,7 @@ export interface ProjectInput {
     author_ids?: Id[];
     filming_days?: ProjectFilmingDay[];
     episode_metadata?: ProjectEpisode[];
+    fitting_workshops?: ProjectFittingWorkshop[];
 }
 
 export interface ProjectListParams {

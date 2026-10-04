@@ -1,0 +1,132 @@
+.project-entry-picker {
+    display: grid;
+    gap: 8px;
+    margin-top: 14px;
+}
+
+/* .eventform-form restyles raw labels (block, margin); keep the Checkbox primitive a single aligned row. */
+.eventform-form .project-entry-picker .ui-checkbox {
+    display: flex;
+    align-items: center;
+    padding: 3px 0;
+    gap: 8px;
+    margin-bottom: 0;
+    font-size: 0.9rem;
+    font-weight: 500;
+    line-height: 1.3;
+}
+
+.eventform-form .project-entry-picker > label:first-child {
+    margin-bottom: 0;
+}
+
+.project-entry-picker-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.project-entry-picker-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 5px 3px 11px;
+    border: 1px solid rgba(149, 88, 3, 0.35);
+    border-radius: 999px;
+    background: rgba(149, 88, 3, 0.1);
+    color: #955803;
+    font-size: 0.82rem;
+    font-weight: 600;
+}
+
+/* .eventform-form gives every plain button a large brown style; the chip's × needs its own, so scope it above that. */
+.eventform-form .project-entry-picker .project-entry-picker-chip button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: rgba(149, 88, 3, 0.15);
+    color: #955803;
+    font-size: 0.95rem;
+    font-weight: 600;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.eventform-form .project-entry-picker .project-entry-picker-chip button:hover {
+    background: rgba(149, 88, 3, 0.28);
+    opacity: 1;
+}
+
+.project-entry-picker-status,
+.project-entry-picker-error {
+    margin: 0;
+    font-size: 0.84rem;
+}
+
+.project-entry-picker-error {
+    color: #9a3412;
+}
+
+.project-entry-picker-suggest {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 6px 10px;
+    border: 1px dashed rgba(149, 88, 3, 0.45);
+    border-radius: 8px;
+    background: rgba(149, 88, 3, 0.06);
+    font-size: 0.84rem;
+}
+
+.project-entry-picker-group {
+    margin: 0;
+    padding: 6px 10px 8px;
+    border: 1px solid rgba(166, 124, 82, 0.25);
+    border-radius: 8px;
+}
+
+.project-entry-picker-group legend {
+    padding: 0 4px;
+    color: #8a7768;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.project-entry-picker-rows {
+    display: grid;
+    gap: 2px 14px;
+    grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+}
+
+.project-entry-picker-rows .ui-checkbox span {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* A fixed label width lines the dates up in a column (Q5 / Q13, EP9 / EP12). */
+.project-entry-picker-rows .ui-checkbox strong {
+    min-width: 2.7em;
+}
+
+.project-entry-picker-date {
+    color: #8a7768;
+    font-size: 0.78rem;
+}
+.project-entry-picker-same {
+    padding: 0 6px;
+    border-radius: 999px;
+    background: rgba(47, 125, 50, 0.14);
+    color: #2f7d32;
+    font-size: 0.68rem;
+    font-weight: 700;
+}

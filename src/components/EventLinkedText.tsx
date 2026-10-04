@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { ROUTES } from "../routes";
+import { getEventTagLinkPath } from "../utils/eventTagLinkPath";
 import { keywordPattern } from "../utils/eventTagLinks";
 import type { EventTagLink } from "../utils/eventTagLinks";
 
@@ -28,11 +28,7 @@ export default function EventLinkedText({ text, eventTagLinks = [] }: { text?: s
         if (!match) return part;
         const { event, projectId, projectEntryType, projectEntryNumber } = match;
         const hasProjectEntry = Boolean(projectId && projectEntryType && Number.isFinite(projectEntryNumber));
-        const destination = hasProjectEntry
-            ? ROUTES.projectRelatedPosts(projectId!, projectEntryType!, projectEntryNumber!)
-            : projectId
-                ? ROUTES.projectDetail(projectId)
-                : ROUTES.eventDetail(event.id ?? 0);
+        const destination = getEventTagLinkPath(match);
 
         return (
             <Link

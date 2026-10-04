@@ -3,11 +3,13 @@ import { useParams, useNavigate, Link } from "react-router-dom";
 import { getAdminProject, getProject, deleteProject } from "../api/projectsService";
 import { getProjectRelatedPostCounts } from "../api/postsService";
 import { ROUTES } from "../routes";
+import type { ProjectEntryType } from "../routes";
 import Avatar from "../components/Avatar";
 import RelationshipChartSection from "../components/RelationshipChartSection";
 import "../styles/Projects.css";
 import { formatEventDateRange } from "../utils/eventDateRange";
 import useEventTagIndex from "../hooks/useEventTagIndex";
+import { projectEntryLabel, projectEntryTablePrefix } from "../utils/projectEntries";
 import { findEventForHashtag } from "../utils/eventTagLinks";
 import { orderViewMimFirst } from "../utils/authors";
 import { getYouTubeEmbedUrl } from "../utils/media";
@@ -40,6 +42,7 @@ export default function ProjectDetail() {
     const [copiedKey, setCopiedKey] = useState("");
     const [showFilmingDays, setShowFilmingDays] = useState(false);
     const [showEpisodes, setShowEpisodes] = useState(false);
+    const [showFittingWorkshops, setShowFittingWorkshops] = useState(false);
     const isAdmin = !!localStorage.getItem("jwt");
 
     async function copyText(value: string | null | undefined, key: string) {
@@ -70,7 +73,7 @@ export default function ProjectDetail() {
 
     useEffect(() => {
         let cancelled = false;
-        getProjectRelatedPostCounts(projectId ?? "").then((res) => {
+        getProjectRelatedPostCounts(projectId ?? "", isAdmin).then((res) => {
             if (cancelled) return;
             setRelatedPostCounts(Object.fromEntries(
                 Object.entries(res.data || {}).map(([tag, count]) => [normalizeHashtag(tag), count]),
@@ -83,7 +86,7 @@ export default function ProjectDetail() {
         return () => {
             cancelled = true;
         };
-    }, [projectId]);
+    }, [projectId, isAdmin]);
 
     // Load Twitter widgets script when a tweet_url is present
     useEffect(() => {
@@ -105,24 +108,44 @@ export default function ProjectDetail() {
     const playlists = project.playlists || [];
     const filmingDays = project.filming_days ?? [];
     const episodeRows = project.episode_metadata ?? [];
+    const fittingWorkshops = project.fitting_workshops ?? [];
+    // Fitting / workshop / prep days often have no hashtag or keyword, so those columns only show when some row has one.
+    const daysHaveHashtags = fittingWorkshops.some((row) => Boolean(row.hashtag?.trim()));
+    const daysHaveKeywords = fittingWorkshops.some((row) => Boolean(row.keyword?.trim()));
+    // Days of one type read "D1"; with several types a letter (F / W / P) tells them apart.
+    const daysHaveSeveralTypes = new Set(fittingWorkshops.map((row) => row.kind)).size > 1;
+    // All three tables share one circle position, so it is set once for the whole page: wider when day labels carry a letter.
+    const listClass = `project-series-metadata-list${isAdmin ? " project-series-metadata-list--counts" : ""}${daysHaveSeveralTypes ? " project-series-metadata-list--letters" : ""}`;
+    const daysRowClass = `project-series-days-row${daysHaveHashtags ? "" : " project-no-days-hashtag"}${daysHaveKeywords ? "" : " project-no-days-keyword"}`;
+    const daysColumnHeader = `project-series-column-header ${daysRowClass}`;
     const childProjects = project.child_projects ?? [];
     const linkedEvents = project.events ?? [];
     const episodeHasTitles = episodeRows.some((row) => row.title);
     const episodeHasKeywords = episodeRows.some((row) => row.keyword);
-    const hasRelatedPosts = (hashtag?: string | null) =>
-        Boolean(hashtag && (relatedPostCounts[normalizeHashtag(hashtag)] || 0) > 0);
-    // A Q/EP hashtag that belongs to an event opens that event; otherwise it opens the related posts.
-    const entryIndex = (label: string, hashtag: string | null | undefined, referenceDate: string | null | undefined, relatedPostsUrl: string) => {
+    // The count of posts for a row: by its hashtag or by an explicit link made in the post form.
+    const relatedCountFor = (entryType: ProjectEntryType, number: number) => relatedPostCounts[`${entryType}:${number}`] || 0;
+
+    // A Q/EP/F/W hashtag that belongs to an event opens that event; otherwise the number opens the related posts.
+    const entryIndex = (hashtag: string | null | undefined, referenceDate: string | null | undefined, entryType: ProjectEntryType, number: number) => {
         const event = findEventForHashtag(eventTagIndex, hashtag, referenceDate);
-        const to = event?.id != null ? ROUTES.eventDetail(event.id) : hasRelatedPosts(hashtag) ? relatedPostsUrl : null;
-        if (!to) return label;
+        const relatedCount = relatedCountFor(entryType, number);
+        // The table shows "D1" for a day; its full name ("Fitting Day 1") is the tooltip and the accessible name.
+        const fullLabel = projectEntryLabel(entryType, number);
+        // The label is one string ("Q13"); its box has a fixed width (see Projects.css), so the count circle starts at the same spot in every row.
+        const label = `${projectEntryTablePrefix(entryType, daysHaveSeveralTypes)}${number}`;
+        const to = event?.id != null
+            ? ROUTES.eventDetail(event.id)
+            : relatedCount > 0 ? ROUTES.projectRelatedPosts(project.slug || project.id, entryType, number) : null;
+        if (!to) return <span title={fullLabel}>{label}</span>;
         return (
             <Link
                 className="project-series-related-index"
                 to={to}
-                title={event ? `Open the event for ${displayHashtag(hashtag)}` : `View posts related to ${displayHashtag(hashtag)}`}
+                title={event ? `Open the event for ${displayHashtag(hashtag)}` : `View posts related to ${fullLabel}`}
+                aria-label={fullLabel}
             >
-                {label}
+                <span className="project-series-related-label">{label}</span>
+                {isAdmin && relatedCount > 0 && <span className={`project-series-related-count${relatedCount > 99 ? " project-series-related-count--wide" : ""}`} title={`${relatedCount} linked post${relatedCount === 1 ? "" : "s"} (includes posts hidden from the related page)`}>{relatedCount > 99 ? "99+" : relatedCount}</span>}
             </Link>
         );
     };
@@ -267,20 +290,61 @@ export default function ProjectDetail() {
                 <RelationshipChartSection key={project.id} project={project} isAdmin={isAdmin} onSaved={(patch) => setProject((current) => current && { ...current, ...patch })} />}
 
 
+            {fittingWorkshops.length > 0 && (
+                <div className="project-detail-series-metadata">
+                    <button type="button" className="project-series-section-toggle" onClick={() => setShowFittingWorkshops((visible) => !visible)}>
+                        <span>Fitting &amp; Workshop</span>
+                        <svg className={showFittingWorkshops ? "is-open" : ""} viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6" /></svg>
+                    </button>
+                    {showFittingWorkshops && <div className={listClass}>
+                        <div className={daysColumnHeader} aria-hidden="true">
+                            <span>Day</span><span>Date</span>{daysHaveHashtags && <span>Hashtag</span>}{daysHaveKeywords && <span>Keyword</span>}
+                        </div>
+                        {fittingWorkshops.map((row) => {
+                            const copyKey = `${row.kind}-${row.number}`;
+                            return (
+                                <div className={`project-series-metadata-row ${daysRowClass}`} key={row.id || copyKey}>
+                                    <strong>
+                                        {entryIndex(row.hashtag, row.date, row.kind, row.number)}
+                                    </strong>
+                                    <span className="project-series-date">{row.date || ""}</span>
+                                    {daysHaveHashtags && (
+                                        <span className="project-series-copy-item project-series-hashtag">
+                                            {row.hashtag && <>
+                                                <button type="button" title="Copy hashtag" onClick={() => copyText(displayHashtag(row.hashtag), `${copyKey}-hashtag`)}><span>{displayHashtag(row.hashtag)}</span></button>
+                                                {copiedKey === `${copyKey}-hashtag` && <span className="project-hashtag-copied">Copied!</span>}
+                                            </>}
+                                        </span>
+                                    )}
+                                    {daysHaveKeywords && (
+                                        <span className="project-series-copy-item project-series-keyword">
+                                            {row.keyword && <>
+                                                <button type="button" title="Copy keyword" onClick={() => copyText(row.keyword, `${copyKey}-keyword`)}><span>{row.keyword}</span></button>
+                                                {copiedKey === `${copyKey}-keyword` && <span className="project-hashtag-copied">Copied!</span>}
+                                            </>}
+                                        </span>
+                                    )}
+                                </div>
+                            );
+                        })}
+                    </div>}
+                </div>
+            )}
+
             {filmingDays.length > 0 && (
                 <div className="project-detail-series-metadata">
                     <button type="button" className="project-series-section-toggle" onClick={() => setShowFilmingDays((visible) => !visible)}>
                         <span>Filming Q Days</span>
                         <svg className={showFilmingDays ? "is-open" : ""} viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6" /></svg>
                     </button>
-                    {showFilmingDays && <div className="project-series-metadata-list">
+                    {showFilmingDays && <div className={listClass}>
                         <div className="project-series-column-header project-series-q-row" aria-hidden="true">
                             <span>Q</span><span>Date</span><span>Hashtag</span><span>Keyword</span>
                         </div>
                         {filmingDays.map((row) => (
                             <div className="project-series-metadata-row project-series-q-row" key={row.id || `q-${row.q_number}`}>
                                 <strong>
-                                    {entryIndex(`Q${row.q_number}`, row.hashtag, row.filming_date, ROUTES.projectRelatedPosts(project.slug || project.id, "filming", row.q_number))}
+                                    {entryIndex(row.hashtag, row.filming_date, "filming", row.q_number)}
                                 </strong>
                                 <span className="project-series-date">{row.filming_date || ""}</span>
                                 {row.hashtag && (
@@ -307,14 +371,14 @@ export default function ProjectDetail() {
                         <span>Episodes</span>
                         <svg className={showEpisodes ? "is-open" : ""} viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6" /></svg>
                     </button>
-                    {showEpisodes && <div className="project-series-metadata-list">
+                    {showEpisodes && <div className={listClass}>
                         <div className={`project-series-column-header project-series-episode-row${episodeHasTitles ? "" : " project-no-episode-title"}${episodeHasKeywords ? "" : " project-no-episode-keyword"}`} aria-hidden="true">
                             <span>EP</span><span>Air date</span>{episodeHasTitles && <span>Title</span>}<span>Hashtag</span>{episodeHasKeywords && <span>Keyword</span>}
                         </div>
                         {episodeRows.map((row) => (
                             <div className={`project-series-metadata-row project-series-episode-row${episodeHasTitles ? "" : " project-no-episode-title"}${episodeHasKeywords ? "" : " project-no-episode-keyword"}`} key={row.id || `episode-${row.episode_number}`}>
                                 <strong>
-                                    {entryIndex(`EP${row.episode_number}`, row.hashtag, row.air_date, ROUTES.projectRelatedPosts(project.slug || project.id, "episodes", row.episode_number))}
+                                    {entryIndex(row.hashtag, row.air_date, "episodes", row.episode_number)}
                                 </strong>
                                 {episodeHasTitles && <span className="project-series-title">{row.title || ""}</span>}
                                 <span className="project-series-date">{row.air_date || ""}</span>

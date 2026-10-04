@@ -621,3 +621,58 @@
     margin-top: 25px;
 }
 
+
+/* Admin-only strip: what the post links to, regardless of the Related Event / Project checkboxes. */
+.post-admin-links {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 8px;
+    margin-top: 10px;
+    padding: 6px 8px;
+    border: 1px dashed rgba(166, 124, 82, 0.4);
+    border-radius: 6px;
+    background: rgba(166, 124, 82, 0.05);
+    font-size: 0.74rem;
+    color: #6b5a47;
+}
+
+.post-admin-links-label {
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #8a7768;
+}
+
+.post-admin-link {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px;
+}
+
+.post-admin-link-tag {
+    font-weight: 600;
+    color: #955803;
+}
+
+.post-admin-link-target {
+    color: inherit;
+    font-weight: 600;
+    text-decoration: underline;
+    text-decoration-color: rgba(149, 88, 3, 0.4);
+    text-underline-offset: 2px;
+}
+
+.post-admin-link-target:hover {
+    color: #955803;
+}
+
+.post-admin-link.is-hidden {
+    opacity: 0.75;
+}
+
+.post-admin-link-note {
+    color: #9a3412;
+    font-style: italic;
+}

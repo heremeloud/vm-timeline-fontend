@@ -681,6 +681,21 @@
     margin-bottom: 6px;
 }
 
+/* Description on top, the add buttons and column toggles below it, left-aligned (three add buttons do not fit beside the text). */
+.series-metadata-heading--stacked {
+    flex-direction: column;
+    align-items: stretch;
+}
+
+.series-metadata-heading--stacked .series-metadata-actions {
+    align-items: flex-start;
+}
+
+.series-metadata-heading--stacked .series-metadata-action-buttons,
+.series-metadata-heading--stacked .series-metadata-toggles {
+    justify-content: flex-start;
+}
+
 .series-metadata-heading > div:first-child > label {
     margin-bottom: 2px;
     font-size: 1.05rem;
@@ -780,6 +795,37 @@
 
 .series-metadata-episode-row.no-episode-title.no-episode-keyword {
     grid-template-columns: 56px minmax(135px, 0.8fr) minmax(0, 1fr) auto;
+}
+
+/* Fitting / workshop / prep days: type, day and date on the first line; the optional hashtag and keyword on a full-width second line. */
+.series-metadata-fw-row {
+    grid-template-columns: 76px 64px minmax(150px, 240px) 1fr;
+}
+
+.series-metadata-fw-row > .series-metadata-remove {
+    grid-column: 4;
+}
+
+.series-metadata-fw-tags {
+    display: grid;
+    grid-column: 1 / -1;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(0, 1fr);
+    gap: 6px;
+}
+
+.eventform-form .series-metadata-fw-row select {
+    width: 100%;
+    height: 46px;
+    margin-top: 0;
+    padding: 0 28px 0 10px;
+    box-sizing: border-box;
+    text-overflow: ellipsis;
+}
+
+/* The date keeps room for "09/19/2025" and its picker icon. */
+.eventform-form .series-metadata-fw-row input[type="date"] {
+    min-width: 150px;
 }
 
 .series-metadata-number-field input {

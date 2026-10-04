@@ -73,13 +73,31 @@ export const getTimeline = ({ limit, offset, sort, platform }: PostListParams = 
     return api.get<TimelinePage>(url);
 };
 
-export const getEventPostCandidates = (eventId: Id | string) => api.get<Post[]>(`/posts/event/${eventId}`);
+/** `includeHidden` (admin only) also returns posts not ticked "Show post on related page". */
+const hiddenParam = (includeHidden: boolean) => (includeHidden ? "include_hidden=true" : "");
 
-export const getProjectPostCandidates = (projectId: Id | string, hashtag: string) =>
-    api.get<Post[]>(`/posts/project/${projectId}/related?hashtag=${encodeURIComponent(hashtag)}`);
+export const getEventPostCandidates = (eventId: Id | string, includeHidden = false) =>
+    api.get<Post[]>(`/posts/event/${eventId}?${hiddenParam(includeHidden)}`);
 
-export const getProjectRelatedPostCounts = (projectId: Id | string) =>
-    api.get<Record<string, number>>(`/posts/project/${projectId}/related-counts`);
+/** Posts related to a project row: by its hashtag (if any) and by explicit links made in the post form. */
+export const getProjectPostCandidates = (
+    projectId: Id | string,
+    hashtag: string,
+    includeHidden = false,
+    entry?: { entryType: string; entryNumber: number },
+) => {
+    const params = new URLSearchParams();
+    if (hashtag) params.set("hashtag", hashtag);
+    if (entry) {
+        params.set("entry_type", entry.entryType);
+        params.set("entry_number", String(entry.entryNumber));
+    }
+    if (includeHidden) params.set("include_hidden", "true");
+    return api.get<Post[]>(`/posts/project/${projectId}/related?${params.toString()}`);
+};
+
+export const getProjectRelatedPostCounts = (projectId: Id | string, includeHidden = false) =>
+    api.get<Record<string, number>>(`/posts/project/${projectId}/related-counts?${hiddenParam(includeHidden)}`);
 
 export const getPost = (id: Id | string) => api.get<{ post: Post }>(`/posts/${id}`);
 

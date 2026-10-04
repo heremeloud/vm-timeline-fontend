@@ -2,6 +2,9 @@ import { useState, useEffect, useRef } from "react";
 import type { ClipboardEvent, FormEvent } from "react";
 import { createPost } from "../api/postsService";
 import { getAuthors, ensureAuthor } from "../api/authorsService";
+import ProjectEntryPicker from "../components/ProjectEntryPicker";
+import { serializeEntryLinks } from "../utils/projectEntries";
+import type { ProjectEntryLink } from "../types/models";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { ROUTES } from "../routes";
 import AutoResizeTextarea from "../components/AutoResizeTextarea";
@@ -51,6 +54,7 @@ export default function CreatePost() {
     const [timelineContext, setTimelineContext] = useState("");
     const [showTimelineContext, setShowTimelineContext] = useState(false);
     const [showOnRelatedPage, setShowOnRelatedPage] = useState(true);
+    const [entryLinks, setEntryLinks] = useState<ProjectEntryLink[]>([]);
     const [showTranslationNote, setShowTranslationNote] = useState(true);
     const [mediaURL, setMediaURL] = useState("");
     const [isVisible, setIsVisible] = useState(true);
@@ -252,6 +256,7 @@ export default function CreatePost() {
                 timeline_context: timelineContext.trim() || null,
                 show_timeline_context: showTimelineContext,
                 show_on_related_page: showOnRelatedPage,
+                project_entry_links_json: serializeEntryLinks(entryLinks),
                 show_translation_note: showTranslationNote,
                 media_url: finalMediaUrl,
                 media_urls_json: JSON.stringify(filteredMediaItems),
@@ -504,6 +509,7 @@ export default function CreatePost() {
                         placeholder="Explain what this post relates to. Add an event or project hashtag to link it."
                         style={{ minHeight: 72 }}
                     />
+                    <ProjectEntryPicker value={entryLinks} onChange={setEntryLinks} postedAt={posted_at} />
                     <label style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8 }}>
                         <input
                             type="checkbox"
@@ -518,7 +524,7 @@ export default function CreatePost() {
                             checked={showOnRelatedPage}
                             onChange={(e) => setShowOnRelatedPage(e.target.checked)}
                         />
-                        Show post on related event page
+                        Show post on related event page (even if hidden from the timeline)
                     </label>
                     <div className="eventform-field-note">The first checkbox controls the label on the post. The second controls whether the post appears on the related page.</div>
                 </div>

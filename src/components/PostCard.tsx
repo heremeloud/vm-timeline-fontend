@@ -9,7 +9,8 @@ import {
     updatePost,
 } from "../api/postsService";
 import { ROUTES } from "../routes";
-import { getEventTagLinks } from "../utils/eventTagLinks";
+import { getEventTagLinkPath } from "../utils/eventTagLinkPath";
+import { describeLinkTarget, getEventTagLinks } from "../utils/eventTagLinks";
 
 import { isVideo } from "../utils/media";
 import InstagramEmbed from "./InstagramEmbed";
@@ -72,6 +73,20 @@ export default function PostCard({
                 !contextTags.has(hashtag.replace(/^#/, "").toLocaleLowerCase()),
         );
     }, [eventTagLinks, post.timeline_context, post.show_timeline_context]);
+
+    // Hashtag chips sit under posts without a translation; project rows picked in the form always show.
+    const hasTranslation = Boolean(post.caption_translation) || Boolean(post.caption_translation_note && (post.show_translation_note ?? true));
+    const chipLinks = standaloneEventTagLinks.filter((link) => link.kind === "entry" || !hasTranslation);
+
+    // Admin only: everything this post links to, even where a checkbox keeps the link off the public page.
+    const adminLinks = useMemo(() => {
+        if (!isAdmin || !eventTagIndex) return [];
+        return getEventTagLinks(post, eventTagIndex, { includeHiddenTimelineContext: true }).map((link) => ({
+            link,
+            target: describeLinkTarget(link, eventTagIndex),
+            publicLink: eventTagLinks.some((shown) => shown.hashtag === link.hashtag && shown.kind === link.kind),
+        }));
+    }, [isAdmin, eventTagIndex, post, eventTagLinks]);
 
     const [comments, setComments] = useState<PostText[]>([]);
     const [childrenPosts, setChildrenPosts] = useState<Post[]>([]);
@@ -391,28 +406,19 @@ export default function PostCard({
                 </div>
             )}
 
-            {!post.caption_translation &&
-                !(
-                    post.caption_translation_note &&
-                    (post.show_translation_note ?? true)
-                ) &&
-                !rendersAdultFallback &&
-                standaloneEventTagLinks.length > 0 && (
+            {!rendersAdultFallback &&
+                chipLinks.length > 0 && (
                     <div
                         className="post-event-tags"
                         aria-label="Related events"
                     >
-                        {standaloneEventTagLinks.map(
-                            ({ hashtag, event, projectId, projectEntryType, projectEntryNumber }) => (
+                        {chipLinks.map(
+                            (link) => {
+                                const { hashtag, event, projectId, projectEntryType, projectEntryNumber } = link;
+                                return (
                                 <Link
                                     key={`${hashtag}-${event.id}`}
-                                    to={
-                                        projectId && projectEntryType && Number.isFinite(projectEntryNumber)
-                                            ? ROUTES.projectRelatedPosts(projectId, projectEntryType, projectEntryNumber!)
-                                            : projectId
-                                            ? ROUTES.projectDetail(projectId)
-                                            : ROUTES.eventDetail(event.id ?? 0)
-                                    }
+                                    to={getEventTagLinkPath(link)}
                                     className="post-event-tag-link"
                                     title={
                                         projectEntryType && Number.isFinite(projectEntryNumber)
@@ -424,10 +430,35 @@ export default function PostCard({
                                 >
                                     {hashtag}
                                 </Link>
-                            ),
+                                );
+                            },
                         )}
                     </div>
                 )}
+
+            {isAdmin && adminLinks.length > 0 && (
+                <div className="post-admin-links" aria-label="Admin: where this post links">
+                    <span className="post-admin-links-label">Links to</span>
+                    {adminLinks.map(({ link, target, publicLink }) => (
+                        <span
+                            key={`${link.kind}-${link.hashtag}`}
+                            className={`post-admin-link${publicLink ? "" : " is-hidden"}`}
+                            title={publicLink ? undefined : "Not linked on the public post: \"Show Related Event / Project\" is off"}
+                        >
+                            <span className="post-admin-link-tag">{link.hashtag}</span>
+                            <span aria-hidden="true">→</span>
+                            <span>
+                                {target.kind === "event" ? "Event" : target.kind === "project" ? "Project" : "Project entry"}:{" "}
+                                <Link to={getEventTagLinkPath(link)} className="post-admin-link-target">{target.label}</Link>
+                            </span>
+                            {!publicLink && <span className="post-admin-link-note">(hidden)</span>}
+                        </span>
+                    ))}
+                    {post.show_on_related_page === false && (
+                        <span className="post-admin-link-note">Not listed on related pages</span>
+                    )}
+                </div>
+            )}
 
             {showReplies && isInstagram && igReplies.length > 0 && (
                 <div className="reply-section">

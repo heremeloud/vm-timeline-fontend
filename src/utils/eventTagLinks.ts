@@ -1,14 +1,15 @@
-import type { EventTagEntry, Post } from "../types/models";
+import type { ProjectEntryType } from "../routes";
+import type { EventTagEntry, Post, ProjectEntryLink } from "../types/models";
 
 export type EventTagIndex = Map<string, EventTagEntry[]>;
 
 export interface EventTagLink {
     /** The hashtag, or for `kind: "keyword"` the event keyword as it should be matched in the text. */
     hashtag: string;
-    kind?: "hashtag" | "keyword";
+    kind?: "hashtag" | "keyword" | "entry";
     event: EventTagEntry;
     projectId?: number | null;
-    projectEntryType?: "filming" | "episodes" | null;
+    projectEntryType?: ProjectEntryType | null;
     projectEntryNumber?: number | null;
 }
 
@@ -31,12 +32,32 @@ const PHYSICAL_EVENT_CATEGORIES = new Set([
 
 const NEARBY_EVENT_WINDOW_MS = 14 * 24 * 60 * 60 * 1000;
 
+/** The project's own base-hashtag entry, as opposed to its episode, filming-day, fitting or workshop entries. */
+function isBaseProjectEntry(entry: EventTagEntry) {
+    return Boolean(entry.is_project && !entry.is_episode && !entry.is_filming_day && !entry.is_fitting_workshop);
+}
+
+/** Which related-posts page an index entry belongs to, if it is a project's Q/EP/fitting/workshop entry. */
+function projectEntryOf(entry: EventTagEntry): { type: ProjectEntryType; number: number } | null {
+    if (entry.is_filming_day) return { type: "filming", number: Number(entry.q_number) };
+    if (entry.is_episode) return { type: "episodes", number: Number(entry.episode_number) };
+    if (entry.is_fitting_workshop && entry.fitting_workshop_kind) {
+        return { type: entry.fitting_workshop_kind, number: Number(entry.fitting_workshop_number) };
+    }
+    return null;
+}
+
 function normalizeTag(tag: string | null | undefined = "") {
     return String(tag || "").trim().replace(/^#/, "").toLocaleLowerCase();
 }
 
 /** Event keywords share the tag index under this prefix; a hashtag can never contain ":". */
 const KEYWORD_KEY_PREFIX = "keyword:";
+
+/** Index key of a project row (Q day, episode, fitting, workshop), whether or not it has a hashtag. */
+export function projectEntryKey(projectId: number | string, type: string, number: number | string) {
+    return `entry:${projectId}:${type}:${number}`;
+}
 
 function normalizeKeyword(keyword: string | null | undefined = "") {
     return String(keyword || "").trim().replace(/\s+/g, " ").toLocaleLowerCase();
@@ -72,6 +93,12 @@ export function buildEventTagIndex(events: EventTagEntry[] = []): EventTagIndex 
     const index: EventTagIndex = new Map();
 
     events.forEach((event) => {
+        const projectEntry = projectEntryOf(event);
+        if (projectEntry && event.project_id != null) {
+            const entryKey = projectEntryKey(event.project_id, projectEntry.type, projectEntry.number);
+            index.set(entryKey, [event]);
+        }
+
         const keyword = normalizeKeyword(event.keyword);
         if (keyword && !event.is_project) {
             const keywordKey = `${KEYWORD_KEY_PREFIX}${keyword}`;
@@ -113,7 +140,7 @@ export function buildEventTagIndex(events: EventTagEntry[] = []): EventTagIndex 
  */
 export function findEventForHashtag(index: EventTagIndex | null | undefined, hashtag: string | null | undefined, referenceDate?: string | null): EventTagEntry | null {
     const matches = (index?.get(normalizeTag(hashtag)) || []).filter(
-        (entry) => entry.id != null && !entry.is_project && !entry.is_filming_day && !entry.is_episode,
+        (entry) => entry.id != null && !entry.is_project && !projectEntryOf(entry),
     );
     if (matches.length === 0) return null;
     return [...matches].sort((a, b) => {
@@ -123,17 +150,32 @@ export function findEventForHashtag(index: EventTagIndex | null | undefined, has
     })[0];
 }
 
-type TaggedPost = Pick<Post, "caption" | "caption_translation" | "caption_translation_note" | "timeline_context" | "show_timeline_context" | "posted_at">;
+type TaggedPost = Pick<Post, "caption" | "caption_translation" | "caption_translation_note" | "timeline_context" | "show_timeline_context" | "posted_at" | "project_entry_links_json">;
 
-export function getEventTagLinks(post: Partial<TaggedPost>, eventTagIndex: EventTagIndex | null | undefined, { includeHiddenTimelineContext = false } = {}): EventTagLink[] {
-    if (!eventTagIndex?.size) return [];
+/** Whether a link opens the event itself; links with a `projectId` open that project (or its Q/EP page) instead. */
+export function linkOpensEvent(link: EventTagLink): boolean {
+    return !link.projectId;
+}
 
-    const text = [
-        post.caption,
-        post.caption_translation,
-        post.caption_translation_note,
-        (includeHiddenTimelineContext || (post.show_timeline_context ?? false)) ? post.timeline_context : null,
-    ].filter(Boolean).join("\n");
+export interface LinkTarget {
+    kind: "event" | "project" | "entry";
+    label: string;
+}
+
+/** What a link opens, in words: an event, a project, or a project's Q/EP entry. */
+export function describeLinkTarget(link: EventTagLink, eventTagIndex: EventTagIndex): LinkTarget {
+    if (link.projectEntryType) return { kind: "entry", label: String(link.event.name || "Project entry") };
+    if (link.projectId) {
+        const project = [...eventTagIndex.values()].flat().find(
+            (entry) => isBaseProjectEntry(entry) && String(entry.project_id) === String(link.projectId),
+        );
+        return { kind: "project", label: String(project?.name || `Project #${link.projectId}`) };
+    }
+    return { kind: "event", label: String(link.event.name || "Event") };
+}
+
+/** Links for the hashtags written in `text`. */
+function hashtagLinksIn(text: string, post: Partial<TaggedPost>, eventTagIndex: EventTagIndex): EventTagLink[] {
     const hashtags = text.match(/#[\p{L}\p{M}\p{N}_]+/gu) || [];
     const seen = new Set<string>();
     const links: EventTagLink[] = [];
@@ -148,6 +190,7 @@ export function getEventTagLinks(post: Partial<TaggedPost>, eventTagIndex: Event
 
         // Event hashtags take priority. Project and episode hashtags are a
         // fallback when this hashtag does not identify an event.
+        const projectOwningTag = matches.find(isBaseProjectEntry);
         const eventMatches = matches.filter((event) => !event.is_project);
         const eligibleMatches = eventMatches.length > 0 ? eventMatches : matches;
 
@@ -175,28 +218,72 @@ export function getEventTagLinks(post: Partial<TaggedPost>, eventTagIndex: Event
             event,
             projectId: event.is_project
                 ? event.project_id
-                : nearbyMatches.length === 0 ? event.project_id : null,
-            projectEntryType: event.is_filming_day ? "filming" : event.is_episode ? "episodes" : null,
-            projectEntryNumber: event.is_filming_day
-                ? Number(event.q_number)
-                : event.is_episode ? Number(event.episode_number) : null,
+                // No event is near the post's date, so a hashtag that is also a project's base hashtag
+                // belongs to that project, not to a far-away event that happens to reuse it.
+                : nearbyMatches.length === 0 ? (projectOwningTag?.project_id ?? event.project_id) : null,
+            projectEntryType: projectEntryOf(event)?.type ?? null,
+            projectEntryNumber: projectEntryOf(event)?.number ?? null,
         });
     });
 
-    // An event keyword typed into "Related Event / Project" links the post to that event.
-    const relatedText = (includeHiddenTimelineContext || (post.show_timeline_context ?? false)) ? post.timeline_context : null;
-    if (relatedText) {
-        eventTagIndex.forEach((matches, key) => {
-            const keyword = key.startsWith(KEYWORD_KEY_PREFIX) ? matches[0]?.keyword?.trim() : null;
-            if (!keyword || !keywordPattern(keyword).test(relatedText)) return;
-            const event = [...matches].sort((a, b) => {
-                const distanceDifference = distanceFromPost(a, post.posted_at) - distanceFromPost(b, post.posted_at);
-                if (distanceDifference !== 0 && !Number.isNaN(distanceDifference)) return distanceDifference;
-                return (a.id || 0) - (b.id || 0);
-            })[0];
-            links.push({ hashtag: keyword, kind: "keyword", event, projectId: null });
-        });
-    }
-
     return links;
+}
+
+/** Links for event keywords written in `text`; only the "Related Event / Project" text is searched for these. */
+function keywordLinksIn(text: string, post: Partial<TaggedPost>, eventTagIndex: EventTagIndex): EventTagLink[] {
+    const links: EventTagLink[] = [];
+    eventTagIndex.forEach((matches, key) => {
+        const keyword = key.startsWith(KEYWORD_KEY_PREFIX) ? matches[0]?.keyword?.trim() : null;
+        if (!keyword || !keywordPattern(keyword).test(text)) return;
+        const event = [...matches].sort((a, b) => {
+            const distanceDifference = distanceFromPost(a, post.posted_at) - distanceFromPost(b, post.posted_at);
+            if (distanceDifference !== 0 && !Number.isNaN(distanceDifference)) return distanceDifference;
+            return (a.id || 0) - (b.id || 0);
+        })[0];
+        links.push({ hashtag: keyword, kind: "keyword", event, projectId: null });
+    });
+    return links;
+}
+
+/** Links for the project rows the post was explicitly linked to in the post form. */
+function entryLinksOf(post: Partial<TaggedPost>, eventTagIndex: EventTagIndex): EventTagLink[] {
+    let items: unknown;
+    try {
+        items = JSON.parse(post.project_entry_links_json || "[]");
+    } catch {
+        return [];
+    }
+    if (!Array.isArray(items)) return [];
+    const links: EventTagLink[] = [];
+    (items as Partial<ProjectEntryLink>[]).forEach((item) => {
+        if (item.project_id == null || !item.entry_type || item.entry_number == null) return;
+        const entry = eventTagIndex.get(projectEntryKey(item.project_id, item.entry_type, item.entry_number))?.[0];
+        if (!entry) return; // the project is hidden or the row was deleted
+        links.push({
+            hashtag: String(entry.name || `${item.entry_type} ${item.entry_number}`),
+            kind: "entry",
+            event: entry,
+            projectId: item.project_id,
+            projectEntryType: item.entry_type,
+            projectEntryNumber: item.entry_number,
+        });
+    });
+    return links;
+}
+
+export function getEventTagLinks(post: Partial<TaggedPost>, eventTagIndex: EventTagIndex | null | undefined, { includeHiddenTimelineContext = false } = {}): EventTagLink[] {
+    if (!eventTagIndex?.size) return [];
+
+    const relatedText = (includeHiddenTimelineContext || (post.show_timeline_context ?? false)) ? post.timeline_context : null;
+    const captionText = [post.caption, post.caption_translation, post.caption_translation_note].filter(Boolean).join("\n");
+
+    // A hashtag, a keyword, or a picked project row in "Related Event / Project" is the curator's explicit choice,
+    // so when it links anywhere it replaces whatever the caption's own hashtags would link to.
+    const relatedConsidered = includeHiddenTimelineContext || (post.show_timeline_context ?? false);
+    const relatedLinks = [
+        ...(relatedText ? [...hashtagLinksIn(relatedText, post, eventTagIndex), ...keywordLinksIn(relatedText, post, eventTagIndex)] : []),
+        ...(relatedConsidered ? entryLinksOf(post, eventTagIndex) : []),
+    ];
+    if (relatedLinks.length > 0) return relatedLinks;
+    return hashtagLinksIn(captionText, post, eventTagIndex);
 }

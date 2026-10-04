@@ -8,7 +8,7 @@ import { PROJECT_CATEGORIES } from "../constants/projectCategories";
 import { cleanPastedSocialUrls, cleanPastedYouTubeUrl, extractPlaylistId, normalizeSocialPostUrl, normalizeYouTubeVideoUrl } from "../utils/postUrls";
 import { slugify } from "../utils/slugify";
 import SeriesMetadataFields from "../components/SeriesMetadataFields";
-import type { EpisodeRow, FilmingDayRow } from "../components/SeriesMetadataFields";
+import type { EpisodeRow, FilmingDayRow, FittingWorkshopRow } from "../components/SeriesMetadataFields";
 import type { Author, Id, Project } from "../types/models";
 import { Button, FocalPointPicker } from "../ui";
 import "../styles/EventForm.css";
@@ -29,6 +29,7 @@ export default function CreateProject() {
     const [episodeCount, setEpisodeCount] = useState("");
     const [filmingDays, setFilmingDays] = useState<FilmingDayRow[]>([]);
     const [episodes, setEpisodes] = useState<EpisodeRow[]>([]);
+    const [fittingWorkshops, setFittingWorkshops] = useState<FittingWorkshopRow[]>([]);
     const [startDate, setStartDate] = useState("");
     const [endDate, setEndDate] = useState("");
     const [description, setDescription] = useState("");
@@ -75,6 +76,7 @@ export default function CreateProject() {
                 episode_count: category === "series" && episodeCount ? parseInt(episodeCount) : null,
                 filming_days: category === "series" ? filmingDays.map((row) => ({ ...row, q_number: parseInt(row.q_number) })) : [],
                 episode_metadata: category === "series" ? episodes.map((row) => ({ ...row, episode_number: parseInt(row.episode_number) })) : [],
+                fitting_workshops: category === "series" ? fittingWorkshops.map((row) => ({ ...row, number: parseInt(row.number) })) : [],
                 start_date: startDate || null,
                 end_date: endDate || null,
                 description: description || null,
@@ -204,6 +206,8 @@ export default function CreateProject() {
                         setFilmingDays={setFilmingDays}
                         episodes={episodes}
                         setEpisodes={setEpisodes}
+                        fittingWorkshops={fittingWorkshops}
+                        setFittingWorkshops={setFittingWorkshops}
                         episodeCount={episodeCount}
                         primaryHashtag={hashtag}
                         startDate={startDate}

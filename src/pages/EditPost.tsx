@@ -3,6 +3,8 @@ import type { ClipboardEvent, FormEvent, ReactNode } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { archiveInstagramPost, getAdminPost, updatePost } from "../api/postsService";
 import { getAuthors } from "../api/authorsService";
+import ProjectEntryPicker from "../components/ProjectEntryPicker";
+import { parseEntryLinks, serializeEntryLinks } from "../utils/projectEntries";
 import { ROUTES } from "../routes";
 import { isImage, isVideo } from "../utils/media";
 import AutoResizeTextarea from "../components/AutoResizeTextarea";
@@ -21,7 +23,7 @@ import { getLocalToday } from "../utils/dates";
 import { errorDetail } from "../utils/errors";
 import { emptyStoryItem, extractExternalId, getSequentialStoryUrl, getStoryItemCount, normalizeInstagramURL, normalizeTikTokURL } from "../utils/postForm";
 import type { StoryItem } from "../utils/postForm";
-import type { Author, Id, MediaItem, Post } from "../types/models";
+import type { Author, Id, MediaItem, Post, ProjectEntryLink } from "../types/models";
 import "../styles/EventForm.css";
 
 export default function EditPost() {
@@ -51,6 +53,7 @@ export default function EditPost() {
     const [timelineContext, setTimelineContext] = useState("");
     const [showTimelineContext, setShowTimelineContext] = useState(false);
     const [showOnRelatedPage, setShowOnRelatedPage] = useState(true);
+    const [entryLinks, setEntryLinks] = useState<ProjectEntryLink[]>([]);
     const [showTranslationNote, setShowTranslationNote] = useState(true);
     const [mediaURL, setMediaURL] = useState("");
     const [mediaItems, setMediaItems] = useState<StoryItem[]>([emptyStoryItem()]);
@@ -90,6 +93,7 @@ export default function EditPost() {
             setTimelineContext(p.timeline_context || "");
             setShowTimelineContext(Boolean(p.timeline_context?.trim()) && p.show_timeline_context === true);
             setShowOnRelatedPage(p.show_on_related_page ?? true);
+            setEntryLinks(parseEntryLinks(p.project_entry_links_json));
             setShowTranslationNote(p.show_translation_note ?? true);
             setMediaURL(p.media_url || "");
             setDisplaySource(p.display_source || "external");
@@ -319,6 +323,7 @@ export default function EditPost() {
             timeline_context: timelineContext.trim() || null,
             show_timeline_context: showTimelineContext,
             show_on_related_page: showOnRelatedPage,
+            project_entry_links_json: serializeEntryLinks(entryLinks),
             show_translation_note: showTranslationNote,
             media_url: isIGCollection ? null : (newlyUploadedUrls[0] || filteredMediaItems[0]?.url || mediaURL || null),
             media_urls_json: JSON.stringify(filteredMediaItems),
@@ -537,6 +542,7 @@ export default function EditPost() {
                         placeholder="Explain what this post relates to. Add an event or project hashtag to link it."
                         style={{ minHeight: 72 }}
                     />
+                    <ProjectEntryPicker value={entryLinks} onChange={setEntryLinks} postedAt={postedAt} />
                     <label style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8 }}>
                         <input
                             type="checkbox"
@@ -551,7 +557,7 @@ export default function EditPost() {
                             checked={showOnRelatedPage}
                             onChange={(e) => setShowOnRelatedPage(e.target.checked)}
                         />
-                        Show post on related event page
+                        Show post on related event page (even if hidden from the timeline)
                     </label>
                     <div className="eventform-field-note">The first checkbox controls the label on the post. The second controls whether the post appears on the related page.</div>
                 </div>

@@ -2,6 +2,9 @@ import type { Id } from "./types/models";
 
 type RouteId = Id | string;
 
+/** Which list of a series a related-posts page belongs to. */
+export type ProjectEntryType = "filming" | "episodes" | "fitting" | "workshop" | "prep";
+
 export const ROUTES = {
     home: "/",
     archive: "/archive",
@@ -10,7 +13,7 @@ export const ROUTES = {
     eventDetail: (id: RouteId) => `/events/${id}`,
     projects: "/projects",
     projectDetail: (id: RouteId) => `/projects/${id}`,
-    projectRelatedPosts: (id: RouteId, entryType: "filming" | "episodes", entryNumber: RouteId) =>
+    projectRelatedPosts: (id: RouteId, entryType: ProjectEntryType, entryNumber: RouteId) =>
         `/projects/${id}/${entryType}/${entryNumber}`,
     createProject: "/create-project",
     editProject: (id: RouteId) => `/edit-project/${id}`,

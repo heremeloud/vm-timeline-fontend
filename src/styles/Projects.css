@@ -606,6 +606,13 @@
     text-transform: uppercase;
 }
 
+/* One first-column width for the Fitting & Workshop, Filming Q Days and Episodes tables, so their dates line up.
+   Admins get room for the post-count circle after the label. Sizes are in rem, like the label and the circle, so they
+   scale together with the reader's text size. */
+.project-series-metadata-list {
+    --series-index-col: 3.1rem;
+}
+
 .project-series-metadata-row {
     display: grid;
     align-items: center;
@@ -632,13 +639,73 @@
 
 .project-series-related-index {
     color: inherit;
+    text-decoration: none;
+}
+
+/* Only the Q/EP label is underlined; the count badge never is. */
+/* Every label is a box of the same width (just wider than the longest label, EP12 / "W D12"), as if padded with invisible space, so
+   the circle after it starts at the same spot in every row. Only the text is underlined, not the empty space, and the characters
+   are set a little tighter. */
+.project-series-related-label {
+    display: inline-block;
+    min-width: var(--series-label-min, 2.4em);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.04em;
     text-decoration: underline;
     text-decoration-color: rgba(149, 88, 3, 0.35);
     text-underline-offset: 3px;
 }
 
+/* Admin: the post-count circle sits right after its label (D1 / Q1 / EP1); the column is wide enough for the longest label plus circle. */
+.project-series-metadata-list--counts {
+    --series-index-col: 3.3rem;
+}
+
+/* With several types of day the labels carry a letter ("W D12"), so every label box is wider (and the admin column a little wider). */
+.project-series-metadata-list--letters {
+    --series-label-min: 3.08em;
+}
+
+.project-series-metadata-list--counts.project-series-metadata-list--letters {
+    --series-index-col: 3.9rem;
+}
+
+.project-series-metadata-list--counts .project-series-related-index {
+    display: inline-flex;
+    align-items: center;
+    gap: 1px;
+}
+
+.project-series-related-count {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    width: 1rem;
+    height: 1rem;
+    padding: 0;
+    border-radius: 50%;
+    background: rgba(149, 88, 3, 0.12);
+    color: #955803;
+    font-size: 0.6rem;
+    font-weight: 700;
+    line-height: 1;
+    text-decoration: none;
+    font-variant-numeric: tabular-nums;
+}
+
+/* "99+" has three characters; a smaller font keeps it inside the circle. */
+.project-series-related-count--wide {
+    font-size: 0.46rem;
+    letter-spacing: -0.02em;
+}
+
 .project-series-related-index:hover {
     color: #955803;
+}
+
+.project-series-related-index:hover .project-series-related-label {
     text-decoration-color: currentColor;
 }
 
@@ -649,23 +716,37 @@
 }
 
 .project-series-q-row {
-    grid-template-columns: 52px 110px minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-columns: var(--series-index-col, 52px) 110px minmax(0, 1fr) minmax(0, 1fr);
 }
 
 .project-series-episode-row {
-    grid-template-columns: 52px 110px minmax(90px, 0.75fr) minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-columns: var(--series-index-col, 52px) 110px minmax(90px, 0.75fr) minmax(0, 1fr) minmax(0, 1fr);
 }
 
 .project-series-episode-row.project-no-episode-title {
-    grid-template-columns: 52px 110px minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-columns: var(--series-index-col, 52px) 110px minmax(0, 1fr) minmax(0, 1fr);
 }
 
 .project-series-episode-row.project-no-episode-keyword {
-    grid-template-columns: 52px 110px minmax(90px, 0.75fr) minmax(0, 1fr);
+    grid-template-columns: var(--series-index-col, 52px) 110px minmax(90px, 0.75fr) minmax(0, 1fr);
 }
 
 .project-series-episode-row.project-no-episode-title.project-no-episode-keyword {
-    grid-template-columns: 52px 110px minmax(0, 1fr);
+    grid-template-columns: var(--series-index-col, 52px) 110px minmax(0, 1fr);
+}
+
+/* Fitting / workshop / prep days: hashtag and keyword columns only exist when some row has them, so cells flow in order. */
+.project-series-days-row {
+    grid-template-columns: var(--series-index-col, 52px) 110px minmax(0, 1fr) minmax(0, 1fr);
+}
+
+.project-series-days-row.project-no-days-hashtag,
+.project-series-days-row.project-no-days-keyword {
+    grid-template-columns: var(--series-index-col, 52px) 110px minmax(0, 1fr);
+}
+
+.project-series-days-row.project-no-days-hashtag.project-no-days-keyword {
+    grid-template-columns: var(--series-index-col, 52px) 110px;
 }
 
 .project-series-q-row > *,
@@ -817,8 +898,15 @@
         display: none;
     }
     .project-series-q-row,
-    .project-series-episode-row {
-        grid-template-columns: 76px minmax(0, 1fr) !important;
+    .project-series-episode-row,
+    .project-series-days-row {
+        grid-template-columns: var(--series-index-col) minmax(0, 1fr) !important;
+    }
+
+    .project-series-days-row .project-series-date,
+    .project-series-days-row .project-series-hashtag,
+    .project-series-days-row .project-series-keyword {
+        grid-column: 2 !important;
     }
 
     .project-series-title,

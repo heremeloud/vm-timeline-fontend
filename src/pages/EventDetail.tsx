@@ -5,7 +5,7 @@ import { getEventPostCandidates } from "../api/postsService";
 import EventCard from "../components/EventCard";
 import PostCard from "../components/PostCard";
 import { ROUTES } from "../routes";
-import { buildEventTagIndex, getEventTagLinks } from "../utils/eventTagLinks";
+import { buildEventTagIndex, getEventTagLinks, linkOpensEvent } from "../utils/eventTagLinks";
 import type { EventTagIndex } from "../utils/eventTagLinks";
 import type { Event, Post } from "../types/models";
 
@@ -26,13 +26,13 @@ export default function EventDetail() {
                 try {
                     const [tagsRes, postsRes] = await Promise.all([
                         getEventTagIndex(),
-                        getEventPostCandidates(eventId ?? ""),
+                        getEventPostCandidates(eventId ?? "", isAdmin),
                     ]);
                     const index = buildEventTagIndex(tagsRes.data || []);
                     setEventTagIndex(index);
                     setRelatedPosts((postsRes.data || []).filter((post) =>
-                        getEventTagLinks(post, index, { includeHiddenTimelineContext: true }).some(({ event: linkedEvent }) =>
-                            String(linkedEvent.id) === String(eventId)
+                        getEventTagLinks(post, index, { includeHiddenTimelineContext: true }).some((link) =>
+                            linkOpensEvent(link) && String(link.event.id) === String(eventId)
                         )
                     ));
                 } catch (relatedError) {
@@ -74,7 +74,7 @@ export default function EventDetail() {
             <EventCard event={event} />
             {relatedPosts.length > 0 && (
                 <section className="event-related-posts" aria-labelledby="event-related-posts-title">
-                    <h2 id="event-related-posts-title">Related posts</h2>
+                    <h2 id="event-related-posts-title">Related Posts</h2>
                     <div className="timeline-container">
                         {relatedPosts.map((post) => (
                             <PostCard key={post.id} post={post} eventTagIndex={eventTagIndex} />

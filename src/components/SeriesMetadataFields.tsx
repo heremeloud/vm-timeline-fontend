@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type { Dispatch, FocusEvent, MouseEvent, SetStateAction } from "react";
 import { Button } from "../ui";
+import type { FittingWorkshopKind } from "../types/models";
 
 /** Form-state rows: every field is a string while editing and parsed on save. */
 export interface FilmingDayRow {
@@ -18,10 +19,36 @@ export interface EpisodeRow {
     keyword: string;
 }
 
+export interface FittingWorkshopRow {
+    kind: FittingWorkshopKind;
+    number: string;
+    date: string;
+    hashtag: string;
+    keyword: string;
+}
+
 type TaggedRow = { hashtag: string; keyword: string };
 
 const emptyQ = (): FilmingDayRow => ({ q_number: "", filming_date: "", hashtag: "", keyword: "" });
 const emptyEpisode = (episodeNumber: number | string = ""): EpisodeRow => ({ episode_number: String(episodeNumber), air_date: "", title: "", hashtag: "", keyword: "" });
+
+/** Short hashtag suffix per type (SeriesF1, SeriesW1, SeriesP1); the visible names are "Fitting Day 1" etc. */
+const FITTING_WORKSHOP_PREFIX: Record<FittingWorkshopKind, string> = { fitting: "F", workshop: "W", prep: "P" };
+const FITTING_WORKSHOP_NAME: Record<FittingWorkshopKind, string> = { fitting: "Fitting Day", workshop: "Workshop Day", prep: "Prep Day" };
+const FITTING_WORKSHOP_SHORT_NAME: Record<FittingWorkshopKind, string> = { fitting: "Fitting", workshop: "Workshop", prep: "Prep" };
+const FITTING_WORKSHOP_KINDS = ["fitting", "workshop", "prep"] as const;
+
+const emptyFittingWorkshop = (kind: FittingWorkshopKind, number: number | string = ""): FittingWorkshopRow => ({ kind, number: String(number), date: "", hashtag: "", keyword: "" });
+
+function nextFittingWorkshopNumber(rows: FittingWorkshopRow[], kind: FittingWorkshopKind) {
+    const numbers = rows.filter((row) => row.kind === kind).map((row) => Number(row.number)).filter((number) => Number.isInteger(number) && number > 0);
+    return numbers.length > 0 ? Math.max(...numbers) + 1 : 1;
+}
+
+function defaultFittingWorkshopHashtag(primaryHashtag: string | null | undefined, kind: FittingWorkshopKind, number: number | string) {
+    const base = (primaryHashtag || "").trim().replace(/^#/, "").replace(/\s+/g, "");
+    return base ? `${base}${FITTING_WORKSHOP_PREFIX[kind]}${number}` : "";
+}
 
 function focusTextEnd(event: MouseEvent<HTMLInputElement> | FocusEvent<HTMLInputElement>) {
     const input = event.currentTarget;
@@ -131,6 +158,8 @@ interface SeriesMetadataFieldsProps {
     setFilmingDays: Dispatch<SetStateAction<FilmingDayRow[]>> | ((rows: FilmingDayRow[]) => void);
     episodes: EpisodeRow[];
     setEpisodes: Dispatch<SetStateAction<EpisodeRow[]>> | ((rows: EpisodeRow[]) => void);
+    fittingWorkshops: FittingWorkshopRow[];
+    setFittingWorkshops: Dispatch<SetStateAction<FittingWorkshopRow[]>> | ((rows: FittingWorkshopRow[]) => void);
     episodeCount: number | string | null | undefined;
     primaryHashtag: string | null | undefined;
     startDate: string;
@@ -142,6 +171,8 @@ export default function SeriesMetadataFields({
     setFilmingDays,
     episodes,
     setEpisodes,
+    fittingWorkshops,
+    setFittingWorkshops,
     episodeCount,
     primaryHashtag,
     startDate,
@@ -156,6 +187,9 @@ export default function SeriesMetadataFields({
     const [includeEpisodeZero, setIncludeEpisodeZero] = useState(() =>
         episodes.some((row) => Number(row.episode_number) === 0)
     );
+    // Fitting / workshop / prep days often have no hashtag or keyword, so those fields are opt-in.
+    const [showFwHashtag, setShowFwHashtag] = useState(() => fittingWorkshops.some((row) => Boolean(row.hashtag.trim())));
+    const [showFwKeyword, setShowFwKeyword] = useState(() => fittingWorkshops.some((row) => Boolean(row.keyword.trim())));
 
     function generateEpisodeDefaults() {
         const count = Math.max(1, Number.parseInt(String(episodeCount ?? ""), 10) || 1);
@@ -194,6 +228,74 @@ export default function SeriesMetadataFields({
 
     return (
         <>
+            <div className="eventform-section series-metadata-section">
+                <div className="series-metadata-heading series-metadata-heading--stacked">
+                    <div>
+                        <label>Fitting &amp; Workshop <span className="form-optional">(optional)</span></label>
+                        <p>F = fitting day, W = workshop day, P = prep day (a day that is both, or general preparation). Each type is numbered on its own; visitors see "Fitting Day 1", "Workshop Day 1", "Prep Day 1".</p>
+                    </div>
+                    <div className="series-metadata-actions">
+                        <div className="series-metadata-action-buttons">
+                            {FITTING_WORKSHOP_KINDS.map((kind) => (
+                                <Button key={kind} variant="add" size="small" onClick={() => {
+                                    const number = nextFittingWorkshopNumber(fittingWorkshops, kind);
+                                    if (number > 99) {
+                                        alert(`${FITTING_WORKSHOP_NAME[kind]} number cannot be greater than 99.`);
+                                        return;
+                                    }
+                                    setFittingWorkshops([
+                                        ...fittingWorkshops,
+                                        {
+                                            ...emptyFittingWorkshop(kind, number),
+                                            date: [...fittingWorkshops].reverse().find((row) => row.date)?.date || startDate || "",
+                                            hashtag: showFwHashtag ? defaultFittingWorkshopHashtag(primaryHashtag, kind, number) : "",
+                                        },
+                                    ]);
+                                }}>+ Add {FITTING_WORKSHOP_SHORT_NAME[kind]}</Button>
+                            ))}
+                        </div>
+                        <div className="series-metadata-toggles">
+                            <label className="series-metadata-toggle">
+                                <input type="checkbox" checked={showFwHashtag} onChange={(e) => setShowFwHashtag(e.target.checked)} />
+                                Hashtag
+                            </label>
+                            <label className="series-metadata-toggle">
+                                <input type="checkbox" checked={showFwKeyword} onChange={(e) => setShowFwKeyword(e.target.checked)} />
+                                Keyword
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                {fittingWorkshops.map((row, index) => (
+                    <div className="series-metadata-row series-metadata-fw-row" key={`fw-${index}`}>
+                        <label>Type
+                            <select aria-label={`Type: ${FITTING_WORKSHOP_NAME[row.kind]}`} title={FITTING_WORKSHOP_NAME[row.kind]} value={row.kind} onChange={(e) => {
+                                const kind = e.target.value as FittingWorkshopKind;
+                                const next = [...fittingWorkshops];
+                                const wasGenerated = !row.hashtag.trim() || row.hashtag === defaultFittingWorkshopHashtag(primaryHashtag, row.kind, row.number);
+                                next[index] = {
+                                    ...row,
+                                    kind,
+                                    hashtag: wasGenerated ? defaultFittingWorkshopHashtag(primaryHashtag, kind, row.number) : row.hashtag,
+                                };
+                                setFittingWorkshops(next);
+                            }}>
+                                {FITTING_WORKSHOP_KINDS.map((kind) => <option key={kind} value={kind} title={FITTING_WORKSHOP_NAME[kind]}>{FITTING_WORKSHOP_PREFIX[kind]}</option>)}
+                            </select>
+                        </label>
+                        <label className="series-metadata-number-field"><span className="series-metadata-label-text">{FITTING_WORKSHOP_PREFIX[row.kind]}# <span className="form-required">*</span></span><input type="number" min="1" max="99" required value={row.number} onChange={(e) => updateIndexedNumber(fittingWorkshops, setFittingWorkshops, index, "number", e.target.value, FITTING_WORKSHOP_PREFIX[row.kind])} /></label>
+                        <label>Date<input type="date" value={row.date} onChange={(e) => updateRow(fittingWorkshops, setFittingWorkshops, index, "date", e.target.value)} /></label>
+                        <RemoveButton onClick={() => setFittingWorkshops(fittingWorkshops.filter((_, i) => i !== index))} />
+                        {(showFwHashtag || showFwKeyword) && (
+                            <div className="series-metadata-fw-tags">
+                            {showFwHashtag && <label>Hashtag<input value={row.hashtag} placeholder={`Series${FITTING_WORKSHOP_PREFIX[row.kind]}1`} onFocus={focusTextEnd} onClick={focusTextEnd} onChange={(e) => updateRow(fittingWorkshops, setFittingWorkshops, index, "hashtag", e.target.value)} /></label>}
+                            {showFwKeyword && <label>Keyword<input value={row.keyword} placeholder={`Series ${FITTING_WORKSHOP_NAME[row.kind]} 1`} onChange={(e) => updateRow(fittingWorkshops, setFittingWorkshops, index, "keyword", e.target.value)} /></label>}
+                            </div>
+                        )}
+                    </div>
+                ))}
+            </div>
+
             <div className="eventform-section series-metadata-section">
                 <div className="series-metadata-heading">
                     <div>

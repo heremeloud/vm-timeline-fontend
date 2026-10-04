@@ -86,6 +86,8 @@ export interface Post {
     timeline_context?: string | null;
     show_timeline_context?: boolean | null;
     show_on_related_page: boolean;
+    /** JSON list of {project_id, entry_type, entry_number}: project rows this post is explicitly linked to. */
+    project_entry_links_json?: string;
     posted_at?: string | null;
     posted_at_utc?: string | null;
     posted_at_is_estimated: boolean;
@@ -162,6 +164,25 @@ export interface ProjectFilmingDay {
     keyword?: string | null;
 }
 
+/** A row of a series a post can be linked to explicitly: Q day, episode, fitting or workshop. */
+export interface ProjectEntryLink {
+    project_id: number;
+    entry_type: "filming" | "episodes" | "fitting" | "workshop" | "prep";
+    entry_number: number;
+}
+
+/** A fitting, workshop or prep day of a series (prep = both, or general preparation), numbered per kind. */
+export type FittingWorkshopKind = "fitting" | "workshop" | "prep";
+
+export interface ProjectFittingWorkshop {
+    id?: Id;
+    kind: FittingWorkshopKind;
+    number: number;
+    date?: string | null;
+    hashtag?: string | null;
+    keyword?: string | null;
+}
+
 export interface ProjectEpisode {
     id?: Id;
     episode_number: number;
@@ -218,6 +239,7 @@ export interface Project {
     authors: AuthorSummary[];
     filming_days?: ProjectFilmingDay[];
     episode_metadata?: ProjectEpisode[];
+    fitting_workshops?: ProjectFittingWorkshop[];
     events?: Event[];
 }
 
@@ -342,6 +364,9 @@ export interface EventTagEntry {
     /** The event's keyword; typed into a post's "Related Event / Project" it links the post to the event. */
     keyword?: string | null;
     is_project?: boolean;
+    is_fitting_workshop?: boolean;
+    fitting_workshop_kind?: FittingWorkshopKind;
+    fitting_workshop_number?: number;
     project_id?: Id | null;
     category?: string | null;
     tags?: string[];
