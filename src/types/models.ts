@@ -84,7 +84,7 @@ export interface Post {
     caption_translation_note?: string | null;
     show_translation_note: boolean;
     timeline_context?: string | null;
-    show_timeline_context: boolean;
+    show_timeline_context?: boolean | null;
     show_on_related_page: boolean;
     posted_at?: string | null;
     posted_at_utc?: string | null;
@@ -236,10 +236,14 @@ export interface EventDateItem {
     hashtag?: string | null;
 }
 
+export type EventMediaDisplayType = "auto" | "article" | "tweet" | "youtube";
+
 export interface LiveMediaItem {
     url: string;
+    date?: string | null;
     keyword?: string | null;
     hashtag?: string | null;
+    display_type?: EventMediaDisplayType | null;
 }
 
 export interface ChildEvent {
@@ -280,6 +284,9 @@ export interface Event {
     /** Admin-only fields. */
     announcement_urls?: string[];
     private_notes?: string | null;
+    public_announcement_url?: string | null;
+    interview_content?: string | null;
+    show_interview_content?: boolean;
     live_urls: string[];
     live_media_items: LiveMediaItem[];
     project_id?: Id | null;
@@ -320,6 +327,7 @@ export interface EventCategoryOption {
     value: string;
     label: string;
     sort_order: number;
+    is_default: boolean;
     subcategories: EventSubcategoryOption[];
 }
 
@@ -331,6 +339,8 @@ export interface CountResponse {
 export interface EventTagEntry {
     id?: Id;
     name?: string;
+    /** The event's keyword; typed into a post's "Related Event / Project" it links the post to the event. */
+    keyword?: string | null;
     is_project?: boolean;
     project_id?: Id | null;
     category?: string | null;

@@ -58,14 +58,16 @@ export default function PostCard({
         [post, eventTagIndex],
     );
     const standaloneEventTagLinks = useMemo(() => {
-        if (!post.timeline_context || !(post.show_timeline_context ?? true))
-            return eventTagLinks;
+        // Keywords are linked inside the "Related Event / Project" text itself, never as separate chips.
+        const hashtagLinks = eventTagLinks.filter(({ kind }) => kind !== "keyword");
+        if (!post.timeline_context || !(post.show_timeline_context ?? false))
+            return hashtagLinks;
         const contextTags = new Set(
             (post.timeline_context.match(/#[\p{L}\p{M}\p{N}_]+/gu) || []).map(
                 (tag: string) => tag.slice(1).toLocaleLowerCase(),
             ),
         );
-        return eventTagLinks.filter(
+        return hashtagLinks.filter(
             ({ hashtag }) =>
                 !contextTags.has(hashtag.replace(/^#/, "").toLocaleLowerCase()),
         );
@@ -364,7 +366,7 @@ export default function PostCard({
                     </div>
                 )}
 
-            {post.timeline_context && (post.show_timeline_context ?? true) && (
+            {post.timeline_context && (post.show_timeline_context ?? false) && (
                 <aside
                     className="post-timeline-context"
                     aria-label=", added by the timeline curator"
@@ -401,17 +403,21 @@ export default function PostCard({
                         aria-label="Related events"
                     >
                         {standaloneEventTagLinks.map(
-                            ({ hashtag, event, projectId }) => (
+                            ({ hashtag, event, projectId, projectEntryType, projectEntryNumber }) => (
                                 <Link
                                     key={`${hashtag}-${event.id}`}
                                     to={
-                                        projectId
+                                        projectId && projectEntryType && Number.isFinite(projectEntryNumber)
+                                            ? ROUTES.projectRelatedPosts(projectId, projectEntryType, projectEntryNumber!)
+                                            : projectId
                                             ? ROUTES.projectDetail(projectId)
                                             : ROUTES.eventDetail(event.id ?? 0)
                                     }
                                     className="post-event-tag-link"
                                     title={
-                                        projectId
+                                        projectEntryType && Number.isFinite(projectEntryNumber)
+                                            ? "View related posts"
+                                            : projectId
                                             ? "View related project"
                                             : `View event: ${event.name}`
                                     }

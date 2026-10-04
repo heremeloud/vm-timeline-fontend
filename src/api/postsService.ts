@@ -75,6 +75,12 @@ export const getTimeline = ({ limit, offset, sort, platform }: PostListParams = 
 
 export const getEventPostCandidates = (eventId: Id | string) => api.get<Post[]>(`/posts/event/${eventId}`);
 
+export const getProjectPostCandidates = (projectId: Id | string, hashtag: string) =>
+    api.get<Post[]>(`/posts/project/${projectId}/related?hashtag=${encodeURIComponent(hashtag)}`);
+
+export const getProjectRelatedPostCounts = (projectId: Id | string) =>
+    api.get<Record<string, number>>(`/posts/project/${projectId}/related-counts`);
+
 export const getPost = (id: Id | string) => api.get<{ post: Post }>(`/posts/${id}`);
 
 export const getAdminPost = (id: Id | string) => api.get<{ post: Post }>(`/posts/admin/${id}`);

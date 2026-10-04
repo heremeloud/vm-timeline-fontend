@@ -3,6 +3,7 @@ import { Link, useParams } from "react-router-dom";
 import { deleteTopic, getAdminTopic, getTopic, updateTopicItemTime } from "../api/topicsService";
 import { ROUTES } from "../routes";
 import PostCard from "../components/PostCard";
+import useEventTagIndex from "../hooks/useEventTagIndex";
 import { Button, ButtonLink } from "../ui";
 import type { Id, Post, Topic, TopicItem } from "../types/models";
 import "../styles/Home.css";
@@ -67,6 +68,7 @@ function getDateTimeInputValue(item: TopicItem) {
 
 export default function TopicDetail() {
     const { topicId } = useParams();
+    const eventTagIndex = useEventTagIndex();
     const isAdmin = !!localStorage.getItem("jwt");
     const [topic, setTopic] = useState<Topic | null>(null);
     const [loading, setLoading] = useState(true);
@@ -220,7 +222,7 @@ export default function TopicDetail() {
                             {item.note && <div className="topic-timeline-note">{item.note}</div>}
                         </div>
 
-                        <PostCard post={getTopicPost(item)} showReplies={item.show_replies ?? true} />
+                        <PostCard post={getTopicPost(item)} eventTagIndex={eventTagIndex} showReplies={item.show_replies ?? true} />
                     </div>
                 ))}
 

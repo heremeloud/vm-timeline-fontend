@@ -29,6 +29,7 @@ export function formatEventSubcategory(value: string) {
 export const DEFAULT_EVENT_CATEGORY_OPTIONS: EventCategoryOption[] = EVENT_CATEGORIES.map((category, categoryIndex) => ({
     ...category,
     sort_order: categoryIndex,
+    is_default: categoryIndex === 0,
     subcategories: (EVENT_SUBCATEGORIES[category.value] || []).map((value, subcategoryIndex) => ({
         value,
         label: formatEventSubcategory(value),

@@ -70,7 +70,7 @@ const emptyNewPost: NewPostDraft = {
     caption_translation: "",
     caption_translation_note: "",
     timeline_context: "",
-    show_timeline_context: true,
+    show_timeline_context: false,
     show_translation_note: true,
     media_url: "",
     posted_at: "",

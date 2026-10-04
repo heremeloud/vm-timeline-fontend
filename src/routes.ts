@@ -10,6 +10,8 @@ export const ROUTES = {
     eventDetail: (id: RouteId) => `/events/${id}`,
     projects: "/projects",
     projectDetail: (id: RouteId) => `/projects/${id}`,
+    projectRelatedPosts: (id: RouteId, entryType: "filming" | "episodes", entryNumber: RouteId) =>
+        `/projects/${id}/${entryType}/${entryNumber}`,
     createProject: "/create-project",
     editProject: (id: RouteId) => `/edit-project/${id}`,
     admin: "/admin",

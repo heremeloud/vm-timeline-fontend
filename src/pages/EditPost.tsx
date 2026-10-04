@@ -49,7 +49,7 @@ export default function EditPost() {
     const [captionTranslation, setCaptionTranslation] = useState("");
     const [captionTranslationNote, setCaptionTranslationNote] = useState("");
     const [timelineContext, setTimelineContext] = useState("");
-    const [showTimelineContext, setShowTimelineContext] = useState(true);
+    const [showTimelineContext, setShowTimelineContext] = useState(false);
     const [showOnRelatedPage, setShowOnRelatedPage] = useState(true);
     const [showTranslationNote, setShowTranslationNote] = useState(true);
     const [mediaURL, setMediaURL] = useState("");
@@ -88,7 +88,7 @@ export default function EditPost() {
             setCaptionTranslation(p.caption_translation || "");
             setCaptionTranslationNote(p.caption_translation_note || "");
             setTimelineContext(p.timeline_context || "");
-            setShowTimelineContext(p.show_timeline_context ?? true);
+            setShowTimelineContext(Boolean(p.timeline_context?.trim()) && p.show_timeline_context === true);
             setShowOnRelatedPage(p.show_on_related_page ?? true);
             setShowTranslationNote(p.show_translation_note ?? true);
             setMediaURL(p.media_url || "");

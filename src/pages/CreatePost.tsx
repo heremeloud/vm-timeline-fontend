@@ -49,7 +49,7 @@ export default function CreatePost() {
     const [captionTranslation, setCaptionTranslation] = useState("");
     const [captionTranslationNote, setCaptionTranslationNote] = useState("");
     const [timelineContext, setTimelineContext] = useState("");
-    const [showTimelineContext, setShowTimelineContext] = useState(true);
+    const [showTimelineContext, setShowTimelineContext] = useState(false);
     const [showOnRelatedPage, setShowOnRelatedPage] = useState(true);
     const [showTranslationNote, setShowTranslationNote] = useState(true);
     const [mediaURL, setMediaURL] = useState("");

@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { ROUTES } from "../routes";
+import { keywordPattern } from "../utils/eventTagLinks";
 import type { EventTagLink } from "../utils/eventTagLinks";
 
 function normalizeTag(tag = ""): string {
@@ -9,22 +10,36 @@ function normalizeTag(tag = ""): string {
 export default function EventLinkedText({ text, eventTagLinks = [] }: { text?: string | null; eventTagLinks?: EventTagLink[] }) {
     if (!text || eventTagLinks.length === 0) return text ?? null;
 
+    const hashtagLinks = eventTagLinks.filter((link) => link.kind !== "keyword");
+    const keywordLinks = eventTagLinks.filter((link) => link.kind === "keyword");
     const eventByTag = new Map(
-        eventTagLinks.map((link) => [normalizeTag(link.hashtag), link])
+        hashtagLinks.map((link) => [normalizeTag(link.hashtag), link])
     );
-    const parts = text.split(/(#[\p{L}\p{M}\p{N}_]+)/gu);
+    const keywordRegexes = keywordLinks.map((link) => ({ link, regex: keywordPattern(link.hashtag) }));
+    const splitter = new RegExp(
+        [...keywordRegexes.map(({ regex }) => `(${regex.source})`), "(#[\\p{L}\\p{M}\\p{N}_]+)"].join("|"),
+        "giu",
+    );
+    const parts = text.split(splitter).filter((part): part is string => part !== undefined);
 
     return parts.map((part, index) => {
-        const match = part.startsWith("#") ? eventByTag.get(normalizeTag(part)) : null;
+        const keywordMatch = keywordRegexes.find(({ regex }) => new RegExp(`^${regex.source}$`, "iu").test(part));
+        const match = keywordMatch ? keywordMatch.link : part.startsWith("#") ? eventByTag.get(normalizeTag(part)) : null;
         if (!match) return part;
-        const { event, projectId } = match;
+        const { event, projectId, projectEntryType, projectEntryNumber } = match;
+        const hasProjectEntry = Boolean(projectId && projectEntryType && Number.isFinite(projectEntryNumber));
+        const destination = hasProjectEntry
+            ? ROUTES.projectRelatedPosts(projectId!, projectEntryType!, projectEntryNumber!)
+            : projectId
+                ? ROUTES.projectDetail(projectId)
+                : ROUTES.eventDetail(event.id ?? 0);
 
         return (
             <Link
                 key={`${event.id}-${index}`}
-                to={projectId ? ROUTES.projectDetail(projectId) : ROUTES.eventDetail(event.id ?? 0)}
+                to={destination}
                 className="post-event-tag-link"
-                title={projectId ? "View related project" : `View event: ${event.name}`}
+                title={hasProjectEntry ? "View related posts" : projectId ? "View related project" : `View event: ${event.name}`}
             >
                 {part}
             </Link>

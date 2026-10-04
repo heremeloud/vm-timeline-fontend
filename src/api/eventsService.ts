@@ -33,6 +33,9 @@ export interface EventInput {
     start_date?: string | null;
     end_date?: string | null;
     announcement_urls?: string[];
+    public_announcement_url?: string | null;
+    interview_content?: string | null;
+    show_interview_content?: boolean;
     private_notes?: string | null;
     live_urls?: string[];
     live_media_items?: LiveMediaItem[];

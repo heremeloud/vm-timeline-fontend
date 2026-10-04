@@ -2,17 +2,23 @@ import { normalizeEventPhotos } from "../utils/eventPhotos";
 import { useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import Avatar from "./Avatar";
+import TweetEmbed from "./TweetEmbed";
 import "../styles/EventCard.css";
 import "../styles/MediaCarousel.css";
-import { Button, ButtonLink, CarouselControls } from "../ui";
+import { Button, ButtonLink, CarouselControls, ToggleButton, ToggleGroup } from "../ui";
 import { deleteEvent, updateEvent } from "../api/eventsService";
 import { ROUTES } from "../routes";
-import { formatEventDateRange, getEventStartDate } from "../utils/eventDateRange";
+import {
+    formatEventDateRange,
+    getEventDates,
+    getEventStartDate,
+} from "../utils/eventDateRange";
 import { getEventDateItemForPhoto } from "../utils/eventDateItems";
 import { errorDetail } from "../utils/errors";
 import { getYouTubeEmbedUrl } from "../utils/media";
 import { orderViewMimFirst } from "../utils/authors";
-import type { Event, EventDateItem } from "../types/models";
+import type { Event } from "../types/models";
+import { detectPostPlatform } from "../utils/postUrls";
 
 // YYYY-MM-DD -> YYYY-MM-DD + 1 day (Twitter until: is exclusive)
 function addOneDay(yyyyMmDd: string | null | undefined) {
@@ -118,6 +124,22 @@ function safeUrl(url?: string | null) {
     return `https://${s}`;
 }
 
+function externalSource(url: string) {
+    try {
+        const hostname = new URL(url).hostname.replace(/^www\./, "");
+        const knownPublishers: Record<string, string> = {
+            "revistaquem.globo.com": "Quem",
+        };
+
+        return {
+            hostname,
+            name: knownPublishers[hostname] || hostname,
+        };
+    } catch {
+        return { hostname: url, name: "Interview source" };
+    }
+}
+
 export default function EventCard({ event }: { event: Event }) {
     const location = useLocation();
     const returnTo = `${location.pathname}${location.search}`;
@@ -125,8 +147,7 @@ export default function EventCard({ event }: { event: Event }) {
     const tags = event.tags || [];
     const dateItems = event.date_items || [];
     const datedItems = dateItems.filter((item) => item.date);
-    const populatedDateItems = dateItems.filter((item) => item.date && (item.keyword || item.hashtag));
-    const hasDateSwitcher = populatedDateItems.length > 1;
+    const eventDates = getEventDates(event);
     const authors = orderViewMimFirst(event.authors || []);
     const isAdmin = !!localStorage.getItem("jwt");
     const photos = normalizeEventPhotos(event);
@@ -134,12 +155,21 @@ export default function EventCard({ event }: { event: Event }) {
     const copyTimer = useRef<number | undefined>(undefined);
     const [copied, setCopied] = useState(false);
     const [liveIdx, setLiveIdx] = useState(0);
-    const [photoIdx, setPhotoIdx] = useState(0);
-    const [selectedDate, setSelectedDate] = useState("");
+    const initialDate = event.live_media_items?.[0]?.date || "";
+    const [photoIdx, setPhotoIdx] = useState(() => {
+        const initialPhotoIndex = initialDate
+            ? photos.findIndex((photo) => photo.date === initialDate)
+            : -1;
+        return initialPhotoIndex >= 0 ? initialPhotoIndex : 0;
+    });
+    const [selectedDate, setSelectedDate] = useState(initialDate);
     const activePhotoIdx = photos.length ? photoIdx % photos.length : 0;
     const activePhoto = photos[activePhotoIdx];
     const selectedDateItem = datedItems.find((item) => item.date === selectedDate);
-    const activeDateItem = selectedDateItem || getEventDateItemForPhoto(dateItems, activePhoto);
+    // Once a date is chosen it owns the keywords/hashtags shown, even if it has none of its own.
+    const activeDateItem = selectedDate ? (selectedDateItem || null) : getEventDateItemForPhoto(dateItems, activePhoto);
+    const pillDates = [...new Set([...eventDates, ...datedItems.map((item) => item.date)])].sort();
+    const activePillDate = selectedDate || activeDateItem?.date || activePhoto?.date || pillDates[0] || "";
     const hasKeywords = Boolean(event.keyword || activeDateItem?.keyword);
     const hasHashtags = tags.length > 0 || Boolean(activeDateItem?.hashtag);
     const [isPublic, setIsPublic] = useState(event.is_visible !== false);
@@ -147,8 +177,12 @@ export default function EventCard({ event }: { event: Event }) {
     const eventDateLabel = formatEventDateRange(event);
     const eventStartDate = getEventStartDate(event);
     const displayName = event.name;
+    const isInterview = event.category?.trim().toLowerCase() === "interview";
+    const publicAnnouncementUrl = safeUrl(event.public_announcement_url);
     const eventDetailUrl = ROUTES.eventDetail(event.id);
     const isEventDetailPage = location.pathname === eventDetailUrl;
+    // The pills replace the date line, so a date is never shown twice.
+    const showDatePills = pillDates.length > 1;
 
     async function handleCopy(text: string) {
         const ok = await copyToClipboard(text);
@@ -175,32 +209,51 @@ export default function EventCard({ event }: { event: Event }) {
         }
     }
 
-    function selectDateItem(item: EventDateItem) {
-        setSelectedDate(item.date);
-
-        const datedPhotoIndex = photos.findIndex((photo) => photo.date === item.date);
-        if (datedPhotoIndex >= 0) {
-            setPhotoIdx(datedPhotoIndex);
-            return;
-        }
-
-        const defaultPhotoIndex = photos.findIndex((photo) => !photo.date);
-        if (defaultPhotoIndex >= 0) setPhotoIdx(defaultPhotoIndex);
+    function selectDate(date: string) {
+        setSelectedDate(date);
+        const matchingPhotoIndex = photos.findIndex((photo) => photo.date === date);
+        if (matchingPhotoIndex >= 0) setPhotoIdx(matchingPhotoIndex);
+        const matchingMediaIndex = liveMediaItems.findIndex((item) => item.date === date);
+        if (matchingMediaIndex >= 0) setLiveIdx(matchingMediaIndex);
     }
 
     function selectPhoto(nextIndex: number) {
         setPhotoIdx(nextIndex);
-        const nextDateItem = getEventDateItemForPhoto(dateItems, photos[nextIndex]);
-        if (photos[nextIndex]?.date && nextDateItem) setSelectedDate(nextDateItem.date);
+        const nextPhotoDate = photos[nextIndex]?.date;
+        if (nextPhotoDate && eventDates.includes(nextPhotoDate)) {
+            setSelectedDate(nextPhotoDate);
+            const matchingMediaIndex = liveMediaItems.findIndex((item) => item.date === nextPhotoDate);
+            if (matchingMediaIndex >= 0) setLiveIdx(matchingMediaIndex);
+        }
     }
 
-    const liveMediaItems = (event.live_media_items?.length
+    const allLiveMediaItems = (event.live_media_items?.length
         ? event.live_media_items
-        : (event.live_urls || []).map((url) => ({ url, keyword: null as string | null, hashtag: null as string | null })))
+        : (event.live_urls || []).map((url) => ({
+            url,
+            keyword: null as string | null,
+            hashtag: null as string | null,
+            date: null as string | null,
+            display_type: "auto" as const,
+        })))
         .map((item) => ({ ...item, url: safeUrl(item.url) }))
-        .filter((item) => item.url);
+        .filter((item) => item.url && item.url !== publicAnnouncementUrl);
+    const liveMediaItems = allLiveMediaItems;
     const liveUrls = liveMediaItems.map((item) => item.url);
     const currentLiveMedia: Partial<(typeof liveMediaItems)[number]> = liveMediaItems[liveIdx] || {};
+
+    function selectLiveMedia(nextIndex: number) {
+        if (nextIndex < 0 || nextIndex >= liveMediaItems.length) return;
+        setLiveIdx(nextIndex);
+
+        const mediaDate = liveMediaItems[nextIndex]?.date || "";
+        setSelectedDate(mediaDate);
+
+        const matchingPhotoIndex = mediaDate
+            ? photos.findIndex((photo) => photo.date === mediaDate)
+            : photos.findIndex((photo) => !photo.date);
+        if (matchingPhotoIndex >= 0) setPhotoIdx(matchingPhotoIndex);
+    }
 
     return (
         <div className="eventcard-wrapper ui-content-card ui-content-card--event">
@@ -299,27 +352,27 @@ export default function EventCard({ event }: { event: Event }) {
                     </div>
                 ) : null}
 
-                {hasDateSwitcher && (
-                    <div className="eventcard-date-switcher" role="group" aria-label="Choose a date's keywords and hashtags">
-                        <span className="eventcard-date-switcher-icon" aria-hidden="true">📅</span>
-                        {datedItems.map((item) => (
-                            <button
-                                type="button"
-                                key={item.date}
-                                className={item.date === activeDateItem?.date ? "active" : ""}
-                                aria-pressed={item.date === activeDateItem?.date}
-                                onClick={() => selectDateItem(item)}
-                            >
-                                {item.date}
-                            </button>
-                        ))}
+                {showDatePills && (
+                    <div className="eventcard-meta eventcard-meta--date-pills">
+                        <span aria-hidden="true">📅</span>
+                        <ToggleGroup className="eventcard-date-pills" role="group" aria-label="Choose an event date">
+                            {pillDates.map((date) => (
+                                <ToggleButton
+                                    key={date}
+                                    active={activePillDate === date}
+                                    onClick={() => selectDate(date)}
+                                >
+                                    {date}
+                                </ToggleButton>
+                            ))}
+                        </ToggleGroup>
                     </div>
                 )}
 
-                {((eventDateLabel && !hasDateSwitcher) || event.location) && (
+                {((!showDatePills && eventDateLabel) || event.location) && (
                     <div className="eventcard-meta">
-                        {eventDateLabel && !hasDateSwitcher ? `📅 ${eventDateLabel}` : null}
-                        {eventDateLabel && !hasDateSwitcher && event.location ? "  •  " : null}
+                        {!showDatePills && eventDateLabel ? `📅 ${eventDateLabel}` : null}
+                        {!showDatePills && eventDateLabel && event.location ? "  •  " : null}
                         {event.location ? `📍 ${event.location}` : null}
                     </div>
                 )}
@@ -386,11 +439,32 @@ export default function EventCard({ event }: { event: Event }) {
                     </div>
                 )}
 
-                {/* LIVE VIDEO SECTION */}
+                {publicAnnouncementUrl && (
+                    <div className="eventcard-announcement">
+                        <div className="eventcard-live-title">Announcement</div>
+                        {detectPostPlatform(publicAnnouncementUrl) === "x" ? (
+                            <div className="eventcard-tweet" role="region" aria-label={`${displayName} announcement tweet`}>
+                                <TweetEmbed url={publicAnnouncementUrl} />
+                            </div>
+                        ) : (
+                            <a
+                                className="eventcard-live-link"
+                                href={publicAnnouncementUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                            >
+                                View announcement ↗
+                            </a>
+                        )}
+                    </div>
+                )}
+
+                {/* EVENT MEDIA SECTION */}
                 {liveUrls.length > 0 && (
                     <div className="eventcard-live">
                         <div className="eventcard-live-title">
-                            Media
+                            {isInterview ? "Interview source" : "Media"}
+                            {currentLiveMedia.date && <span className="eventcard-live-date"> · {currentLiveMedia.date}</span>}
                             {liveUrls.length > 1 && (
                                 <span className="eventcard-live-count">
                                     {liveIdx + 1} / {liveUrls.length}
@@ -401,7 +475,21 @@ export default function EventCard({ event }: { event: Event }) {
                         {(() => {
                             const url = liveUrls[liveIdx];
                             const ytEmbed = getYouTubeEmbedUrl(url);
-                            return ytEmbed ? (
+                            const displayType = currentLiveMedia.display_type || "auto";
+                            const showTweet = displayType === "tweet"
+                                || (displayType === "auto" && detectPostPlatform(url) === "x");
+                            const showYouTube = displayType === "youtube"
+                                || (displayType === "auto" && Boolean(ytEmbed));
+                            const showArticle = displayType === "article"
+                                || (displayType === "auto" && isInterview && !showTweet && !showYouTube);
+
+                            if (showTweet) return (
+                                <div className="eventcard-tweet" role="region" aria-label={`${displayName} tweet`}>
+                                    <TweetEmbed url={url} />
+                                </div>
+                            );
+
+                            if (showYouTube && ytEmbed) return (
                                 <div className="eventcard-live-embed">
                                     <iframe
                                         src={ytEmbed}
@@ -410,7 +498,32 @@ export default function EventCard({ event }: { event: Event }) {
                                         allowFullScreen
                                     />
                                 </div>
-                            ) : (
+                            );
+
+                            if (showArticle) {
+                                const source = externalSource(url);
+                                const readLabel = isInterview ? "Read interview" : "Read article";
+                                return (
+                                    <a
+                                        className="eventcard-interview-source"
+                                        href={url}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        aria-label={`${readLabel} on ${source.name} (opens in a new tab)`}
+                                    >
+                                        <span className="eventcard-interview-source-icon" aria-hidden="true">▤</span>
+                                        <span className="eventcard-interview-source-copy">
+                                            <strong>{source.name}</strong>
+                                            <span>{source.hostname}</span>
+                                        </span>
+                                        <span className="eventcard-interview-source-action">
+                                            {readLabel} <span aria-hidden="true">↗</span>
+                                        </span>
+                                    </a>
+                                );
+                            }
+
+                            return (
                                 <a
                                     className="eventcard-live-link"
                                     href={url}
@@ -451,7 +564,7 @@ export default function EventCard({ event }: { event: Event }) {
                             <div className="eventcard-live-nav">
                                 <button
                                     className="eventcard-live-nav-btn"
-                                    onClick={() => setLiveIdx((i) => i - 1)}
+                                    onClick={() => selectLiveMedia(liveIdx - 1)}
                                     disabled={liveIdx === 0}
                                 >
                                     ‹ Prev
@@ -462,7 +575,7 @@ export default function EventCard({ event }: { event: Event }) {
                                         <button
                                             key={i}
                                             className={`eventcard-live-dot${i === liveIdx ? " active" : ""}`}
-                                            onClick={() => setLiveIdx(i)}
+                                            onClick={() => selectLiveMedia(i)}
                                             aria-label={`Media ${i + 1}`}
                                         />
                                     ))}
@@ -470,7 +583,7 @@ export default function EventCard({ event }: { event: Event }) {
 
                                 <button
                                     className="eventcard-live-nav-btn"
-                                    onClick={() => setLiveIdx((i) => i + 1)}
+                                    onClick={() => selectLiveMedia(liveIdx + 1)}
                                     disabled={liveIdx === liveUrls.length - 1}
                                 >
                                     Next ›
@@ -478,6 +591,13 @@ export default function EventCard({ event }: { event: Event }) {
                             </div>
                         )}
                     </div>
+                )}
+
+                {isEventDetailPage && event.show_interview_content && event.interview_content && (
+                    <section className="eventcard-interview-content" aria-labelledby={`event-${event.id}-interview-content`}>
+                        <h2 id={`event-${event.id}-interview-content`}>Interview content</h2>
+                        <div>{event.interview_content}</div>
+                    </section>
                 )}
 
                 {authors.length > 0 && (
@@ -511,9 +631,7 @@ export default function EventCard({ event }: { event: Event }) {
                                 to={ROUTES.eventDetail(c.id)}
                                 className="eventcard-interview-item"
                             >
-                                {formatEventDateRange(c) && (
-                                    <span className="eventcard-interview-date">{formatEventDateRange(c)}</span>
-                                )}
+                                <span className="eventcard-interview-date">{formatEventDateRange(c)}</span>
                                 <span>{c.english_name || c.name}</span>
                             </Link>
                         ))}

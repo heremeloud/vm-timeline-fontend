@@ -680,9 +680,12 @@ export default function ManageDisplay() {
                                 dragPosition={dragTarget?.id === item.id ? dragTarget.position : null}
                                 onDragStart={(e) => {
                                     draggedPostIdRef.current = item.id;
-                                    setDraggedPostId(item.id);
                                     e.dataTransfer.effectAllowed = "move";
                                     e.dataTransfer.setData("text/plain", String(item.id));
+                                    // Shrinking the card inside dragstart makes Chrome cancel the drag, so style it afterwards.
+                                    setTimeout(() => {
+                                        if (draggedPostIdRef.current === item.id) setDraggedPostId(item.id);
+                                    }, 0);
                                 }}
                                 onDragOver={(e) => {
                                     e.preventDefault();
@@ -855,8 +858,23 @@ function EventCategoryManager({ categories, loading, reload }: EventCategoryMana
                             />
                             <div className="manage-authors-row-info">
                                 <strong>{category.label}</strong>
-                                <div className="manage-authors-row-sub">{category.subcategories?.length || 0} subcategories · stored as “{category.value}”</div>
+                                <div className="manage-authors-row-sub">
+                                    {category.subcategories?.length || 0} subcategories · stored as “{category.value}”
+                                    {category.is_default ? " · default for event forms" : ""}
+                                </div>
                             </div>
+                            <label className="event-category-default-choice">
+                                <input
+                                    type="radio"
+                                    name="default-event-category"
+                                    checked={category.is_default}
+                                    disabled={saving}
+                                    onChange={() => {
+                                        if (!category.is_default) void run(() => updateEventCategory(category.id, { is_default: true }));
+                                    }}
+                                />
+                                Default
+                            </label>
                             <button type="button" className="manage-authors-row-edit" onClick={() => setSelectedCategoryId(category.id)}>Edit</button>
                             <Button variant="danger" size="small" disabled={saving} className="manage-display-delete" onClick={() => removeCategory(category)}>Delete</Button>
                         </div>

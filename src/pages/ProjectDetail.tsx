@@ -1,11 +1,14 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { getAdminProject, getProject, deleteProject } from "../api/projectsService";
+import { getProjectRelatedPostCounts } from "../api/postsService";
 import { ROUTES } from "../routes";
 import Avatar from "../components/Avatar";
 import RelationshipChartSection from "../components/RelationshipChartSection";
 import "../styles/Projects.css";
 import { formatEventDateRange } from "../utils/eventDateRange";
+import useEventTagIndex from "../hooks/useEventTagIndex";
+import { findEventForHashtag } from "../utils/eventTagLinks";
 import { orderViewMimFirst } from "../utils/authors";
 import { getYouTubeEmbedUrl } from "../utils/media";
 import { Button, ButtonLink } from "../ui";
@@ -23,10 +26,16 @@ function displayHashtag(value?: string | null) {
     return clean ? `#${clean}` : "";
 }
 
+function normalizeHashtag(value?: string | null) {
+    return (value || "").trim().replace(/^#/, "").toLocaleLowerCase();
+}
+
 export default function ProjectDetail() {
     const { projectId } = useParams();
     const navigate = useNavigate();
     const [project, setProject] = useState<Project | null>(null);
+    const [relatedPostCounts, setRelatedPostCounts] = useState<Record<string, number>>({});
+    const eventTagIndex = useEventTagIndex();
     const [loading, setLoading] = useState(true);
     const [copiedKey, setCopiedKey] = useState("");
     const [showFilmingDays, setShowFilmingDays] = useState(false);
@@ -59,6 +68,23 @@ export default function ProjectDetail() {
         load();
     }, [projectId, isAdmin]);
 
+    useEffect(() => {
+        let cancelled = false;
+        getProjectRelatedPostCounts(projectId ?? "").then((res) => {
+            if (cancelled) return;
+            setRelatedPostCounts(Object.fromEntries(
+                Object.entries(res.data || {}).map(([tag, count]) => [normalizeHashtag(tag), count]),
+            ));
+        }).catch((error) => {
+            if (cancelled) return;
+            console.error("Related project post counts load failed:", error);
+            setRelatedPostCounts({});
+        });
+        return () => {
+            cancelled = true;
+        };
+    }, [projectId]);
+
     // Load Twitter widgets script when a tweet_url is present
     useEffect(() => {
         if (!project?.tweet_url) return;
@@ -83,6 +109,23 @@ export default function ProjectDetail() {
     const linkedEvents = project.events ?? [];
     const episodeHasTitles = episodeRows.some((row) => row.title);
     const episodeHasKeywords = episodeRows.some((row) => row.keyword);
+    const hasRelatedPosts = (hashtag?: string | null) =>
+        Boolean(hashtag && (relatedPostCounts[normalizeHashtag(hashtag)] || 0) > 0);
+    // A Q/EP hashtag that belongs to an event opens that event; otherwise it opens the related posts.
+    const entryIndex = (label: string, hashtag: string | null | undefined, referenceDate: string | null | undefined, relatedPostsUrl: string) => {
+        const event = findEventForHashtag(eventTagIndex, hashtag, referenceDate);
+        const to = event?.id != null ? ROUTES.eventDetail(event.id) : hasRelatedPosts(hashtag) ? relatedPostsUrl : null;
+        if (!to) return label;
+        return (
+            <Link
+                className="project-series-related-index"
+                to={to}
+                title={event ? `Open the event for ${displayHashtag(hashtag)}` : `View posts related to ${displayHashtag(hashtag)}`}
+            >
+                {label}
+            </Link>
+        );
+    };
     const externalLinks: ExternalLinkItem[] = [
         project.gmmtv_url && { href: project.gmmtv_url, icon: "/icons/gmmtv_logo.svg", alt: "GMMTV", label: "GMMTV" },
         project.category === "series" && project.official_twitter_url && { href: project.official_twitter_url, icon: "https://cdn.simpleicons.org/x/000000", alt: "X", label: "Official X" },
@@ -236,7 +279,9 @@ export default function ProjectDetail() {
                         </div>
                         {filmingDays.map((row) => (
                             <div className="project-series-metadata-row project-series-q-row" key={row.id || `q-${row.q_number}`}>
-                                <strong>Q{row.q_number}</strong>
+                                <strong>
+                                    {entryIndex(`Q${row.q_number}`, row.hashtag, row.filming_date, ROUTES.projectRelatedPosts(project.slug || project.id, "filming", row.q_number))}
+                                </strong>
                                 <span className="project-series-date">{row.filming_date || ""}</span>
                                 {row.hashtag && (
                                     <span className="project-series-copy-item project-series-hashtag">
@@ -268,7 +313,9 @@ export default function ProjectDetail() {
                         </div>
                         {episodeRows.map((row) => (
                             <div className={`project-series-metadata-row project-series-episode-row${episodeHasTitles ? "" : " project-no-episode-title"}${episodeHasKeywords ? "" : " project-no-episode-keyword"}`} key={row.id || `episode-${row.episode_number}`}>
-                                <strong>EP{row.episode_number}</strong>
+                                <strong>
+                                    {entryIndex(`EP${row.episode_number}`, row.hashtag, row.air_date, ROUTES.projectRelatedPosts(project.slug || project.id, "episodes", row.episode_number))}
+                                </strong>
                                 {episodeHasTitles && <span className="project-series-title">{row.title || ""}</span>}
                                 <span className="project-series-date">{row.air_date || ""}</span>
                                 {row.hashtag && (
@@ -361,10 +408,12 @@ export default function ProjectDetail() {
                             return (
                                 <div key={ev.id}>
                                     <Link to={ROUTES.eventDetail(ev.id)} className="project-detail-event-item">
-                                        <span className="project-detail-event-date">
-                                            {formatEventDateRange(ev, "to")}
+                                        <span className="project-detail-event-copy">
+                                            <span className="project-detail-event-name">{ev.english_name || ev.name}</span>
+                                            <span className="project-detail-event-date">
+                                                {formatEventDateRange(ev, "Date to be announced")}
+                                            </span>
                                         </span>
-                                        <span className="project-detail-event-name">{ev.english_name || ev.name}</span>
                                         {ev.category && (
                                             <span className="project-detail-event-category">
                                                 {ev.category}
@@ -375,10 +424,12 @@ export default function ProjectDetail() {
                                         <div className="project-detail-event-children">
                                             {children.map((child) => (
                                                 <Link key={child.id} to={ROUTES.eventDetail(child.id)} className="project-detail-event-item project-detail-event-child">
-                                                    <span className="project-detail-event-date">
-                                                        {formatEventDateRange(child, "to")}
+                                                    <span className="project-detail-event-copy">
+                                                        <span className="project-detail-event-name">{child.english_name || child.name}</span>
+                                                        <span className="project-detail-event-date">
+                                                            {formatEventDateRange(child, "Date to be announced")}
+                                                        </span>
                                                     </span>
-                                                    <span className="project-detail-event-name">{child.english_name || child.name}</span>
                                                     {child.category && (
                                                         <span className="project-detail-event-category">
                                                             {child.category}
@@ -453,6 +504,7 @@ export default function ProjectDetail() {
                     })}
                 </div>
             )}
+
         </div>
     );
 }

@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { getAdminPost, getPost } from "../api/postsService";
 import PostCard from "../components/PostCard";
+import useEventTagIndex from "../hooks/useEventTagIndex";
 import type { Post } from "../types/models";
 
 export default function PostPage() {
@@ -9,6 +10,7 @@ export default function PostPage() {
 
     const [loading, setLoading] = useState(true);
     const [post, setPost] = useState<Post | null>(null);
+    const eventTagIndex = useEventTagIndex();
     const isAdmin = !!localStorage.getItem("jwt");
 
     useEffect(() => {
@@ -30,6 +32,6 @@ export default function PostPage() {
     if (!post) return <div>Post not found</div>;
 
     return (
-        <PostCard post={post} />
+        <PostCard post={post} eventTagIndex={eventTagIndex} />
     );
 }

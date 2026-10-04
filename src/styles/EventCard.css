@@ -157,12 +157,15 @@
     letter-spacing: 0.05em;
     color: #aaa;
     margin-bottom: 6px;
+    padding-left: 6px;
 }
 
+/* Date column and title column line up across every row of the list. */
 .eventcard-interview-item {
-    display: flex;
-    align-items: center;
-    gap: 8px;
+    display: grid;
+    grid-template-columns: 5.25rem minmax(0, 1fr);
+    align-items: baseline;
+    column-gap: 10px;
     padding: 5px 6px;
     border-radius: 6px;
     text-decoration: none;
@@ -178,8 +181,8 @@
 .eventcard-interview-date {
     font-size: 0.72rem;
     color: #bbb;
-    min-width: 80px;
-    flex-shrink: 0;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
 }
 
 .eventcard-project-link {
@@ -213,7 +216,6 @@
     font-size: 0.9rem;
 }
 
-
 /* ============================= */
 /* BADGES */
 /* ============================= */
@@ -231,57 +233,31 @@
     margin-top: 6px;
 }
 
-.eventcard-date-switcher {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    max-width: 100%;
-    margin-top: 8px;
-    padding-bottom: 2px;
-    overflow-x: auto;
-    scrollbar-width: thin;
-}
-
-.eventcard-date-switcher-icon {
-    flex: 0 0 auto;
-    margin-right: 1px;
-    font-size: 0.9rem;
-    line-height: 1;
-}
-
-.eventcard-date-switcher button {
-    flex: 0 0 auto;
-    appearance: none;
-    padding: 4px 9px;
-    border: 1px solid rgba(149, 88, 3, 0.25);
-    border-radius: 999px;
-    background: #fff;
-    color: #765a37;
-    font: inherit;
-    font-size: 0.74rem;
-    font-weight: 600;
-    line-height: 1.3;
-    cursor: pointer;
-}
-
-.eventcard-date-switcher button:hover {
-    border-color: rgba(149, 88, 3, 0.5);
-    background: #faf3eb;
-}
-
-.eventcard-date-switcher button.active {
-    border-color: #955803;
-    background: #955803;
-    color: #fff;
-}
-
-.eventcard-date-switcher button:focus-visible {
-    outline: 2px solid rgba(149, 88, 3, 0.45);
-    outline-offset: 2px;
-}
-
 .eventcard-live-badge-groups {
     margin-top: 10px;
+}
+
+/* Date pills share one row with the 📅 emoji and wrap together. */
+.eventcard-meta--date-pills {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 6px;
+    opacity: 1;
+}
+
+.eventcard-meta--date-pills > span {
+    opacity: 0.7;
+}
+
+.eventcard-date-pills {
+    display: contents;
+}
+
+.eventcard-meta--date-pills .ui-toggle-button {
+    min-height: 24px;
+    padding: 2px 9px;
+    font-size: 0.74rem;
 }
 
 .eventcard-date-badges {
@@ -460,6 +436,12 @@
     padding-top: 10px;
 }
 
+.eventcard-announcement {
+    margin-top: 20px;
+    border-top: 1px solid var(--ui-content-card-border);
+    padding-top: 10px;
+}
+
 .eventcard-live-title {
     font-size: 0.72rem;
     font-weight: 600;
@@ -467,6 +449,10 @@
     letter-spacing: 0.05em;
     color: #aaa;
     margin-bottom: 8px;
+}
+
+.eventcard-live-date {
+    color: #765a37;
 }
 
 .eventcard-live-embed {
@@ -486,6 +472,23 @@
     border: 0;
 }
 
+.eventcard-tweet {
+    width: 100%;
+    min-width: 0;
+}
+
+.eventcard-tweet .tweet-embed-wrapper {
+    width: 100%;
+    max-width: 550px;
+    min-width: 0;
+    margin: 0 auto;
+}
+
+.eventcard-tweet .tweet-embed-wrapper iframe,
+.eventcard-tweet .tweet-embed-wrapper twitter-widget {
+    width: 100% !important;
+}
+
 .eventcard-live-link {
     display: inline-block;
     font-size: 0.9rem;
@@ -496,6 +499,80 @@
 }
 .eventcard-live-link:hover {
     opacity: 0.9;
+}
+
+.eventcard-interview-source {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: var(--ui-space-3);
+    padding: var(--ui-space-3);
+    border: 1px solid var(--ui-color-border);
+    border-radius: var(--ui-radius-md);
+    background: var(--ui-color-surface-muted);
+    color: var(--ui-color-text);
+    text-decoration: none;
+    box-shadow: var(--ui-shadow-sm);
+    transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
+}
+
+.eventcard-interview-source:hover {
+    border-color: var(--ui-color-accent);
+    background: var(--ui-color-surface);
+    color: var(--ui-color-text);
+}
+
+.eventcard-interview-source:focus-visible {
+    outline: none;
+    box-shadow: var(--ui-focus-ring);
+}
+
+.eventcard-interview-source-icon {
+    display: inline-flex;
+    width: 36px;
+    height: 36px;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--ui-color-border);
+    border-radius: var(--ui-radius-sm);
+    background: var(--ui-color-surface);
+    color: var(--ui-color-accent-strong);
+    font-size: 1.1rem;
+}
+
+.eventcard-interview-source-copy {
+    display: grid;
+    min-width: 0;
+    gap: 2px;
+}
+
+.eventcard-interview-source-copy strong {
+    font-size: 0.9rem;
+}
+
+.eventcard-interview-source-copy span {
+    overflow: hidden;
+    color: var(--ui-color-muted);
+    font-size: 0.72rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.eventcard-interview-source-action {
+    color: var(--ui-color-accent-strong);
+    font-size: 0.82rem;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+@media (max-width: 480px) {
+    .eventcard-interview-source {
+        grid-template-columns: auto minmax(0, 1fr);
+    }
+
+    .eventcard-interview-source-action {
+        grid-column: 2;
+    }
 }
 
 .eventcard-live-count {
@@ -550,3 +627,25 @@
     background: #888;
 }
 
+.eventcard-interview-content {
+    margin-top: 20px;
+    padding-top: var(--ui-space-3);
+    border-top: 1px solid var(--ui-content-card-border);
+}
+
+.eventcard-interview-content h2 {
+    margin: 0 0 var(--ui-space-3);
+    color: var(--ui-color-muted);
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
+.eventcard-interview-content div {
+    color: var(--ui-color-text);
+    font-size: 0.94rem;
+    line-height: 1.65;
+    overflow-wrap: anywhere;
+    white-space: pre-wrap;
+}

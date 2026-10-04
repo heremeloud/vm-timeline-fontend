@@ -5,6 +5,7 @@ export interface CategoryInput {
     name?: string;
     label?: string;
     sort_order?: number;
+    is_default?: boolean;
 }
 
 export interface SubcategoryInput extends CategoryInput {

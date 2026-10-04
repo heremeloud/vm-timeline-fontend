@@ -13,7 +13,7 @@ import { cleanPastedSocialUrls, normalizeSocialPostUrl } from "../utils/postUrls
 import { formatEventDateRange } from "../utils/eventDateRange";
 import EventMediaFields, { cleanEventMediaItems, normalizeEventMediaItems } from "../components/EventMediaFields";
 import { cleanEventDateItems, emptyEventDateItem } from "../utils/eventDateItems";
-import { Button } from "../ui";
+import { Button, Checkbox, FormField, Select, Textarea } from "../ui";
 import DefaultTagRow from "../components/DefaultTagRow";
 import { DEFAULT_TAG_OPTIONS } from "../constants/eventTags";
 import { getLocalToday } from "../utils/dates";
@@ -33,7 +33,7 @@ export default function CreateEvent() {
     // Form fields
     const [name, setName] = useState("");
     const [englishName, setEnglishName] = useState("");
-    const [category, setCategory] = useState("");
+    const [category, setCategory] = useState<string | null>(null);
     const [subcategory, setSubcategory] = useState("");
     const [location, setLocation] = useState("");
     const [keyword, setKeyword] = useState("");
@@ -48,6 +48,9 @@ export default function CreateEvent() {
     const [dateItems, setDateItems] = useState<EventDateItemForm[]>(() => [emptyEventDateItem()]);
     const dates = dateItems.map((item) => item.date);
     const [announcementURLsInput, setAnnouncementURLsInput] = useState("");
+    const [publicAnnouncementUrl, setPublicAnnouncementUrl] = useState("");
+    const [interviewContent, setInterviewContent] = useState("");
+    const [showInterviewContent, setShowInterviewContent] = useState(false);
     const [privateNotes, setPrivateNotes] = useState("");
     const [liveMediaItems, setLiveMediaItems] = useState<EventMediaItem[]>(() => normalizeEventMediaItems());
     const [projectId, setProjectId] = useState("");
@@ -82,7 +85,13 @@ export default function CreateEvent() {
         };
     }, []);
 
-    const subcategoryOptions = eventCategories.find((item) => item.value === category)?.subcategories ?? [];
+    const selectedCategory = category ?? eventCategories.find((item) => item.is_default)?.value ?? "";
+    const isInterview = selectedCategory.toLowerCase() === "interview" || subcategory.toLowerCase() === "interview";
+    const subcategoryOptions = eventCategories.find((item) => item.value === selectedCategory)?.subcategories ?? [];
+    const announcementUrls = useMemo(
+        () => announcementURLsInput.split("\n").map(normalizeSocialPostUrl).filter(Boolean),
+        [announcementURLsInput],
+    );
 
     const tags = useMemo(() => {
         const base = tagsInput.split(",").map((t) => t.trim()).filter(Boolean);
@@ -128,7 +137,7 @@ export default function CreateEvent() {
             await createEvent({
                 name: name.trim(),
                 english_name: englishName.trim() || null,
-                category: category || null,
+                category: selectedCategory || null,
                 subcategory: subcategory || null,
                 location: location.trim() || null,
                 keyword: keyword.trim() || null,
@@ -138,9 +147,14 @@ export default function CreateEvent() {
                 date_items: dateMode === "dates" ? cleanEventDateItems(dateItems) : [],
                 start_date: dateMode === "range" ? startDate || null : null,
                 end_date: dateMode === "range" ? endDate || null : null,
-                announcement_urls: announcementURLsInput.split("\n").map(normalizeSocialPostUrl).filter(Boolean),
+                announcement_urls: announcementUrls,
+                public_announcement_url: announcementUrls.includes(normalizeSocialPostUrl(publicAnnouncementUrl))
+                    ? normalizeSocialPostUrl(publicAnnouncementUrl)
+                    : null,
+                interview_content: interviewContent.trim() || null,
+                show_interview_content: Boolean(interviewContent.trim()) && showInterviewContent,
                 private_notes: privateNotes.trim() || null,
-                live_media_items: cleanEventMediaItems(liveMediaItems),
+                live_media_items: cleanEventMediaItems(liveMediaItems, dateMode === "dates" ? dates : []),
                 author_ids: selectedAuthorIds,
                 project_id: projectId ? Number(projectId) : null,
                 parent_event_id: parentEventId ? Number(parentEventId) : null,
@@ -233,7 +247,7 @@ export default function CreateEvent() {
                 <div className="eventform-section">
                     <label>Category <span className="form-optional">(optional)</span></label>
                     <select
-                        value={category}
+                        value={selectedCategory}
                         onChange={(e) => {
                             setCategory(e.target.value);
                             setSubcategory("");
@@ -292,7 +306,7 @@ export default function CreateEvent() {
                 <EventPhotoFields photos={photos} onChange={setPhotos} dates={dates} dateMode={dateMode} startDate={startDate} endDate={endDate} />
 
                 <div className="eventform-section">
-                    <label>Announcement URLs <span className="form-optional">(optional, private, one per line)</span></label>
+                    <label>Announcement URLs <span className="form-optional">(optional, private unless selected below, one per line)</span></label>
                     <textarea
                         value={announcementURLsInput}
                         onChange={(e) => setAnnouncementURLsInput(e.target.value)}
@@ -300,7 +314,43 @@ export default function CreateEvent() {
                         placeholder={"https://...\nhttps://..."}
                         style={{ minHeight: 80 }}
                     />
+                    <FormField
+                        className="eventform-public-announcement"
+                        label="Public announcement card"
+                        hint="Select one announcement to show publicly. X/Twitter links appear as an embedded tweet."
+                    >
+                        <Select
+                            value={publicAnnouncementUrl}
+                            disabled={announcementUrls.length === 0}
+                            onChange={(e) => setPublicAnnouncementUrl(e.target.value)}
+                        >
+                            <option value="">Do not display an announcement</option>
+                            {announcementUrls.map((url) => <option key={url} value={url}>{url}</option>)}
+                        </Select>
+                    </FormField>
                 </div>
+
+                {isInterview && (
+                    <div className="eventform-section eventform-interview-content">
+                        <FormField
+                            label={<>Interview content <span className="form-optional">(optional, private by default)</span></>}
+                            hint="Save the article text, transcript, or translated interview here. Line breaks are preserved."
+                        >
+                            <Textarea
+                                value={interviewContent}
+                                onChange={(e) => setInterviewContent(e.target.value)}
+                                rows={12}
+                            />
+                        </FormField>
+                        <Checkbox
+                            className="eventform-show-interview-content"
+                            checked={showInterviewContent}
+                            disabled={!interviewContent.trim()}
+                            onChange={(e) => setShowInterviewContent(e.target.checked)}
+                            label="Show this content publicly on the event detail page"
+                        />
+                    </div>
+                )}
 
                 <div className="eventform-section">
                     <label>Private Notes <span className="form-optional">(optional, not shown publicly)</span></label>
@@ -312,7 +362,11 @@ export default function CreateEvent() {
                     />
                 </div>
 
-                <EventMediaFields items={liveMediaItems} onChange={setLiveMediaItems} />
+                <EventMediaFields
+                    items={liveMediaItems}
+                    dateOptions={dateMode === "dates" ? dates.filter(Boolean) : []}
+                    onChange={setLiveMediaItems}
+                />
 
                 <div className="eventform-section">
                     <label>Part of Press Tour <span className="form-optional">(optional)</span></label>

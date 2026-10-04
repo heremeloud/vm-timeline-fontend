@@ -8,6 +8,10 @@ export interface EventDateItemForm {
 
 export const emptyEventDateItem = (): EventDateItemForm => ({ date: "", keyword: "", hashtag: "" });
 
+export function getEventDateMode(event: Partial<Pick<Event, "dates">> = {}): "range" | "dates" {
+    return event.dates?.length ? "dates" : "range";
+}
+
 export function normalizeEventDateItems(event: Partial<Pick<Event, "date_items" | "dates">> = {}): EventDateItemForm[] {
     if (event.date_items?.length) {
         return event.date_items.map((item) => ({

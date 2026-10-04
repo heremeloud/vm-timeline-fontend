@@ -410,17 +410,21 @@
     border-bottom: none;
 }
 
+.project-detail-event-copy {
+    display: grid;
+    min-width: 0;
+    flex: 1;
+    gap: 2px;
+}
+
 .project-detail-event-date {
     font-size: 0.75rem;
     color: #aaa;
-    min-width: 88px;
-    flex-shrink: 0;
 }
 
 .project-detail-event-name {
     font-size: 0.9rem;
     font-weight: 600;
-    flex: 1;
 }
 
 .project-detail-event-category {
@@ -626,6 +630,24 @@
     white-space: nowrap;
 }
 
+.project-series-related-index {
+    color: inherit;
+    text-decoration: underline;
+    text-decoration-color: rgba(149, 88, 3, 0.35);
+    text-underline-offset: 3px;
+}
+
+.project-series-related-index:hover {
+    color: #955803;
+    text-decoration-color: currentColor;
+}
+
+.project-series-related-index:focus-visible {
+    border-radius: 3px;
+    outline: 2px solid rgba(149, 88, 3, 0.45);
+    outline-offset: 2px;
+}
+
 .project-series-q-row {
     grid-template-columns: 52px 110px minmax(0, 1fr) minmax(0, 1fr);
 }
@@ -755,6 +777,39 @@
     text-overflow: clip;
     white-space: normal;
     overflow-wrap: anywhere;
+}
+
+.project-related-page {
+    max-width: 750px;
+    margin: 0 auto;
+    padding: 24px 20px 60px;
+}
+
+.project-related-page-header {
+    margin: 18px 0 22px;
+}
+
+.project-related-page-header h1 {
+    margin: 4px 0 6px;
+    font-size: 1.7rem;
+}
+
+.project-related-page-eyebrow,
+.project-related-page-hashtag {
+    color: #955803;
+    font-size: 0.82rem;
+    font-weight: 700;
+}
+
+.project-related-page-eyebrow {
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
+.project-related-posts-status {
+    margin: 0;
+    color: #777;
+    font-size: 0.9rem;
 }
 
 @media (max-width: 720px) {

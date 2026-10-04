@@ -18,6 +18,7 @@ import EditEvent from "./pages/EditEvent";
 
 import Projects from "./pages/Projects";
 import ProjectDetail from "./pages/ProjectDetail";
+import ProjectRelatedPosts from "./pages/ProjectRelatedPosts";
 import CreateProject from "./pages/CreateProject";
 import EditProject from "./pages/EditProject";
 import Archive from "./pages/Archive";
@@ -43,6 +44,7 @@ function App() {
                 <Route path="/events/:eventId" element={<EventDetail />} />
                 <Route path="/projects" element={<Projects />} />
                 <Route path="/projects/:projectId" element={<ProjectDetail />} />
+                <Route path="/projects/:projectId/:entryType/:entryNumber" element={<ProjectRelatedPosts />} />
                 <Route path="/specials" element={<Topics />} />
                 <Route path="/specials/:topicId" element={<TopicDetail />} />
 
