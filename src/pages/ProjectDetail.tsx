@@ -124,7 +124,7 @@ export default function ProjectDetail() {
     // Days of one type read "D1"; with several types a letter (F / W / P) tells them apart.
     const daysHaveSeveralTypes = new Set(fittingWorkshops.map((row) => row.kind)).size > 1;
     // All three tables share one circle position, so it is set once for the whole page: wider when day labels carry a letter.
-    const listClass = `project-series-metadata-list${isAdmin ? " project-series-metadata-list--counts" : ""}${daysHaveSeveralTypes ? " project-series-metadata-list--letters" : ""}`;
+    const listClass = `project-series-metadata-list project-series-metadata-list--counts${daysHaveSeveralTypes ? " project-series-metadata-list--letters" : ""}`;
     const daysRowClass = `project-series-days-row${daysHaveHashtags ? "" : " project-no-days-hashtag"}${daysHaveKeywords ? "" : " project-no-days-keyword"}`;
     const daysColumnHeader = `project-series-column-header ${daysRowClass}`;
     const childProjects = project.child_projects ?? [];
@@ -154,7 +154,14 @@ export default function ProjectDetail() {
                 aria-label={fullLabel}
             >
                 <span className="project-series-related-label">{label}</span>
-                {isAdmin && relatedCount > 0 && <span className={`project-series-related-count${relatedCount > 99 ? " project-series-related-count--wide" : ""}`} title={`${relatedCount} linked post${relatedCount === 1 ? "" : "s"} (includes posts hidden from the related page)`}>{relatedCount > 99 ? "99+" : relatedCount}</span>}
+                {relatedCount > 0 && (
+                    <span
+                        className={`project-series-related-count${relatedCount > 99 ? " project-series-related-count--wide" : ""}`}
+                        title={`${relatedCount} linked post${relatedCount === 1 ? "" : "s"}${isAdmin ? " (includes posts hidden from the related page)" : ""}`}
+                    >
+                        {relatedCount > 99 ? "99+" : relatedCount}
+                    </span>
+                )}
             </Link>
         );
     };

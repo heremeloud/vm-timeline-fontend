@@ -607,7 +607,7 @@
 }
 
 /* One first-column width for the Fitting & Workshop, Filming Q Days and Episodes tables, so their dates line up.
-   Admins get room for the post-count circle after the label. Sizes are in rem, like the label and the circle, so they
+   Rows get room for the post-count circle after the label. Sizes are in rem, like the label and the circle, so they
    scale together with the reader's text size. */
 .project-series-metadata-list {
     --series-index-col: 3.1rem;
@@ -656,12 +656,12 @@
     text-underline-offset: 3px;
 }
 
-/* Admin: the post-count circle sits right after its label (D1 / Q1 / EP1); the column is wide enough for the longest label plus circle. */
+/* The post-count circle sits right after its label (D1 / Q1 / EP1); the column is wide enough for the longest label plus circle. */
 .project-series-metadata-list--counts {
     --series-index-col: 3.3rem;
 }
 
-/* With several types of day the labels carry a letter ("W D12"), so every label box is wider (and the admin column a little wider). */
+/* With several types of day the labels carry a letter ("W D12"), so every label box and index column is a little wider. */
 .project-series-metadata-list--letters {
     --series-label-min: 3.08em;
 }
