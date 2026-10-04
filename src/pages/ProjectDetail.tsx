@@ -73,11 +73,20 @@ export default function ProjectDetail() {
 
     useEffect(() => {
         let cancelled = false;
-        getProjectRelatedPostCounts(projectId ?? "", isAdmin).then((res) => {
+        const keyed = (counts: Record<string, number>) => Object.fromEntries(
+            Object.entries(counts || {}).map(([tag, count]) => [normalizeHashtag(tag), count]),
+        );
+        // Admins ask for the counts that include posts hidden from the related page. If that request fails (an expired token, the
+        // admin API unreachable...) fall back to the public counts, so the Q / EP links stay instead of vanishing.
+        const load = isAdmin
+            ? getProjectRelatedPostCounts(projectId ?? "", true).catch((error) => {
+                console.warn("Admin related-post counts failed; showing the public counts instead:", error);
+                return getProjectRelatedPostCounts(projectId ?? "", false);
+            })
+            : getProjectRelatedPostCounts(projectId ?? "", false);
+        load.then((res) => {
             if (cancelled) return;
-            setRelatedPostCounts(Object.fromEntries(
-                Object.entries(res.data || {}).map(([tag, count]) => [normalizeHashtag(tag), count]),
-            ));
+            setRelatedPostCounts(keyed(res.data));
         }).catch((error) => {
             if (cancelled) return;
             console.error("Related project post counts load failed:", error);

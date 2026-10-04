@@ -159,3 +159,21 @@ Stored in `ProjectFittingWorkshop` (`kind` = `fitting` | `workshop` | `prep`, `n
 - **Linking.** Rows with a hashtag link like Q/EP; rows without one are linked from the post form (see 2.3).
 
 Backend tests: `tests/test_project_fitting_workshop.py`, `tests/test_event_related_posts.py`.
+
+## 9. Related-post counts: how they are computed and cached
+
+`GET /posts/project/:ref/related-counts` (`routers/posts.py`) feeds the numbers on the project page (the count circles are admin-only).
+
+- **One pass, no N+1.** `_compute_related_counts` runs a fixed number of queries (the project's rows, then one query for the candidate posts that
+  selects only the text columns), extracts each post's hashtags once, and looks them up in a dict of `hashtag -> rows`. The cost grows with
+  the number of posts, not rows x posts, and the query count does not change with the number of rows or posts (covered by a test).
+- **Server cache.** The answer is cached per process for 5 minutes, per project and per view (public / admin). Any write request (POST, PATCH,
+  PUT, DELETE) clears it (`clear_related_counts_after_writes` in `main.py`). On the Vercel deployment the database is read-only and only changes
+  with a deploy (see `on_startup`), so cached answers are always current there.
+- **CDN cache.** The public answer is sent with `Cache-Control: public, max-age=0, s-maxage=300, stale-while-revalidate=60`, so Vercel's edge can
+  answer without running the function (browsers always revalidate, so a local edit shows up at once). The admin answer (`include_hidden`) is
+  `private, no-store` and always needs a valid admin token, even when the public answer is cached.
+- **Frontend.** The project page asks for the admin counts when a token is present and falls back to the public counts if that request fails,
+  so the Q / EP links never disappear. The circles themselves only show for a logged-in admin: the token is stored per site, so being logged in on
+  `localhost` does not log you in on viewmim.info.
+
