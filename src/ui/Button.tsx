@@ -3,7 +3,7 @@ import "../styles/UI.css";
 import { cx } from "./classNames";
 
 export type ButtonVariant = "primary" | "secondary" | "ghost" | "danger" | "add" | "insert" | "save";
-export type ButtonSize = "small" | "medium" | "large";
+export type ButtonSize = "compact" | "small" | "card" | "medium" | "large";
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
     variant?: ButtonVariant;

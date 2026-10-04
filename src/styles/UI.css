@@ -98,6 +98,19 @@
     font-size: 0.8rem;
 }
 
+.ui-button--compact {
+    min-height: 24px;
+    padding: 3px 6px;
+    border-radius: var(--ui-radius-sm);
+    font-size: 0.72rem;
+}
+
+.ui-button--card {
+    min-height: 33px;
+    padding: 6px 11px;
+    font-size: 0.85rem;
+}
+
 .ui-button--medium {
     padding: 8px 13px;
     font-size: 0.9rem;
@@ -795,11 +808,12 @@
 .ui-drop-indicator--compact.ui-drop-indicator--before { top: -5px; }
 .ui-drop-indicator--compact.ui-drop-indicator--after { bottom: -5px; }
 
-/* Floating "+" create control, pinned to the right edge of the viewport. */
+/* Floating "+" create control, bottom-right above the scroll-to-top button (the admin shortcut column fills the mid-right edge). */
 .ui-fab {
     position: fixed;
-    top: calc(50% + 38px);
+    bottom: calc(76px + env(safe-area-inset-bottom));
     right: 20px;
+    z-index: 1000;
     display: flex;
     align-items: center;
     justify-content: center;

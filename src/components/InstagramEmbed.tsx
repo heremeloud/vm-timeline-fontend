@@ -256,25 +256,13 @@ export default function InstagramEmbed({
 
     // 3) Story / manual media → show avatar + carousel
     if (hasMedia) {
+        const currentStoryUrl = allItems[storyIndex]?.url ?? "";
         const avatar = (
             <Avatar
                 url={author_ig_pfp_url || author_photo}
                 authorId={author_id}
                 name={author_name}
             />
-        );
-        const authorName = (
-            <>
-                {author_name}
-                {allItems.length > 1 && (
-                    <span
-                        style={{ fontWeight: 400, fontSize: "0.8rem", opacity: 0.6, lineHeight: 1 }}
-                        aria-live="polite"
-                    >
-                        {storyIndex + 1} / {allItems.length} stories
-                    </span>
-                )}
-            </>
         );
 
         return (
@@ -287,26 +275,35 @@ export default function InstagramEmbed({
                     ) : avatar}
 
                     <div style={{ flex: 1 }}>
-                        {author_name && (
-                            author_instagram_url ? (
+                        <div className="igpost-author">
+                            {author_name && (author_instagram_url ? (
                                 <a
                                     href={author_instagram_url}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="igpost-author ig-author-link"
-                                    style={{ display: "flex", alignItems: "baseline", gap: 8, flexWrap: "wrap", fontWeight: 600, marginBottom: 6 }}
+                                    className="ig-author-link"
                                 >
-                                    {authorName}
+                                    {author_name}
                                 </a>
                             ) : (
-                                <div
-                                className="igpost-author"
-                                style={{ display: "flex", alignItems: "baseline", gap: 8, flexWrap: "wrap", fontWeight: 600, marginBottom: 6 }}
+                                <span>{author_name}</span>
+                            ))}
+                            {allItems.length > 1 && (
+                                <span className="ig-story-progress" aria-live="polite">
+                                    {storyIndex + 1} / {allItems.length} stories
+                                </span>
+                            )}
+                            <a
+                                className="ig-story-download"
+                                href={getMediaDownloadUrl(currentStoryUrl)}
+                                aria-label={`Download story ${storyIndex + 1} of ${allItems.length}`}
+                                title="Download this story"
                             >
-                                    {authorName}
-                                </div>
-                            )
-                        )}
+                                <svg viewBox="0 0 20 20" aria-hidden="true">
+                                    <path d="M10 4.5v10m-4-4 4 4 4-4" />
+                                </svg>
+                            </a>
+                        </div>
 
                         <MediaCarousel
                             items={allItems}

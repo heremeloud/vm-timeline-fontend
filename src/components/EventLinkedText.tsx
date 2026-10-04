@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import EventTagAnchor from "./EventTagAnchor";
 import { getEventTagLinkPath } from "../utils/eventTagLinkPath";
 import { keywordPattern } from "../utils/eventTagLinks";
 import type { EventTagLink } from "../utils/eventTagLinks";
@@ -31,14 +31,14 @@ export default function EventLinkedText({ text, eventTagLinks = [] }: { text?: s
         const destination = getEventTagLinkPath(match);
 
         return (
-            <Link
+            <EventTagAnchor
                 key={`${event.id}-${index}`}
                 to={destination}
                 className="post-event-tag-link"
                 title={hasProjectEntry ? "View related posts" : projectId ? "View related project" : `View event: ${event.name}`}
             >
                 {part}
-            </Link>
+            </EventTagAnchor>
         );
     });
 }

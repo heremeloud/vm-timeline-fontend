@@ -10,12 +10,13 @@ import { orderViewMimFirst } from "../utils/authors";
 import type { Id, Project } from "../types/models";
 import "../styles/Home.css";
 import "../styles/Projects.css";
+import { isAdminView } from "../utils/adminView";
 
 export default function Projects() {
     const [projects, setProjects] = useState<Project[]>([]);
     const [categoryFilter, setCategoryFilter] = useState("");
     const [savingVisibilityId, setSavingVisibilityId] = useState<Id | null>(null);
-    const isAdmin = !!localStorage.getItem("jwt");
+    const isAdmin = isAdminView();
 
     async function toggleVisibility(project: Project) {
         const nextValue = !project.is_visible;

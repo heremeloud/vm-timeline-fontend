@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useLocation, useParams, useNavigate } from "react-router-dom";
 import { getAdminEvent, getEvent, getEventTagIndex } from "../api/eventsService";
 import { getEventPostCandidates } from "../api/postsService";
 import EventCard from "../components/EventCard";
@@ -8,15 +8,26 @@ import { ROUTES } from "../routes";
 import { buildEventTagIndex, getEventTagLinks, linkOpensEvent } from "../utils/eventTagLinks";
 import type { EventTagIndex } from "../utils/eventTagLinks";
 import type { Event, Post } from "../types/models";
+import { isAdminView } from "../utils/adminView";
+import { getEventStartDate } from "../utils/eventDateRange";
+import { FloatingActionLink } from "../ui";
+
+function eventContextText(event: Event, defaultDate: string) {
+    const dateItem = event.date_items.find((item) => item.date === defaultDate);
+    const hashtag = dateItem?.hashtag?.trim() || event.tags.find((tag) => tag.trim())?.trim() || "";
+    if (hashtag) return `#${hashtag.replace(/^#/, "")}`;
+    return dateItem?.keyword?.trim() || event.keyword?.trim() || "";
+}
 
 export default function EventDetail() {
     const { eventId } = useParams();
     const navigate = useNavigate();
+    const location = useLocation();
     const [event, setEvent] = useState<Event | null>(null);
     const [relatedPosts, setRelatedPosts] = useState<Post[]>([]);
     const [eventTagIndex, setEventTagIndex] = useState<EventTagIndex | null>(null);
     const [loading, setLoading] = useState(true);
-    const isAdmin = !!localStorage.getItem("jwt");
+    const isAdmin = isAdminView();
 
     useEffect(() => {
         async function load() {
@@ -62,6 +73,9 @@ export default function EventDetail() {
         }
     }
 
+    const defaultPostedAt = getEventStartDate(event) || "";
+    const defaultTimelineContext = eventContextText(event, defaultPostedAt);
+
     return (
         <div style={{ maxWidth: 750, margin: "0 auto", padding: "24px 20px 60px" }}>
             <button
@@ -81,6 +95,18 @@ export default function EventDetail() {
                         ))}
                     </div>
                 </section>
+            )}
+            {isAdmin && (
+                <FloatingActionLink
+                    to={ROUTES.createPost}
+                    label={`Create post linked to ${event.name}`}
+                    state={{
+                        returnTo: `${location.pathname}${location.search}`,
+                        defaultPostedAt,
+                        defaultTimelineContext,
+                        defaultShowTimelineContext: Boolean(defaultTimelineContext),
+                    }}
+                />
             )}
         </div>
     );

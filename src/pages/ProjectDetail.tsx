@@ -15,6 +15,7 @@ import { orderViewMimFirst } from "../utils/authors";
 import { getYouTubeEmbedUrl } from "../utils/media";
 import { Button, ButtonLink } from "../ui";
 import type { Event, Project } from "../types/models";
+import { isAdminView } from "../utils/adminView";
 
 interface ExternalLinkItem {
     href: string;
@@ -43,7 +44,7 @@ export default function ProjectDetail() {
     const [showFilmingDays, setShowFilmingDays] = useState(false);
     const [showEpisodes, setShowEpisodes] = useState(false);
     const [showFittingWorkshops, setShowFittingWorkshops] = useState(false);
-    const isAdmin = !!localStorage.getItem("jwt");
+    const isAdmin = isAdminView();
 
     async function copyText(value: string | null | undefined, key: string) {
         if (!value) return;

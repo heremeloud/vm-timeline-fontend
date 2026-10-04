@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import type { FormEvent } from "react";
+import { useLocation } from "react-router-dom";
 import "../styles/PostCard.css";
 import { getTextsByPost } from "../api/textsService";
 import {
@@ -19,14 +20,16 @@ import TweetEmbed from "./TweetEmbed";
 import TikTokEmbed from "./TikTokEmbed";
 import AdultTweetCard from "./AdultTweetCard";
 import EventLinkedText from "./EventLinkedText";
+import EventTagAnchor from "./EventTagAnchor";
 
 import IGReply from "./IGReply";
 import TweetReply from "./TweetReply";
 import TikTokReply from "./TikTokReply";
-import { Button } from "../ui";
+import { Alert, Button, ButtonLink, Checkbox, Textarea } from "../ui";
 import { errorDetail } from "../utils/errors";
 import type { EventTagIndex } from "../utils/eventTagLinks";
 import type { Post, PostText } from "../types/models";
+import { isAdminView } from "../utils/adminView";
 
 export interface PostCardProps {
     post: Post;
@@ -40,7 +43,7 @@ export default function PostCard({
     eventTagIndex = null,
 }: PostCardProps) {
     const location = useLocation();
-    const isAdmin = !!localStorage.getItem("jwt");
+    const isAdmin = isAdminView();
     const returnTo = `${location.pathname}${location.search}`;
     const isInstagram = post.platform === "ig" || post.platform === "instagram";
     const isBroadcast = isInstagram && post.content_type === "broadcast";
@@ -54,17 +57,32 @@ export default function PostCard({
             ? "x"
             : "tiktok";
     const rendersAdultFallback = Boolean(post.is_adult);
+    const [timelineContext, setTimelineContext] = useState(post.timeline_context || "");
+    const [showTimelineContext, setShowTimelineContext] = useState(Boolean(post.show_timeline_context));
+    const [showOnRelatedPage, setShowOnRelatedPage] = useState(post.show_on_related_page !== false);
+    const [contextEditorOpen, setContextEditorOpen] = useState(false);
+    const [contextDraft, setContextDraft] = useState(post.timeline_context || "");
+    const [showContextDraft, setShowContextDraft] = useState(Boolean(post.show_timeline_context));
+    const [showRelatedDraft, setShowRelatedDraft] = useState(post.show_on_related_page !== false);
+    const [savingContext, setSavingContext] = useState(false);
+    const [contextError, setContextError] = useState("");
+    const postForLinks = useMemo(() => ({
+        ...post,
+        timeline_context: timelineContext || null,
+        show_timeline_context: showTimelineContext,
+        show_on_related_page: showOnRelatedPage,
+    }), [post, timelineContext, showTimelineContext, showOnRelatedPage]);
     const eventTagLinks = useMemo(
-        () => getEventTagLinks(post, eventTagIndex),
-        [post, eventTagIndex],
+        () => getEventTagLinks(postForLinks, eventTagIndex),
+        [postForLinks, eventTagIndex],
     );
     const standaloneEventTagLinks = useMemo(() => {
         // Keywords are linked inside the "Related Event / Project" text itself, never as separate chips.
         const hashtagLinks = eventTagLinks.filter(({ kind }) => kind !== "keyword");
-        if (!post.timeline_context || !(post.show_timeline_context ?? false))
+        if (!timelineContext || !showTimelineContext)
             return hashtagLinks;
         const contextTags = new Set(
-            (post.timeline_context.match(/#[\p{L}\p{M}\p{N}_]+/gu) || []).map(
+            (timelineContext.match(/#[\p{L}\p{M}\p{N}_]+/gu) || []).map(
                 (tag: string) => tag.slice(1).toLocaleLowerCase(),
             ),
         );
@@ -72,7 +90,7 @@ export default function PostCard({
             ({ hashtag }) =>
                 !contextTags.has(hashtag.replace(/^#/, "").toLocaleLowerCase()),
         );
-    }, [eventTagLinks, post.timeline_context, post.show_timeline_context]);
+    }, [eventTagLinks, timelineContext, showTimelineContext]);
 
     // Hashtag chips sit under posts without a translation; project rows picked in the form always show.
     const hasTranslation = Boolean(post.caption_translation) || Boolean(post.caption_translation_note && (post.show_translation_note ?? true));
@@ -81,17 +99,90 @@ export default function PostCard({
     // Admin only: everything this post links to, even where a checkbox keeps the link off the public page.
     const adminLinks = useMemo(() => {
         if (!isAdmin || !eventTagIndex) return [];
-        return getEventTagLinks(post, eventTagIndex, { includeHiddenTimelineContext: true }).map((link) => ({
+        return getEventTagLinks(postForLinks, eventTagIndex, { includeHiddenTimelineContext: true }).map((link) => ({
             link,
             target: describeLinkTarget(link, eventTagIndex),
             publicLink: eventTagLinks.some((shown) => shown.hashtag === link.hashtag && shown.kind === link.kind),
         }));
-    }, [isAdmin, eventTagIndex, post, eventTagLinks]);
+    }, [isAdmin, eventTagIndex, postForLinks, eventTagLinks]);
 
     const [comments, setComments] = useState<PostText[]>([]);
     const [childrenPosts, setChildrenPosts] = useState<Post[]>([]);
     const [isPublic, setIsPublic] = useState(post.is_visible !== false);
     const [savingVisibility, setSavingVisibility] = useState(false);
+
+    function openContextEditor() {
+        setContextDraft(timelineContext);
+        setShowContextDraft(showTimelineContext);
+        setShowRelatedDraft(showOnRelatedPage);
+        setContextError("");
+        setContextEditorOpen(true);
+    }
+
+    function cancelContextEditor() {
+        setContextDraft(timelineContext);
+        setShowContextDraft(showTimelineContext);
+        setShowRelatedDraft(showOnRelatedPage);
+        setContextError("");
+        setContextEditorOpen(false);
+    }
+
+    async function saveContext(event: FormEvent<HTMLFormElement>) {
+        event.preventDefault();
+        const nextContext = contextDraft.trim();
+        const nextShowContext = Boolean(nextContext) && showContextDraft;
+        setSavingContext(true);
+        setContextError("");
+        try {
+            await updatePost(post.id, {
+                timeline_context: nextContext || null,
+                show_timeline_context: nextShowContext,
+                show_on_related_page: showRelatedDraft,
+            });
+            setTimelineContext(nextContext);
+            setShowTimelineContext(nextShowContext);
+            setShowOnRelatedPage(showRelatedDraft);
+            setContextEditorOpen(false);
+        } catch (err) {
+            console.error("Related Event / Project update failed:", err);
+            setContextError(errorDetail(err, "Could not update Related Event / Project."));
+        } finally {
+            setSavingContext(false);
+        }
+    }
+
+    async function toggleContextVisibility(nextValue: boolean) {
+        if (!timelineContext) return;
+        const previousValue = showTimelineContext;
+        setShowTimelineContext(nextValue);
+        setSavingContext(true);
+        setContextError("");
+        try {
+            await updatePost(post.id, { show_timeline_context: nextValue });
+        } catch (err) {
+            setShowTimelineContext(previousValue);
+            console.error("Related Event / Project visibility update failed:", err);
+            setContextError(errorDetail(err, "Could not update Related Event / Project visibility."));
+        } finally {
+            setSavingContext(false);
+        }
+    }
+
+    async function toggleRelatedPageVisibility(nextValue: boolean) {
+        const previousValue = showOnRelatedPage;
+        setShowOnRelatedPage(nextValue);
+        setSavingContext(true);
+        setContextError("");
+        try {
+            await updatePost(post.id, { show_on_related_page: nextValue });
+        } catch (err) {
+            setShowOnRelatedPage(previousValue);
+            console.error("Related page visibility update failed:", err);
+            setContextError(errorDetail(err, "Could not update related-page visibility."));
+        } finally {
+            setSavingContext(false);
+        }
+    }
 
     async function togglePublicVisibility() {
         const nextValue = !isPublic;
@@ -106,6 +197,21 @@ export default function PostCard({
             alert("Could not update this post's public visibility.");
         } finally {
             setSavingVisibility(false);
+        }
+    }
+
+    async function handleDeletePost() {
+        if (!confirm("Delete this post?")) return;
+
+        try {
+            await deletePost(post.id);
+            window.location.reload();
+        } catch (err) {
+            console.error("Delete post failed:", err);
+            alert(
+                "Delete failed: " +
+                    errorDetail(err, err instanceof Error ? err.message : "Unknown error"),
+            );
         }
     }
 
@@ -182,60 +288,62 @@ export default function PostCard({
 
     return (
         <div className={`post-wrapper ui-content-card ui-content-card--post ui-platform-${platformTone}`}>
-            {isAdmin && (
-                <label
-                    className="post-visibility-toggle"
-                    title={
-                        isPublic
-                            ? "Visible to the public"
-                            : "Hidden from the public"
-                    }
-                >
-                    <input
-                        type="checkbox"
-                        checked={isPublic}
-                        disabled={savingVisibility}
-                        onChange={togglePublicVisibility}
-                        aria-label="Show this post to the public"
-                    />
-                    <span>{savingVisibility ? "Saving…" : "Public"}</span>
-                </label>
-            )}
-            {post.posted_at && (
-                <div className="post-date">
-                    <span className={`post-platform-dot post-platform-dot--${platformTone}`} />
-                    <span className="post-platform-name">
-                        {isBroadcast
-                            ? "Instagram Broadcast Channel"
-                            : isInstagram
-                              ? "Instagram"
-                              : isTwitter
-                                ? "X (Twitter)"
-                                : "TikTok"}
-                    </span>
-                    <span className="post-date-sep">·</span>
-                    {isAdmin && post.posted_at_utc
-                        ? new Date(post.posted_at_utc).toLocaleString("en-US", {
-                              timeZone: "Asia/Bangkok",
-                              year: "numeric",
-                              month: "long",
-                              day: "numeric",
-                              hour: "numeric",
-                              minute: "2-digit",
-                              second: "2-digit",
-                              timeZoneName: "short",
-                          })
-                        : new Date(
-                              post.posted_at + "T00:00:00",
-                          ).toLocaleDateString("en-US", {
-                              year: "numeric",
-                              month: "long",
-                              day: "numeric",
-                          })}
-                    {isAdmin &&
-                        post.posted_at_utc &&
-                        post.posted_at_is_estimated &&
-                        " (estimated)"}
+            {(post.posted_at || isAdmin) && (
+                <div className="post-card-topline">
+                    {post.posted_at && (
+                        <div className="post-date">
+                            <span className={`post-platform-dot post-platform-dot--${platformTone}`} />
+                            <span className="post-platform-name">
+                                {isBroadcast
+                                    ? "Instagram Broadcast Channel"
+                                    : isInstagram
+                                      ? "Instagram"
+                                      : isTwitter
+                                        ? "X (Twitter)"
+                                        : "TikTok"}
+                            </span>
+                            <span className="post-date-sep">·</span>
+                            {isAdmin && post.posted_at_utc
+                                ? new Date(post.posted_at_utc).toLocaleString("en-US", {
+                                      timeZone: "Asia/Bangkok",
+                                      year: "numeric",
+                                      month: "long",
+                                      day: "numeric",
+                                      hour: "numeric",
+                                      minute: "2-digit",
+                                      second: "2-digit",
+                                      timeZoneName: "short",
+                                  })
+                                : new Date(
+                                      post.posted_at + "T00:00:00",
+                                  ).toLocaleDateString("en-US", {
+                                      year: "numeric",
+                                      month: "long",
+                                      day: "numeric",
+                                  })}
+                            {isAdmin &&
+                                post.posted_at_utc &&
+                                post.posted_at_is_estimated &&
+                                " (estimated)"}
+                        </div>
+                    )}
+                    {isAdmin && (
+                        <div className="post-card-admin-actions">
+                            <label
+                                className="post-visibility-toggle"
+                                title={isPublic ? "Visible to the public" : "Hidden from the public"}
+                            >
+                                <input
+                                    type="checkbox"
+                                    checked={isPublic}
+                                    disabled={savingVisibility}
+                                    onChange={togglePublicVisibility}
+                                    aria-label="Show this post to the public"
+                                />
+                                <span>{savingVisibility ? "Saving…" : "Public"}</span>
+                            </label>
+                        </div>
+                    )}
                 </div>
             )}
             <div className="post-embed">
@@ -381,22 +489,107 @@ export default function PostCard({
                     </div>
                 )}
 
-            {post.timeline_context && (post.show_timeline_context ?? false) && (
+            {isAdmin ? (
                 <aside
-                    className="post-timeline-context"
-                    aria-label=", added by the timeline curator"
+                    className={`post-timeline-context post-timeline-context--admin${!timelineContext ? " is-empty" : showTimelineContext ? "" : " is-hidden"}`}
+                    aria-label="Edit Related Event / Project"
                 >
+                    {contextEditorOpen ? (
+                        <form className="post-context-editor" onSubmit={saveContext}>
+                            <label className="post-timeline-context-label" htmlFor={`post-context-${post.id}`}>
+                                Related Event / Project <span className="form-optional">(optional)</span>
+                            </label>
+                            <Textarea
+                                id={`post-context-${post.id}`}
+                                rows={3}
+                                value={contextDraft}
+                                disabled={savingContext}
+                                placeholder="Explain what this post relates to. Add an event or project hashtag to link it."
+                                onChange={(event) => setContextDraft(event.target.value)}
+                                autoFocus
+                            />
+                            <Checkbox
+                                label="Show Related Event / Project to visitors"
+                                checked={showContextDraft}
+                                disabled={savingContext || !contextDraft.trim()}
+                                onChange={(event) => setShowContextDraft(event.target.checked)}
+                            />
+                            <Checkbox
+                                label="Show post on related event page (even if hidden from the TL)"
+                                checked={showRelatedDraft}
+                                disabled={savingContext}
+                                onChange={(event) => setShowRelatedDraft(event.target.checked)}
+                            />
+                            {contextError && <Alert variant="error">{contextError}</Alert>}
+                            <div className="post-context-editor-actions">
+                                <Button type="submit" variant="save" size="small" disabled={savingContext}>
+                                    {savingContext ? "Saving…" : "Save"}
+                                </Button>
+                                <Button variant="secondary" size="small" disabled={savingContext} onClick={cancelContextEditor}>
+                                    Cancel
+                                </Button>
+                            </div>
+                        </form>
+                    ) : (
+                        <>
+                            <div className="post-timeline-context-header">
+                                <div className="post-timeline-context-label">
+                                    Related Event / Project
+                                </div>
+                                <div className="post-context-visibility-controls">
+                                    {timelineContext ? (
+                                        <>
+                                            <Checkbox
+                                                className="post-context-visibility-toggle"
+                                                label={savingContext ? "Saving…" : "Visible to visitors"}
+                                                title="Display the Related Event / Project text to visitors"
+                                                checked={showTimelineContext}
+                                                disabled={savingContext}
+                                                onChange={(event) => void toggleContextVisibility(event.target.checked)}
+                                            />
+                                            <Checkbox
+                                                className="post-context-visibility-toggle"
+                                                label="On related page"
+                                                title="Show this post on its related event or project page, even if it is hidden from the timeline"
+                                                checked={showOnRelatedPage}
+                                                disabled={savingContext}
+                                                onChange={(event) => void toggleRelatedPageVisibility(event.target.checked)}
+                                            />
+                                            <Button variant="ghost" size="small" disabled={savingContext} onClick={openContextEditor}>Edit</Button>
+                                        </>
+                                    ) : (
+                                        <Button variant="add" size="compact" onClick={openContextEditor}>
+                                            + Add # / Keyword
+                                        </Button>
+                                    )}
+                                </div>
+                            </div>
+                            {timelineContext && (
+                                <p>
+                                    {/* Admins can follow the link even while "Visible to visitors" is off. */}
+                                    <EventLinkedText
+                                        text={timelineContext}
+                                        eventTagLinks={adminLinks.map(({ link }) => link)}
+                                    />
+                                </p>
+                            )}
+                            {contextError && <Alert variant="error">{contextError}</Alert>}
+                        </>
+                    )}
+                </aside>
+            ) : timelineContext && showTimelineContext ? (
+                <aside className="post-timeline-context" aria-label=", added by the timeline curator">
                     <div className="post-timeline-context-label">
                         Related Event / Project
                     </div>
                     <p>
                         <EventLinkedText
-                            text={post.timeline_context}
+                            text={timelineContext}
                             eventTagLinks={eventTagLinks}
                         />
                     </p>
                 </aside>
-            )}
+            ) : null}
 
             {/* Separate media block for X.
           If TweetEmbed already handles media, can remove this. */}
@@ -416,7 +609,7 @@ export default function PostCard({
                             (link) => {
                                 const { hashtag, event, projectId, projectEntryType, projectEntryNumber } = link;
                                 return (
-                                <Link
+                                <EventTagAnchor
                                     key={`${hashtag}-${event.id}`}
                                     to={getEventTagLinkPath(link)}
                                     className="post-event-tag-link"
@@ -429,7 +622,7 @@ export default function PostCard({
                                     }
                                 >
                                     {hashtag}
-                                </Link>
+                                </EventTagAnchor>
                                 );
                             },
                         )}
@@ -445,16 +638,14 @@ export default function PostCard({
                             className={`post-admin-link${publicLink ? "" : " is-hidden"}`}
                             title={publicLink ? undefined : "Not linked on the public post: \"Show Related Event / Project\" is off"}
                         >
-                            <span className="post-admin-link-tag">{link.hashtag}</span>
-                            <span aria-hidden="true">→</span>
                             <span>
                                 {target.kind === "event" ? "Event" : target.kind === "project" ? "Project" : "Project entry"}:{" "}
-                                <Link to={getEventTagLinkPath(link)} className="post-admin-link-target">{target.label}</Link>
+                                <EventTagAnchor to={getEventTagLinkPath(link)} className="post-admin-link-target">{target.label}</EventTagAnchor>
                             </span>
                             {!publicLink && <span className="post-admin-link-note">(hidden)</span>}
                         </span>
                     ))}
-                    {post.show_on_related_page === false && (
+                    {!showOnRelatedPage && (
                         <span className="post-admin-link-note">Not listed on related pages</span>
                     )}
                 </div>
@@ -489,48 +680,34 @@ export default function PostCard({
 
             {isAdmin && (
                 <div className="post-actions">
-                    <Link
-                        to={ROUTES.addReply(post.id)}
-                        state={{ returnTo }}
-                        onClick={saveReturnScroll}
-                        className="ui-button ui-button--add ui-button--medium"
-                    >
-                        {isInstagram
-                            ? "+ Add IG Reply"
-                            : isTikTok
-                              ? "+ Add TikTok Reply"
-                              : "+ Add Tweet Reply"}
-                    </Link>
+                    <div className="post-action-row">
+                        <ButtonLink
+                            to={ROUTES.addReply(post.id)}
+                            state={{ returnTo }}
+                            onClick={saveReturnScroll}
+                            variant="add"
+                            size="card"
+                        >
+                            {isInstagram
+                                ? "+ Add IG Reply"
+                                : isTikTok
+                                  ? "+ Add TT Reply"
+                                  : "+ Add TWT Reply"}
+                        </ButtonLink>
 
-                    <Link
-                        to={ROUTES.editPost(post.id)}
-                        state={{ returnTo }}
-                        onClick={saveReturnScroll}
-                        className="ui-button ui-button--primary ui-button--medium"
-                    >
-                        Edit Post
-                    </Link>
-
-                    <Button
-                        variant="danger"
-                        size="medium"
-                        onClick={async () => {
-                            if (confirm("Delete this post?")) {
-                                try {
-                                    await deletePost(post.id);
-                                    window.location.reload();
-                                } catch (err) {
-                                    console.error("Delete post failed:", err);
-                                    alert(
-                                        "Delete failed: " +
-                                            errorDetail(err, err instanceof Error ? err.message : "Unknown error"),
-                                    );
-                                }
-                            }
-                        }}
-                    >
-                        Delete Post
-                    </Button>
+                        <ButtonLink
+                            to={ROUTES.editPost(post.id)}
+                            state={{ returnTo }}
+                            onClick={saveReturnScroll}
+                            variant="primary"
+                            size="card"
+                        >
+                            Edit Post
+                        </ButtonLink>
+                        <Button variant="danger" size="card" onClick={handleDeletePost}>
+                            Delete Post
+                        </Button>
+                    </div>
                 </div>
             )}
         </div>

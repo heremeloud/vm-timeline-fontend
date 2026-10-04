@@ -38,6 +38,7 @@ type AuthorPayload = Record<TextKey, string | null> & {
 };
 
 const CATEGORY_OPTIONS = [
+    { value: "main", label: "Main Artist" },
     { value: "artist", label: "Artist" },
     { value: "crew", label: "Crew" },
     { value: "official", label: "Official Account" },

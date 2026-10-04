@@ -12,6 +12,7 @@ import useEventCategories from "../hooks/useEventCategories";
 import { getEventStartDate } from "../utils/eventDateRange";
 import { FilterBar, FilterDivider, FilterField, FilterRow, FloatingActionLink, Pagination, Select, TextInput, ToggleButton, ToggleGroup } from "../ui";
 import type { Event, EventView } from "../types/models";
+import { isAdminView } from "../utils/adminView";
 
 type ViewMode = "list" | "calendar";
 
@@ -91,7 +92,7 @@ function eventOverlapsDay(event: Event, dayKey: string) {
 export default function Events() {
     const { eventViewSlug } = useParams();
     const [searchParams, setSearchParams] = useSearchParams();
-    const isAdmin = !!localStorage.getItem("jwt");
+    const isAdmin = isAdminView();
     const { categories: eventCategories } = useEventCategories();
     const [savedView, setSavedView] = useState<EventView | null>(null);
     const [savedViewLoading, setSavedViewLoading] = useState(!!eventViewSlug);
@@ -595,7 +596,7 @@ export default function Events() {
             )}
 
             {/* Create Event button (admin only) */}
-            {localStorage.getItem("jwt") && (
+            {isAdmin && (
                 <FloatingActionLink to={ROUTES.createEvent} label="Create event" />
             )}
                 </>

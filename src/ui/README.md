@@ -25,7 +25,7 @@ Tokens (`--ui-*`) and all primitive CSS live in [`src/styles/UI.css`](../styles/
 
 | Primitive | Use for | Notes |
 | --- | --- | --- |
-| `Button` | Any action | `variant`: `primary` `secondary`(default) `ghost` `danger` `add` `insert` `save`; `size`: `small` `medium`(default) `large`. `type="button"` by default. |
+| `Button` | Any action | `variant`: `primary` `secondary`(default) `ghost` `danger` `add` `insert` `save`; `size`: `compact` `small` `card` `medium`(default) `large`. `type="button"` by default. |
 | `ButtonLink` | Navigation that looks like a button | Wraps react-router `Link`; same `variant`/`size`. Never nest a `<button>` in a `<Link>`. |
 | `ToggleButton` / `ToggleGroup` | Immediate choices | `active` sets `aria-pressed` (or `aria-selected` with `role="tab"`); `segmented` for mutually exclusive; `compact` for small 1px-border pills in dense rows. |
 | `FormField` | Label + hint + error + required around **one** control | Injects `id`, `required`, `aria-invalid`, `aria-describedby` into its child. |
@@ -37,7 +37,7 @@ Tokens (`--ui-*`) and all primitive CSS live in [`src/styles/UI.css`](../styles/
 | `Card` `CardGrid` `Stack` `Inline` | Surfaces and layout | Gaps are `1`–`4` (4/8/12/16px). `CardGrid` is the only responsive card grid. |
 | `CarouselControls` | Arrows + dots for media | Wrap media in `.media-carousel`. |
 | `DragHandle` `DropIndicator` `reorderItems` | Drag to reorder | Row owns `onDragOver`/`onDrop`; `DropIndicator` (row must be `position: relative`) shows the target; `reorderItems` moves immutably. |
-| `FloatingActionButton` / `FloatingActionLink` | The round "+" create control | `label` is the accessible name. |
+| `FloatingActionButton` / `FloatingActionLink` | The round "+" create control | `label` is the accessible name.  Sits bottom-right above scroll-to-top, clear of the admin shortcut column. |
 | `FocalPointPicker` | Display Focus for photos/artwork | Re-exported from `components/`. |
 | `cx(...)` | Join class names | Skips falsy values. |
 

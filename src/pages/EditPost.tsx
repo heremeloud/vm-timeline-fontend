@@ -557,7 +557,7 @@ export default function EditPost() {
                             checked={showOnRelatedPage}
                             onChange={(e) => setShowOnRelatedPage(e.target.checked)}
                         />
-                        Show post on related event page (even if hidden from the timeline)
+                        Show post on related event page (even if hidden from the TL)
                     </label>
                     <div className="eventform-field-note">The first checkbox controls the label on the post. The second controls whether the post appears on the related page.</div>
                 </div>

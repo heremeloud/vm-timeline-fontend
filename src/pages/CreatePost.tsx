@@ -23,11 +23,20 @@ import { errorDetail } from "../utils/errors";
 import type { Author } from "../types/models";
 import "../styles/EventForm.css";
 
+interface CreatePostLocationState {
+    returnTo?: string;
+    defaultPostedAt?: string;
+    defaultTimelineContext?: string;
+    defaultShowTimelineContext?: boolean;
+    defaultEntryLinks?: ProjectEntryLink[];
+}
+
 export default function CreatePost() {
     const mediaUploaderRef = useRef<R2MediaUploaderHandle>(null);
     const navigate = useNavigate();
     const location = useLocation();
-    const returnTo = location.state?.returnTo;
+    const createPostState = location.state as CreatePostLocationState | null;
+    const returnTo = createPostState?.returnTo;
     const [params] = useSearchParams();
 
     // If this is a reply page: /create-post?parent=3
@@ -42,8 +51,8 @@ export default function CreatePost() {
     // form fields
     const [external_url, setExternalURL] = useState("");
     const [posted_at, setPostedAt] = useState(() => {
-        const defaultDate = location.state?.defaultPostedAt;
-        return /^\d{4}-\d{2}-\d{2}$/.test(defaultDate || "") ? defaultDate : "";
+        const defaultDate = createPostState?.defaultPostedAt || "";
+        return /^\d{4}-\d{2}-\d{2}$/.test(defaultDate) ? defaultDate : "";
     });
     const [postedTime, setPostedTime] = useState("");
     const [postedAtIsEstimated, setPostedAtIsEstimated] = useState(false);
@@ -51,10 +60,10 @@ export default function CreatePost() {
     const [caption, setCaption] = useState("");
     const [captionTranslation, setCaptionTranslation] = useState("");
     const [captionTranslationNote, setCaptionTranslationNote] = useState("");
-    const [timelineContext, setTimelineContext] = useState("");
-    const [showTimelineContext, setShowTimelineContext] = useState(false);
+    const [timelineContext, setTimelineContext] = useState(() => createPostState?.defaultTimelineContext?.trim() || "");
+    const [showTimelineContext, setShowTimelineContext] = useState(() => createPostState?.defaultShowTimelineContext === true);
     const [showOnRelatedPage, setShowOnRelatedPage] = useState(true);
-    const [entryLinks, setEntryLinks] = useState<ProjectEntryLink[]>([]);
+    const [entryLinks, setEntryLinks] = useState<ProjectEntryLink[]>(() => createPostState?.defaultEntryLinks || []);
     const [showTranslationNote, setShowTranslationNote] = useState(true);
     const [mediaURL, setMediaURL] = useState("");
     const [isVisible, setIsVisible] = useState(true);
@@ -524,7 +533,7 @@ export default function CreatePost() {
                             checked={showOnRelatedPage}
                             onChange={(e) => setShowOnRelatedPage(e.target.checked)}
                         />
-                        Show post on related event page (even if hidden from the timeline)
+                        Show post on related event page (even if hidden from the TL)
                     </label>
                     <div className="eventform-field-note">The first checkbox controls the label on the post. The second controls whether the post appears on the related page.</div>
                 </div>

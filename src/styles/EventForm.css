@@ -681,21 +681,6 @@
     margin-bottom: 6px;
 }
 
-/* Description on top, the add buttons and column toggles below it, left-aligned (three add buttons do not fit beside the text). */
-.series-metadata-heading--stacked {
-    flex-direction: column;
-    align-items: stretch;
-}
-
-.series-metadata-heading--stacked .series-metadata-actions {
-    align-items: flex-start;
-}
-
-.series-metadata-heading--stacked .series-metadata-action-buttons,
-.series-metadata-heading--stacked .series-metadata-toggles {
-    justify-content: flex-start;
-}
-
 .series-metadata-heading > div:first-child > label {
     margin-bottom: 2px;
     font-size: 1.05rem;
@@ -1474,6 +1459,7 @@
     cursor: pointer;
 }
 
+.author-category-select.cat-main { background-color: #955803; }
 .author-category-select.cat-artist { background-color: #a4614f; }
 .author-category-select.cat-crew { background-color: #5b7a99; }
 .author-category-select.cat-official { background-color: #8a5ba4; }

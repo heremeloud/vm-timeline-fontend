@@ -19,6 +19,7 @@ import { getYouTubeEmbedUrl } from "../utils/media";
 import { orderViewMimFirst } from "../utils/authors";
 import type { Event } from "../types/models";
 import { detectPostPlatform } from "../utils/postUrls";
+import { isAdminView } from "../utils/adminView";
 
 // YYYY-MM-DD -> YYYY-MM-DD + 1 day (Twitter until: is exclusive)
 function addOneDay(yyyyMmDd: string | null | undefined) {
@@ -149,7 +150,7 @@ export default function EventCard({ event }: { event: Event }) {
     const datedItems = dateItems.filter((item) => item.date);
     const eventDates = getEventDates(event);
     const authors = orderViewMimFirst(event.authors || []);
-    const isAdmin = !!localStorage.getItem("jwt");
+    const isAdmin = isAdminView();
     const photos = normalizeEventPhotos(event);
 
     const copyTimer = useRef<number | undefined>(undefined);

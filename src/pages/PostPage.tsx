@@ -4,6 +4,7 @@ import { getAdminPost, getPost } from "../api/postsService";
 import PostCard from "../components/PostCard";
 import useEventTagIndex from "../hooks/useEventTagIndex";
 import type { Post } from "../types/models";
+import { isAdminView } from "../utils/adminView";
 
 export default function PostPage() {
     const { postId } = useParams();
@@ -11,7 +12,7 @@ export default function PostPage() {
     const [loading, setLoading] = useState(true);
     const [post, setPost] = useState<Post | null>(null);
     const eventTagIndex = useEventTagIndex();
-    const isAdmin = !!localStorage.getItem("jwt");
+    const isAdmin = isAdminView();
 
     useEffect(() => {
         async function load() {

@@ -6,6 +6,7 @@ import { Button } from "../ui";
 import { resolvePhotoUrl } from "../utils/media";
 import type { Author } from "../types/models";
 import "../styles/Archive.css";
+import { isAdminView } from "../utils/adminView";
 
 type SocialKey = "twitter_url" | "instagram_url" | "tiktok_url" | "gmmtv_url" | "mydramalist_url" | "fc_url";
 type DraftKey = SocialKey | "name" | "nickname" | "full_name" | "birthday" | "ig_pfp_url" | "twitter_pfp_url" | "tiktok_pfp_url";
@@ -49,7 +50,7 @@ function ProfileCard({ author, ...rest }: ProfileCardProps) {
 }
 
 function ProfileCardContent({ author: initialAuthor, defaultPhoto, thaiFullName, fcIcon = "🤎", className = "" }: ProfileCardProps & { author: Author }) {
-    const isAdmin = !!localStorage.getItem("jwt");
+    const isAdmin = isAdminView();
     const [editing, setEditing] = useState(false);
     const [author, setAuthor] = useState<Author>(initialAuthor);
     const [draft, setDraft] = useState<AuthorDraft>(EMPTY_DRAFT);

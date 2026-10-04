@@ -99,6 +99,11 @@
     width: 140px;
 }
 
+/* Admin-only author group checkboxes: their own row under the Platform / Sort filters. */
+.filter-bar--two-row .timeline-author-filters {
+    grid-column: 1 / -1;
+}
+
 /* ============================= */
 /* EVENTS CALENDAR               */
 /* ============================= */

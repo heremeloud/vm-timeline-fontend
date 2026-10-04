@@ -286,11 +286,22 @@
     line-height: 1.35;
 }
 
-.post-visibility-toggle {
+.post-card-topline {
+    margin-bottom: 4px;
+}
+
+.post-card-admin-actions {
     position: absolute;
     top: 12px;
     right: 12px;
     z-index: 2;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 6px;
+}
+
+.post-visibility-toggle {
     display: inline-flex;
     align-items: center;
     gap: 4px;
@@ -320,10 +331,8 @@
 }
 
 .post-date {
-    padding-right: 62px;
-}
-
-.post-date {
+    min-width: 0;
+    padding-right: 80px;
     display: flex;
     align-items: center;
     gap: 5px;
@@ -400,6 +409,62 @@
 
 .igpost-row > div {
     min-width: 0;
+}
+
+.igpost-author {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 6px;
+    font-weight: 600;
+}
+
+.ig-story-progress {
+    font-size: 0.8rem;
+    font-weight: 400;
+    line-height: 1;
+    opacity: 0.6;
+}
+
+.ig-story-download {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    width: 18px;
+    height: 18px;
+    margin-left: -3px;
+    padding: 0;
+    border: 1px solid currentColor;
+    border-radius: 50%;
+    background: transparent;
+    color: inherit;
+    opacity: 0.58;
+    text-decoration: none;
+}
+
+.ig-story-download:hover {
+    background: rgba(0, 0, 0, 0.05);
+    color: inherit;
+    opacity: 1;
+}
+
+.ig-story-download:focus-visible {
+    outline: 2px solid currentColor;
+    outline-offset: 2px;
+    opacity: 1;
+}
+
+.ig-story-download svg {
+    display: block;
+    width: 14px;
+    height: 14px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.7;
+    stroke-linecap: round;
+    stroke-linejoin: round;
 }
 
 .ig-archive-card {
@@ -567,6 +632,82 @@
     text-transform: uppercase;
 }
 
+.post-timeline-context--admin.is-hidden,
+.post-timeline-context--admin.is-empty {
+    border-left-style: dashed;
+    background: rgba(166, 124, 82, 0.04);
+}
+
+.post-timeline-context-header {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 5px;
+}
+
+.post-timeline-context-header .post-timeline-context-label {
+    margin: 0 auto 0 0;
+}
+
+.post-context-visibility-toggle.ui-checkbox {
+    flex: none;
+    gap: 4px;
+    height: 22px;
+    min-height: 0;
+    margin: 0;
+    padding: 0 5px;
+    box-sizing: border-box;
+    border: 1px solid rgba(166, 124, 82, 0.32);
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.55);
+    color: #4b4039;
+    font-size: 0.74rem;
+    font-weight: 500;
+    line-height: 1;
+    white-space: nowrap;
+}
+
+.post-context-visibility-toggle.ui-checkbox input {
+    width: 12px;
+    height: 12px;
+    margin: 0;
+    accent-color: #955803;
+}
+
+.post-context-visibility-controls {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px 10px;
+}
+
+.post-context-editor {
+    display: grid;
+    gap: 8px;
+}
+
+.post-context-editor .post-timeline-context-label {
+    margin: 0;
+}
+
+.post-context-editor .ui-checkbox {
+    align-items: flex-start;
+    margin: 0;
+    font-size: 0.78rem;
+    line-height: 1.35;
+}
+
+.post-context-editor .ui-checkbox input {
+    flex: 0 0 17px;
+    margin-top: 2px;
+}
+
+.post-context-editor-actions {
+    display: flex;
+    gap: 8px;
+}
+
 .post-timeline-context p {
     margin: 0;
     white-space: pre-wrap;
@@ -617,8 +758,16 @@
 
 .post-actions {
     display: flex;
+    flex-direction: column;
+    align-items: flex-start;
     gap: 6px;
     margin-top: 25px;
+}
+
+.post-action-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
 }
 
 
@@ -649,11 +798,6 @@
     flex-wrap: wrap;
     align-items: center;
     gap: 4px;
-}
-
-.post-admin-link-tag {
-    font-weight: 600;
-    color: #955803;
 }
 
 .post-admin-link-target {

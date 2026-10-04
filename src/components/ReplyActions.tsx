@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { Button } from "../ui";
 import "../styles/ReplyActions.css";
+import { isAdminView } from "../utils/adminView";
 
 interface ReplyAdminActionsProps {
     onEdit: () => void;
@@ -9,7 +10,7 @@ interface ReplyAdminActionsProps {
 
 /** Edit / Delete controls under a reply; shown to the signed-in admin only. */
 export function ReplyAdminActions({ onEdit, onDelete }: ReplyAdminActionsProps) {
-    if (!localStorage.getItem("jwt")) return null;
+    if (!isAdminView()) return null;
 
     return (
         <div className="reply-admin-actions">

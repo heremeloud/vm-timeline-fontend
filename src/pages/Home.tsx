@@ -8,17 +8,22 @@ import PostCard from "../components/PostCard";
 import { buildEventTagIndex } from "../utils/eventTagLinks";
 import { FilterBar, FilterDivider, FilterField, FilterRow, FloatingActionButton, Pagination, Select } from "../ui";
 import type { EventTagEntry, Post, TimelinePage } from "../types/models";
+import { isAdminView } from "../utils/adminView";
+import AuthorGroupFilters from "../components/AuthorGroupFilters";
+import { hiddenAuthorCategories, readShownAuthorGroups, writeShownAuthorGroups } from "../utils/authorGroups";
+import type { ShownAuthorGroups } from "../utils/authorGroups";
 
 interface TimelineUrlState {
     platformFilter?: string;
     sortOrder?: string;
     page?: number;
+    shownGroups?: ShownAuthorGroups;
 }
 
 export default function Home() {
     const navigate = useNavigate();
     const location = useLocation();
-    const isAdmin = !!localStorage.getItem("jwt");
+    const isAdmin = isAdminView();
     const [searchParams, setSearchParams] = useSearchParams();
     const [posts, setPosts] = useState<Post[]>([]);
     const [events, setEvents] = useState<EventTagEntry[]>([]);
@@ -29,6 +34,7 @@ export default function Home() {
     const [sortOrder, setSortOrder] = useState(
         searchParams.get("sort") || "newest"
     );
+    const [shownGroups, setShownGroups] = useState(() => readShownAuthorGroups(searchParams));
 
     const [page, setPage] = useState(() =>
         Math.max(1, Number(searchParams.get("page")) || 1)
@@ -70,6 +76,7 @@ export default function Home() {
         const nextParams = new URLSearchParams(timelineQuery);
         setPlatformFilter(nextParams.get("platform") || "all");
         setSortOrder(nextParams.get("sort") || "newest");
+        setShownGroups(readShownAuthorGroups(nextParams));
         setPage(Math.max(1, Number(nextParams.get("page")) || 1));
         setLastPage(null);
         setJumpPage("");
@@ -79,11 +86,13 @@ export default function Home() {
         const nextPlatform = next.platformFilter ?? platformFilter;
         const nextSort = next.sortOrder ?? sortOrder;
         const nextPage = next.page ?? page;
+        const nextShownGroups = next.shownGroups ?? shownGroups;
         const params = new URLSearchParams();
 
         if (nextPlatform !== "all") params.set("platform", nextPlatform);
         if (nextSort !== "newest") params.set("sort", nextSort);
         if (nextPage > 1) params.set("page", String(nextPage));
+        writeShownAuthorGroups(params, nextShownGroups);
 
         setSearchParams(params, { replace: true });
     }
@@ -110,15 +119,25 @@ export default function Home() {
         updateTimelineURL({ sortOrder: nextSort, page: 1 });
     }
 
+    function changeShownGroups(next: ShownAuthorGroups) {
+        setShownGroups(next);
+        setLastPage(null);
+        setJumpPage("");
+        setPage(1);
+        updateTimelineURL({ shownGroups: next, page: 1 });
+    }
+
     // Fetch ONLY the base posts for a page (no replies)
     async function fetchBasePosts(targetPage: number) {
-        const request = isAdmin ? getAdminPosts : getPosts;
-        const res = await request({
+        const params = {
             limit: LIMIT,
             offset: (targetPage - 1) * LIMIT,
             sort: sortOrder,
             platform: platformFilter,
-        });
+        };
+        const res = isAdmin
+            ? await getAdminPosts({ ...params, hideAuthorCategories: hiddenAuthorCategories(shownGroups) })
+            : await getPosts(params);
         return res.data || [];
     }
 
@@ -198,6 +217,7 @@ export default function Home() {
                     offset: (page - 1) * LIMIT,
                     sort: sortOrder,
                     platform: platformFilter,
+                    hideAuthorCategories: hiddenAuthorCategories(shownGroups),
                 });
                 const rows = res.data || [];
                 timeline = {
@@ -248,7 +268,7 @@ export default function Home() {
     useEffect(() => {
         load();
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [platformFilter, sortOrder, page]);
+    }, [platformFilter, sortOrder, page, shownGroups]);
 
     useEffect(() => {
         const savedScrollY = sessionStorage.getItem("homeTimelineReturnScrollY");
@@ -306,6 +326,11 @@ export default function Home() {
                     </Select>
                     </FilterField>
                 </FilterRow>
+                {isAdmin && (
+                    <div className="timeline-author-filters">
+                        <AuthorGroupFilters value={shownGroups} onChange={changeShownGroups} />
+                    </div>
+                )}
             </FilterBar>
 
             {/* Posts Page */}
@@ -329,7 +354,7 @@ export default function Home() {
             />
 
             {/* Add Button */}
-            {localStorage.getItem("jwt") && (
+            {isAdmin && (
                 <FloatingActionButton label="Create post at the current timeline date" onClick={createPostAtCurrentDate} />
             )}
         </div>

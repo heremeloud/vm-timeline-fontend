@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { DragEvent, FormEvent } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { getAuthors, updateAuthor } from "../api/authorsService";
+import { getAuthors } from "../api/authorsService";
 import { countAdminPosts, countAdminPostSearch, deletePost, getAdminPosts, reorderPost, searchAdminPosts, updatePost } from "../api/postsService";
 import { countAdminEvents, getAdminEvents, updateEvent } from "../api/eventsService";
 import { createEventView, deleteEventView, getAdminEventViews, updateEventView } from "../api/eventViewsService";
@@ -19,6 +19,8 @@ import TikTokEmbed from "../components/TikTokEmbed";
 import VisibilityToggle from "../components/VisibilityToggle";
 import { Button, DragHandle, DropIndicator, Pagination, ToggleButton, ToggleGroup } from "../ui";
 import { errorDetail } from "../utils/errors";
+import AuthorGroupFilters from "../components/AuthorGroupFilters";
+import { defaultShownAuthorGroups, hiddenAuthorCategories } from "../utils/authorGroups";
 import { slugify } from "../utils/slugify";
 import { resolvePhotoUrl } from "../utils/media";
 import type { SearchScopes } from "../api/postsService";
@@ -26,7 +28,7 @@ import type { Author, EventCategoryOption, EventSubcategoryOption, EventView, Id
 import "../styles/EventForm.css";
 
 const LIMIT = 25;
-const TABS = ["posts", "events", "event-settings", "projects", "specials", "authors"] as const;
+const TABS = ["posts", "events", "event-settings", "projects", "specials"] as const;
 
 type Tab = (typeof TABS)[number];
 type DropPosition = "before" | "after";
@@ -34,7 +36,7 @@ type DragTargetState = { id: Id; position: DropPosition };
 
 /**
  * One row of any Manage Display tab. The tabs list different record types
- * (posts, events, projects, specials, authors), so only the fields this screen
+ * (posts, events, projects, specials), so only the fields this screen
  * reads are modelled, and all of them are optional apart from `id`.
  */
 interface DisplayItem {
@@ -72,12 +74,10 @@ interface DisplayItem {
     project_thumbnail_url?: string | null;
     thumbnail_url?: string | null;
     cover_url?: string | null;
-    ig_pfp_url?: string | null;
     is_visible?: boolean;
-    show_on_timeline?: boolean;
 }
 
-type VisibilityPatch = { is_visible?: boolean; show_on_timeline?: boolean };
+type VisibilityPatch = { is_visible?: boolean };
 
 /** Event categories as saved by the API; settings screens only ever see saved rows with ids. */
 type SavedSubcategory = EventSubcategoryOption & { id: Id };
@@ -119,8 +119,7 @@ function previewUrlForItem(tab: Tab, item: DisplayItem) {
     }
     if (tab === "events") return item.media_url || item.project_thumbnail_url || "";
     if (tab === "projects") return item.thumbnail_url || "";
-    if (tab === "specials") return item.cover_url || "";
-    return item.ig_pfp_url || "";
+    return item.cover_url || "";
 }
 
 function ManageDisplayPreview({ url, title, tab, item }: { url: string; title: string; tab: Tab; item: DisplayItem }) {
@@ -210,6 +209,8 @@ export default function ManageDisplay() {
     const [sortOrder, setSortOrder] = useState("newest");
     const [platformFilter, setPlatformFilter] = useState("all");
     const [authorFilter, setAuthorFilter] = useState("all");
+    const [shownGroups, setShownGroups] = useState(defaultShownAuthorGroups);
+    const hideAuthorCategories = useMemo(() => hiddenAuthorCategories(shownGroups), [shownGroups]);
     const [dateFrom, setDateFrom] = useState("");
     const [dateTo, setDateTo] = useState("");
     const [postSearch, setPostSearch] = useState("");
@@ -244,7 +245,7 @@ export default function ManageDisplay() {
     useEffect(() => {
         setPage(1);
         setJumpPage("");
-    }, [activeTab, sortOrder, platformFilter, authorFilter, dateFrom, dateTo, submittedPostSearch, searchScopes]);
+    }, [activeTab, sortOrder, platformFilter, authorFilter, hideAuthorCategories, dateFrom, dateTo, submittedPostSearch, searchScopes]);
 
     async function loadItems() {
         setLoading(true);
@@ -263,6 +264,7 @@ export default function ManageDisplay() {
                 sort: sortOrder,
                 platform: platformFilter,
                 authorId: authorFilter,
+                hideAuthorCategories,
                 dateFrom,
                 dateTo,
                 searchScopes,
@@ -272,6 +274,7 @@ export default function ManageDisplay() {
                 sort: sortOrder,
                 platform: platformFilter,
                 authorId: authorFilter,
+                hideAuthorCategories,
                 dateFrom,
                 dateTo,
             });
@@ -295,8 +298,6 @@ export default function ManageDisplay() {
             const rows = orderedRows.slice(offset, offset + LIMIT + 1);
             setHasNextPage(rows.length > LIMIT);
             setItems(rows.slice(0, LIMIT));
-        } else {
-            setItems(authors);
         }
 
         setLoading(false);
@@ -305,7 +306,7 @@ export default function ManageDisplay() {
     useEffect(() => {
         loadItems();
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [activeTab, page, sortOrder, platformFilter, authorFilter, dateFrom, dateTo, submittedPostSearch, searchScopes, authors.length]);
+    }, [activeTab, page, sortOrder, platformFilter, authorFilter, hideAuthorCategories, dateFrom, dateTo, submittedPostSearch, searchScopes]);
 
     useEffect(() => {
         let cancelled = false;
@@ -321,12 +322,14 @@ export default function ManageDisplay() {
                     q: searchTerm,
                     platform: platformFilter,
                     authorId: authorFilter,
+                    hideAuthorCategories,
                     dateFrom,
                     dateTo,
                     searchScopes,
                 }) : await countAdminPosts({
                     platform: platformFilter,
                     authorId: authorFilter,
+                    hideAuthorCategories,
                     dateFrom,
                     dateTo,
                 });
@@ -340,8 +343,6 @@ export default function ManageDisplay() {
             } else if (activeTab === "specials") {
                 const res = await getAdminTopics();
                 total = (res.data || []).length;
-            } else {
-                total = authors.length;
             }
 
             if (!cancelled) setLastPage(Math.max(1, Math.ceil(total / LIMIT)));
@@ -353,7 +354,7 @@ export default function ManageDisplay() {
         return () => {
             cancelled = true;
         };
-    }, [activeTab, sortOrder, platformFilter, authorFilter, dateFrom, dateTo, submittedPostSearch, searchScopes, authors.length]);
+    }, [activeTab, sortOrder, platformFilter, authorFilter, hideAuthorCategories, dateFrom, dateTo, submittedPostSearch, searchScopes]);
 
     const authorById = useMemo(() => {
         const map = new Map<Id, Author>();
@@ -367,27 +368,16 @@ export default function ManageDisplay() {
         if (type === "posts") return updatePost(id, data);
         if (type === "events") return updateEvent(id, data);
         if (type === "projects") return updateProject(id, data);
-        if (type === "specials") return updateTopic(id, data);
-        return updateAuthor(id, data);
+        return updateTopic(id, data);
     }
 
     async function toggleVisibility(type: Tab, item: DisplayItem) {
         const id = item.id;
         const key = `${type}-${id}`;
-        const field = type === "authors" ? "show_on_timeline" : "is_visible";
-        const nextValue = !item[field];
-        const patch: VisibilityPatch = { [field]: nextValue };
+        const patch: VisibilityPatch = { is_visible: !item.is_visible };
 
         setSavingKey(key);
         await updateRow(type, id, patch);
-
-        if (type === "authors") {
-            setAuthors((current) =>
-                current.map((author) =>
-                    author.id === id ? { ...author, ...patch } as Author : author
-                )
-            );
-        }
 
         setItems((current) =>
             current.map((row) =>
@@ -478,6 +468,7 @@ export default function ManageDisplay() {
                 sort: sortOrder,
                 platform: platformFilter,
                 authorId: authorFilter,
+                hideAuthorCategories,
                 dateFrom,
                 dateTo,
             });
@@ -549,7 +540,7 @@ export default function ManageDisplay() {
                 ))}
             </ToggleGroup>
 
-            {activeTab !== "authors" && activeTab !== "event-settings" && (
+            {activeTab !== "event-settings" && (
                 <div className="eventform-section eventform-form" style={{ width: "min(100%, 240px)", marginTop: 14 }}>
                     <label>Sort</label>
                     <select value={sortOrder} onChange={(e) => setSortOrder(e.target.value)}>
@@ -597,6 +588,11 @@ export default function ManageDisplay() {
                                 <input type="date" value={dateTo} min={dateFrom || undefined} onChange={(e) => setDateTo(e.target.value)} />
                             </div>
                         </div>
+                    </div>
+
+                    <div style={{ marginTop: 12 }}>
+                        <label>Show posts by</label>
+                        <AuthorGroupFilters allTypes value={shownGroups} onChange={setShownGroups} />
                     </div>
 
                     <form onSubmit={submitPostSearch} style={{ display: "grid", gap: 8, marginTop: 12 }}>
@@ -647,7 +643,7 @@ export default function ManageDisplay() {
             {activeTab !== "event-settings" && <section className="eventform-section eventform-form">
                 <h3>{tabLabel(activeTab)}</h3>
 
-                {activeTab !== "authors" && renderPaginationControls("top")}
+                {renderPaginationControls("top")}
 
                 {activeTab === "posts" && !isSearchingPosts && page > 1 && !loadedPreviousPosts && (
                     <button
@@ -737,9 +733,7 @@ export default function ManageDisplay() {
                     </button>
                 )}
 
-                {activeTab !== "authors" && (
-                    renderPaginationControls("bottom")
-                )}
+                {renderPaginationControls("bottom")}
             </section>}
         </div>
     );
@@ -1352,10 +1346,9 @@ interface DisplayRowProps {
 }
 
 function DisplayRow({ tab, item, author, isSearchResult = false, saving, returnTo, onToggle, onDelete, canDrag = false, isDragging = false, dragPosition, onDragStart, onDragOver, onDrop, onDragEnd }: DisplayRowProps) {
-    const isAuthor = tab === "authors";
     const isReplySearchResult = tab === "posts" && isSearchResult && item.result_type !== "post";
     const canManageDisplay = !isReplySearchResult;
-    const isVisible = isAuthor ? item.show_on_timeline : item.is_visible;
+    const isVisible = item.is_visible;
     const extraVisible = tab === "posts" && !isReplySearchResult ? !!author?.show_on_timeline : true;
     const status = itemStatus(isVisible, extraVisible);
 

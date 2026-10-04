@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useLocation, useParams } from "react-router-dom";
 import { getEventTagIndex } from "../api/eventsService";
 import { getProjectPostCandidates } from "../api/postsService";
 import { getAdminProject, getProject } from "../api/projectsService";
@@ -10,25 +10,41 @@ import { projectEntryLabel } from "../utils/projectEntries";
 import "../styles/Projects.css";
 import { buildEventTagIndex } from "../utils/eventTagLinks";
 import type { EventTagIndex } from "../utils/eventTagLinks";
-import type { Post, Project } from "../types/models";
+import type { Post, Project, ProjectEntryLink } from "../types/models";
+import { isAdminView } from "../utils/adminView";
+import { FloatingActionLink } from "../ui";
+
+interface ProjectEntrySummary {
+    hashtag?: string | null;
+    keyword?: string | null;
+    date?: string | null;
+}
 
 /** The Q day, episode, fitting or workshop row a related-posts page is about. */
-function findProjectEntry(project: Project, entryType: string, number: number): { hashtag?: string | null } | null {
-    if (entryType === "filming") return (project.filming_days || []).find((row) => row.q_number === number) ?? null;
-    if (entryType === "episodes") return (project.episode_metadata || []).find((row) => row.episode_number === number) ?? null;
+function findProjectEntry(project: Project, entryType: string, number: number): ProjectEntrySummary | null {
+    if (entryType === "filming") {
+        const row = (project.filming_days || []).find((item) => item.q_number === number);
+        return row ? { hashtag: row.hashtag, keyword: row.keyword, date: row.filming_date } : null;
+    }
+    if (entryType === "episodes") {
+        const row = (project.episode_metadata || []).find((item) => item.episode_number === number);
+        return row ? { hashtag: row.hashtag, keyword: row.keyword, date: row.air_date } : null;
+    }
     if (entryType === "fitting" || entryType === "workshop" || entryType === "prep") {
-        return (project.fitting_workshops || []).find((row) => row.kind === entryType && row.number === number) ?? null;
+        const row = (project.fitting_workshops || []).find((item) => item.kind === entryType && item.number === number);
+        return row ? { hashtag: row.hashtag, keyword: row.keyword, date: row.date } : null;
     }
     return null;
 }
 
 export default function ProjectRelatedPosts() {
     const { projectId = "", entryType = "", entryNumber = "" } = useParams();
+    const location = useLocation();
     const [project, setProject] = useState<Project | null>(null);
     const [posts, setPosts] = useState<Post[]>([]);
     const [eventTagIndex, setEventTagIndex] = useState<EventTagIndex | null>(null);
     const [loading, setLoading] = useState(true);
-    const isAdmin = !!localStorage.getItem("jwt");
+    const isAdmin = isAdminView();
 
     useEffect(() => {
         let cancelled = false;
@@ -74,6 +90,12 @@ export default function ProjectRelatedPosts() {
     const cleanHashtag = entry.hashtag?.trim().replace(/^#/, "") || "";
     // `entry` was found above only for a known entry type, so this route param is a ProjectEntryType.
     const entryLabel = projectEntryLabel(entryType as ProjectEntryType, number);
+    const defaultTimelineContext = cleanHashtag ? `#${cleanHashtag}` : entry.keyword?.trim() || "";
+    const defaultEntryLink: ProjectEntryLink = {
+        project_id: Number(project.id),
+        entry_type: entryType as ProjectEntryType,
+        entry_number: number,
+    };
 
     return (
         <main className="project-related-page">
@@ -95,6 +117,19 @@ export default function ProjectRelatedPosts() {
                 <p className="project-related-posts-status">
                     No related posts found.{!cleanHashtag && ` ${entryLabel} has no hashtag, so posts are linked to it from the post form.`}
                 </p>
+            )}
+            {isAdmin && (
+                <FloatingActionLink
+                    to={ROUTES.createPost}
+                    label={`Create post linked to ${project.title} ${entryLabel}`}
+                    state={{
+                        returnTo: `${location.pathname}${location.search}`,
+                        defaultPostedAt: entry.date || "",
+                        defaultTimelineContext,
+                        defaultShowTimelineContext: true,
+                        defaultEntryLinks: [defaultEntryLink],
+                    }}
+                />
             )}
         </main>
     );

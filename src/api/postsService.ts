@@ -21,6 +21,8 @@ export interface AdminPostFilters {
     authorId?: string | number;
     dateFrom?: string;
     dateTo?: string;
+    /** Author categories (`artist`, `crew`, `official`, …) whose posts are left out. */
+    hideAuthorCategories?: string[];
 }
 
 export interface AdminPostListParams extends PostListParams, AdminPostFilters {}
@@ -45,7 +47,8 @@ export interface ArchiveResult {
     post: Post;
 }
 
-function appendFilters(params: URLSearchParams, { platform, authorId, dateFrom, dateTo }: AdminPostFilters) {
+function appendFilters(params: URLSearchParams, { platform, authorId, dateFrom, dateTo, hideAuthorCategories = [] }: AdminPostFilters) {
+    if (hideAuthorCategories.length > 0) params.set("hide_author_categories", hideAuthorCategories.join(","));
     if (platform && platform !== "all") params.set("platform", platform);
     if (authorId && authorId !== "all") params.set("author_id", String(authorId));
     if (dateFrom) params.set("date_from", dateFrom);
@@ -103,9 +106,9 @@ export const getPost = (id: Id | string) => api.get<{ post: Post }>(`/posts/${id
 
 export const getAdminPost = (id: Id | string) => api.get<{ post: Post }>(`/posts/admin/${id}`);
 
-export const getAdminPosts = ({ limit = 100, offset = 0, sort = "newest", platform, authorId, dateFrom, dateTo }: AdminPostListParams = {}) => {
+export const getAdminPosts = ({ limit = 100, offset = 0, sort = "newest", platform, authorId, dateFrom, dateTo, hideAuthorCategories }: AdminPostListParams = {}) => {
     const params = new URLSearchParams({ limit: String(limit), offset: String(offset), sort });
-    appendFilters(params, { platform, authorId, dateFrom, dateTo });
+    appendFilters(params, { platform, authorId, dateFrom, dateTo, hideAuthorCategories });
     return api.get<Post[]>(`/posts/admin?${params.toString()}`);
 };
 
@@ -115,21 +118,21 @@ export const countAdminPosts = (filters: AdminPostFilters = {}) => {
     return api.get<CountResponse>(`/posts/admin/count?${params.toString()}`);
 };
 
-export const searchAdminPosts = ({ q, limit = 50, offset = 0, sort = "newest", platform, authorId, dateFrom, dateTo, searchScopes }: AdminPostSearchParams = {}) => {
+export const searchAdminPosts = ({ q, limit = 50, offset = 0, sort = "newest", platform, authorId, dateFrom, dateTo, hideAuthorCategories, searchScopes }: AdminPostSearchParams = {}) => {
     const params = new URLSearchParams({
         q: q || "",
         limit: String(limit),
         offset: String(offset),
         sort,
     });
-    appendFilters(params, { platform, authorId, dateFrom, dateTo });
+    appendFilters(params, { platform, authorId, dateFrom, dateTo, hideAuthorCategories });
     appendSearchScopes(params, searchScopes);
     return api.get<Post[]>(`/posts/admin/search?${params.toString()}`);
 };
 
-export const countAdminPostSearch = ({ q, platform, authorId, dateFrom, dateTo, searchScopes }: Omit<AdminPostSearchParams, "limit" | "offset" | "sort"> = {}) => {
+export const countAdminPostSearch = ({ q, platform, authorId, dateFrom, dateTo, hideAuthorCategories, searchScopes }: Omit<AdminPostSearchParams, "limit" | "offset" | "sort"> = {}) => {
     const params = new URLSearchParams({ q: q || "" });
-    appendFilters(params, { platform, authorId, dateFrom, dateTo });
+    appendFilters(params, { platform, authorId, dateFrom, dateTo, hideAuthorCategories });
     appendSearchScopes(params, searchScopes);
     return api.get<CountResponse>(`/posts/admin/search/count?${params.toString()}`);
 };

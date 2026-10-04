@@ -3,8 +3,10 @@ import { Link, useMatch } from "react-router-dom";
 import { ROUTES } from "../routes";
 import { getAdminProject } from "../api/projectsService";
 import { getAdminTopic } from "../api/topicsService";
+import { hasAdminSession, isVisitorPreview, setVisitorPreview } from "../utils/adminView";
 
 export default function AdminQuickActions() {
+    const visitorPreview = isVisitorPreview();
     const projectMatch = useMatch("/projects/:projectId");
     const specialMatch = useMatch("/specials/:topicId");
     const postMatch = useMatch("/post/:postId");
@@ -52,6 +54,7 @@ export default function AdminQuickActions() {
                     : "Save All Authors";
 
     useEffect(() => {
+        if (visitorPreview) return;
         let cancelled = false;
 
         async function resolveEditRoute() {
@@ -74,60 +77,80 @@ export default function AdminQuickActions() {
         return () => {
             cancelled = true;
         };
-    }, [projectRef, specialRef]);
+    }, [projectRef, specialRef, visitorPreview]);
 
-    if (!localStorage.getItem("jwt")) return null;
+    if (!hasAdminSession()) return null;
+
+    function toggleVisitorPreview() {
+        setVisitorPreview(!visitorPreview);
+        window.location.reload();
+    }
 
     return (
-        <nav className="admin-quick-actions" aria-label="Admin shortcuts">
-            <Link className="admin-quick-button" to={ROUTES.manageDisplay} aria-label="Manage Display" title="Manage Display">
+        <>
+            <button
+                type="button"
+                className="admin-quick-button admin-visitor-toggle"
+                onClick={toggleVisitorPreview}
+                aria-label={visitorPreview ? "Return to admin view" : "View as visitor"}
+                title={visitorPreview ? "Return to admin view" : "View as visitor"}
+            >
                 <svg viewBox="0 0 24 24" aria-hidden="true">
-                    <rect x="3" y="4" width="18" height="13" rx="2" />
-                    <path d="M8 21h8M12 17v4" />
+                    <path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z" />
+                    <circle cx="12" cy="12" r="2.75" />
+                    {visitorPreview && <path d="m4 4 16 16" />}
                 </svg>
-            </Link>
-            <Link className="admin-quick-button" to={ROUTES.manageAuthors} aria-label="Manage Authors" title="Manage Authors">
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                    <circle cx="12" cy="8" r="4" />
-                    <path d="M4.5 21a7.5 7.5 0 0 1 15 0" />
-                </svg>
-            </Link>
-            {manageAuthorsMatch && (
-                <button
-                    type="button"
-                    className="admin-quick-button"
-                    onClick={() => document.getElementById("manage-authors-add-button")?.click()}
-                    aria-label="Add Author"
-                    title="Add Author"
-                >
+            </button>
+            {!visitorPreview && <nav className="admin-quick-actions" aria-label="Admin shortcuts">
+                <Link className="admin-quick-button" to={ROUTES.manageDisplay} aria-label="Manage Display" title="Manage Display">
                     <svg viewBox="0 0 24 24" aria-hidden="true">
-                        <circle cx="9" cy="8" r="4" />
-                        <path d="M2.5 21a6.5 6.5 0 0 1 13 0M18 8v6M15 11h6" />
-                    </svg>
-                </button>
-            )}
-            {activeEditRoute && (
-                <Link className="admin-quick-button" to={activeEditRoute} aria-label="Edit" title={editTitle}>
-                    <svg viewBox="0 0 24 24" aria-hidden="true">
-                        <path d="M4 20h4l11-11a2.8 2.8 0 0 0-4-4L4 16v4Z" />
-                        <path d="m13.5 6.5 4 4" />
+                        <rect x="3" y="4" width="18" height="13" rx="2" />
+                        <path d="M8 21h8M12 17v4" />
                     </svg>
                 </Link>
-            )}
-            {saveFormId && (
-                <button
-                    type="submit"
-                    form={saveFormId}
-                    className="admin-quick-button"
-                    aria-label="Save"
-                    title={saveTitle}
-                >
+                <Link className="admin-quick-button" to={ROUTES.manageAuthors} aria-label="Manage Authors" title="Manage Authors">
                     <svg viewBox="0 0 24 24" aria-hidden="true">
-                        <path d="M5 3h12l2 2v16H5V3Z" />
-                        <path d="M8 3v6h8V3M8 21v-7h8v7" />
+                        <circle cx="12" cy="8" r="4" />
+                        <path d="M4.5 21a7.5 7.5 0 0 1 15 0" />
                     </svg>
-                </button>
-            )}
-        </nav>
+                </Link>
+                {manageAuthorsMatch && (
+                    <button
+                        type="button"
+                        className="admin-quick-button"
+                        onClick={() => document.getElementById("manage-authors-add-button")?.click()}
+                        aria-label="Add Author"
+                        title="Add Author"
+                    >
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                            <circle cx="9" cy="8" r="4" />
+                            <path d="M2.5 21a6.5 6.5 0 0 1 13 0M18 8v6M15 11h6" />
+                        </svg>
+                    </button>
+                )}
+                {activeEditRoute && (
+                    <Link className="admin-quick-button" to={activeEditRoute} aria-label="Edit" title={editTitle}>
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M4 20h4l11-11a2.8 2.8 0 0 0-4-4L4 16v4Z" />
+                            <path d="m13.5 6.5 4 4" />
+                        </svg>
+                    </Link>
+                )}
+                {saveFormId && (
+                    <button
+                        type="submit"
+                        form={saveFormId}
+                        className="admin-quick-button"
+                        aria-label="Save"
+                        title={saveTitle}
+                    >
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M5 3h12l2 2v16H5V3Z" />
+                            <path d="M8 3v6h8V3M8 21v-7h8v7" />
+                        </svg>
+                    </button>
+                )}
+            </nav>}
+        </>
     );
 }

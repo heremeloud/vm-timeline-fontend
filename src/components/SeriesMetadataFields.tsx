@@ -229,7 +229,7 @@ export default function SeriesMetadataFields({
     return (
         <>
             <div className="eventform-section series-metadata-section">
-                <div className="series-metadata-heading series-metadata-heading--stacked">
+                <div className="series-metadata-heading">
                     <div>
                         <label>Fitting &amp; Workshop <span className="form-optional">(optional)</span></label>
                         <p>F = fitting day, W = workshop day, P = prep day (a day that is both, or general preparation). Each type is numbered on its own; visitors see "Fitting Day 1", "Workshop Day 1", "Prep Day 1".</p>

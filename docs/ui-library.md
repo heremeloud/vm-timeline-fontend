@@ -25,9 +25,9 @@ import { Button } from "../ui";
 
 Variants: `primary`, `secondary` (default), `ghost`, `danger`, `add`, `insert`, and `save`. `primary` remains an alias for the app accent where an older screen has not yet adopted a semantic intent.
 
-Sizes: `small`, `medium` (default), and `large`.
+Sizes: `compact`, `small`, `card`, `medium` (default), and `large`.
 
-Button heights are border-box dimensions: small is 30px, medium is 36px, and large is 42px. Padding is included in those heights and must not make the rendered control taller.
+Button heights are border-box dimensions: compact is 24px, small is 30px, card is 33px, medium is 36px, and large is 42px. Compact is for low-priority controls inside dense metadata headers; card distinguishes post-level actions from smaller controls inside card content. Padding is included in those heights and must not make the rendered control taller.
 
 Use a native `disabled` prop while an action is unavailable or saving. Icon-only buttons must have an `aria-label`.
 
@@ -44,7 +44,7 @@ Action meaning determines color; location determines only size. The same action 
 | Insert | `insert` | Blue-gray | Insert an item at a specific position in an existing sequence |
 | Save | `save` | Brown | Save, Apply, Update, Confirm edits |
 
-All four intents share the same interaction rules: solid default, a brighter hover, a subtle pressed offset, matching keyboard focus, and reduced-opacity disabled state. Hover and pressed states do not change the label color. Never choose a different color because a button is smaller. Use `size="small"`, `"medium"`, or `"large"` independently, and use one size for every action in the same row.
+All four intents share the same interaction rules: solid default, a brighter hover, a subtle pressed offset, matching keyboard focus, and reduced-opacity disabled state. Hover and pressed states do not change the label color. Never choose a different color because a button is smaller. Use `size="compact"`, `"small"`, `"card"`, `"medium"`, or `"large"` independently, and use one size for every action in the same row.
 
 ```tsx
 <Button variant="danger" size="small">Remove</Button>

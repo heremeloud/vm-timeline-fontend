@@ -1,5 +1,6 @@
 import axios from "axios";
 import { setupCache } from "axios-cache-interceptor";
+import { isAdminView, setVisitorPreview } from "../utils/adminView";
 
 const api = setupCache(axios.create({
     baseURL: import.meta.env.VITE_API_URL ,
@@ -15,7 +16,7 @@ const api = setupCache(axios.create({
 api.interceptors.request.use((config) => {
     const token = localStorage.getItem("jwt");
 
-    if (token) {
+    if (token && isAdminView()) {
         config.headers.Authorization = `Bearer ${token}`;
     }
 
@@ -32,8 +33,9 @@ api.interceptors.response.use(
         const isStaleAuthentication = status === 401
             || (status === 403 && detail === "Invalid token");
 
-        if (isStaleAuthentication && localStorage.getItem("jwt")) {
+        if (isAdminView() && isStaleAuthentication && localStorage.getItem("jwt")) {
             localStorage.removeItem("jwt");
+            setVisitorPreview(false);
             if (!redirectingToLogin && window.location.pathname !== "/admin") {
                 redirectingToLogin = true;
                 window.location.assign("/admin?expired=1");

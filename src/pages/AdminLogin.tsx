@@ -5,6 +5,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { ROUTES } from "../routes";
 import { Button } from "../ui";
 import "../styles/EventForm.css";
+import { setVisitorPreview } from "../utils/adminView";
 
 export default function AdminLogin() {
     const [username, setUsername] = useState("");
@@ -18,6 +19,7 @@ export default function AdminLogin() {
         try {
             const res = await loginRequest(username, password);
             localStorage.setItem("jwt", res.data.access_token);
+            setVisitorPreview(false);
             navigate(ROUTES.home);
         } catch (err) {
             console.error(err);

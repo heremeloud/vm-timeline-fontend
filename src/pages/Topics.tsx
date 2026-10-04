@@ -5,13 +5,14 @@ import { ROUTES } from "../routes";
 import { CardGrid, FloatingActionLink } from "../ui";
 import { formatCardDateRange } from "../utils/cardDate";
 import type { Id, Topic } from "../types/models";
+import { isAdminView } from "../utils/adminView";
 import "../styles/Home.css";
 import "../styles/Topics.css";
 
 export default function Topics() {
     const [topics, setTopics] = useState<Topic[]>([]);
     const [savingVisibilityId, setSavingVisibilityId] = useState<Id | null>(null);
-    const isAdmin = !!localStorage.getItem("jwt");
+    const isAdmin = isAdminView();
 
     useEffect(() => {
         async function load() {

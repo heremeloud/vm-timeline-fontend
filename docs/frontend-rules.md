@@ -81,6 +81,7 @@ Search for an existing helper before writing a new one; extract a helper when a 
 - Paths come from `ROUTES` (`src/routes.ts`) — never hard-code a URL string in a `Link`/`navigate`.
 - Effects: no synchronous `setState` in an effect body (lint-enforced); derive state during render or key on props instead.
 - Hashtag/keyword → event/project links (post cards, project Q/EP rows, event related posts, admin view) follow `docs/event-project-linking.md`; update it when you change `utils/eventTagLinks.ts`.
+- Post order (timeline, Manage Display, event and project Related Posts) follows `docs/post-ordering.md`; every list uses the backend's `_order_posts`, so don't add a screen-specific sort.
 - Don't edit `RelationshipChart*` styling/geometry without reading `docs/relationship-chart-ui.md` (CSS and `utils/relationshipChart.ts` constants are kept in sync).
 
 ## Styling rules

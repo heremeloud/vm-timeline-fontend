@@ -8,6 +8,7 @@ import { Button, ButtonLink } from "../ui";
 import type { Id, Post, Topic, TopicItem } from "../types/models";
 import "../styles/Home.css";
 import "../styles/Topics.css";
+import { isAdminView } from "../utils/adminView";
 
 function formatDateTime(value?: string | null) {
     if (!value) return "No approximate time";
@@ -69,7 +70,7 @@ function getDateTimeInputValue(item: TopicItem) {
 export default function TopicDetail() {
     const { topicId } = useParams();
     const eventTagIndex = useEventTagIndex();
-    const isAdmin = !!localStorage.getItem("jwt");
+    const isAdmin = isAdminView();
     const [topic, setTopic] = useState<Topic | null>(null);
     const [loading, setLoading] = useState(true);
     const [editingTimeId, setEditingTimeId] = useState<Id | null>(null);
