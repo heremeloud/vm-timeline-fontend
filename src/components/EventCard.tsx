@@ -337,7 +337,7 @@ export default function EventCard({ event }: { event: Event }) {
                                 to={ROUTES.projectDetail(event.project_id)}
                                 className="eventcard-project-link"
                             >
-                                {projectEmoji(event.project_category)} {event.project_title}
+                                <span className="eventcard-icon" aria-hidden="true">{projectEmoji(event.project_category)}</span>{event.project_title}
                             </Link>
                         )}
 
@@ -354,11 +354,12 @@ export default function EventCard({ event }: { event: Event }) {
 
                 {showDatePills && (
                     <div className="eventcard-meta eventcard-meta--date-pills">
-                        <span aria-hidden="true">📅</span>
+                        <span className="eventcard-icon eventcard-meta-icon" aria-hidden="true">📅</span>
                         <ToggleGroup className="eventcard-date-pills" role="group" aria-label="Choose an event date">
                             {pillDates.map((date) => (
                                 <ToggleButton
                                     key={date}
+                                    compact
                                     active={activePillDate === date}
                                     onClick={() => selectDate(date)}
                                 >
@@ -371,9 +372,9 @@ export default function EventCard({ event }: { event: Event }) {
 
                 {((!showDatePills && eventDateLabel) || event.location) && (
                     <div className="eventcard-meta">
-                        {!showDatePills && eventDateLabel ? `📅 ${eventDateLabel}` : null}
-                        {!showDatePills && eventDateLabel && event.location ? "  •  " : null}
-                        {event.location ? `📍 ${event.location}` : null}
+                        {!showDatePills && eventDateLabel ? <><span className="eventcard-icon eventcard-meta-icon" aria-hidden="true">📅</span>{eventDateLabel}</> : null}
+                        {!showDatePills && eventDateLabel && event.location ? <span className="eventcard-meta-sep" aria-hidden="true">•</span> : null}
+                        {event.location ? <><span className="eventcard-icon eventcard-meta-icon" aria-hidden="true">📍</span>{event.location}</> : null}
                     </div>
                 )}
 
@@ -491,7 +492,9 @@ export default function EventCard({ event }: { event: Event }) {
 
                             if (showYouTube && ytEmbed) return (
                                 <div className="eventcard-live-embed">
+                                    {/* A new element per video: changing an iframe's src adds a browser-history entry, which breaks Back. */}
                                     <iframe
+                                        key={ytEmbed}
                                         src={ytEmbed}
                                         title={`${displayName} media ${liveIdx + 1}`}
                                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"

@@ -27,7 +27,7 @@ Tokens (`--ui-*`) and all primitive CSS live in [`src/styles/UI.css`](../styles/
 | --- | --- | --- |
 | `Button` | Any action | `variant`: `primary` `secondary`(default) `ghost` `danger` `add` `insert` `save`; `size`: `small` `medium`(default) `large`. `type="button"` by default. |
 | `ButtonLink` | Navigation that looks like a button | Wraps react-router `Link`; same `variant`/`size`. Never nest a `<button>` in a `<Link>`. |
-| `ToggleButton` / `ToggleGroup` | Immediate choices | `active` sets `aria-pressed` (or `aria-selected` with `role="tab"`); `segmented` for mutually exclusive. |
+| `ToggleButton` / `ToggleGroup` | Immediate choices | `active` sets `aria-pressed` (or `aria-selected` with `role="tab"`); `segmented` for mutually exclusive; `compact` for small 1px-border pills in dense rows. |
 | `FormField` | Label + hint + error + required around **one** control | Injects `id`, `required`, `aria-invalid`, `aria-describedby` into its child. |
 | `TextInput` `Select` `Textarea` `Checkbox` | Form controls | Don't style native controls per page. |
 | `FilterBar` `FilterRow` `FilterField` `FilterDivider` | Compact, open filter rows | Events page is the reference. |

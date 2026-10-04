@@ -18,11 +18,14 @@ export function ToggleGroup({ segmented = false, className = "", children, role 
 export interface ToggleButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
     active?: boolean;
     variant?: ToggleVariant;
+    /** Small pill with a single-weight border, for dense rows such as event date pickers. */
+    compact?: boolean;
 }
 
 export default function ToggleButton({
     active = false,
     variant = "accent",
+    compact = false,
     className = "",
     role,
     children,
@@ -36,7 +39,7 @@ export default function ToggleButton({
         <button
             type="button"
             role={role}
-            className={cx("ui-toggle-button", `ui-toggle-button--${variant}`, className)}
+            className={cx("ui-toggle-button", `ui-toggle-button--${variant}`, compact && "ui-toggle-button--compact", className)}
             {...stateProps}
             {...props}
         >
