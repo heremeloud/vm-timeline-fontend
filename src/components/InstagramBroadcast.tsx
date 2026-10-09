@@ -22,7 +22,7 @@ interface InstagramBroadcastProps {
 function MessageMedia({ url }: { url?: string | null }) {
     if (!url) return null;
     if (isVideo(url)) {
-        return <video className="ig-broadcast-media" src={url} controls playsInline preload="none" />;
+        return <video className="ig-broadcast-media" src={url} controls playsInline preload="metadata" />;
     }
     if (isImage(url)) {
         return <img className="ig-broadcast-media" src={url} alt="Broadcast channel attachment" loading="lazy" />;
