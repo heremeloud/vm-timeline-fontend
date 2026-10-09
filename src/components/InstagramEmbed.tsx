@@ -19,6 +19,7 @@ function MediaItem({ url, caption, postLayout = false }: { url: string; caption?
                 controls
                 playsInline
                 muted
+                autoPlay
                 preload="metadata"
                 className={postLayout ? "ig-archive-media" : undefined}
                 style={postLayout ? undefined : {
