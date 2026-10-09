@@ -20,6 +20,7 @@ import { orderViewMimFirst } from "../utils/authors";
 import type { Event } from "../types/models";
 import { detectPostPlatform } from "../utils/postUrls";
 import { isAdminView } from "../utils/adminView";
+import { DEFAULT_TAG_OPTIONS } from "../constants/eventTags";
 
 // YYYY-MM-DD -> YYYY-MM-DD + 1 day (Twitter until: is exclusive)
 function addOneDay(yyyyMmDd: string | null | undefined) {
@@ -146,6 +147,9 @@ export default function EventCard({ event }: { event: Event }) {
     const returnTo = `${location.pathname}${location.search}`;
     const editEventUrl = `${ROUTES.editEvent(event.id)}?returnTo=${encodeURIComponent(returnTo)}`;
     const tags = event.tags || [];
+    const defaultTagValues = new Set(DEFAULT_TAG_OPTIONS.map((tag) => tag.value.toLocaleLowerCase()));
+    const namingTags = tags.filter((tag) => defaultTagValues.has(tag.toLocaleLowerCase()));
+    const eventTags = tags.filter((tag) => !defaultTagValues.has(tag.toLocaleLowerCase()));
     const dateItems = event.date_items || [];
     const datedItems = dateItems.filter((item) => item.date);
     const eventDates = getEventDates(event);
@@ -401,7 +405,7 @@ export default function EventCard({ event }: { event: Event }) {
                                 )}
                             </div>
                         )}
-                        {hasHashtags && (
+                        {(activeDateItem?.hashtag || eventTags.length > 0) && (
                             <div className="eventcard-badges eventcard-hashtag-row">
                                 {activeDateItem?.hashtag && (
                                     <CopyBadge
@@ -411,7 +415,7 @@ export default function EventCard({ event }: { event: Event }) {
                                         onCopy={handleCopy}
                                     />
                                 )}
-                                {tags.map((t) => {
+                                {eventTags.map((t) => {
                                     const term = `#${t}`;
                                     return (
                                         <CopyBadge
@@ -423,6 +427,19 @@ export default function EventCard({ event }: { event: Event }) {
                                         />
                                     );
                                 })}
+                            </div>
+                        )}
+                        {namingTags.length > 0 && (
+                            <div className="eventcard-badges eventcard-naming-hashtag-row">
+                                {namingTags.map((tag) => (
+                                    <CopyBadge
+                                        key={tag}
+                                        term={`#${tag}`}
+                                        startDate={eventStartDate}
+                                        endDate={event.end_date}
+                                        onCopy={handleCopy}
+                                    />
+                                ))}
                             </div>
                         )}
                     </div>

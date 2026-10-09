@@ -1,42 +1,42 @@
+import { lazy, Suspense } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Home from "./pages/Home";
 import Header from "./components/Header";
 import ScrollToTopButton from "./components/ScrollToTopButton";
 import AdminQuickActions from "./components/AdminQuickActions";
-
-import CreatePost from "./pages/CreatePost";
-import AddReply from "./pages/AddReply";
-import EditPost from "./pages/EditPost";
-import PostPage from "./pages/PostPage";
-import AdminLogin from "./pages/AdminLogin";
 import ProtectedRoute from "./components/ProtectedRoute";
 
-import Events from "./pages/Events";
-import EventDetail from "./pages/EventDetail";
-import CreateEvent from "./pages/CreateEvent";
-import EditEvent from "./pages/EditEvent";
-
-import Projects from "./pages/Projects";
-import ProjectDetail from "./pages/ProjectDetail";
-import ProjectRelatedPosts from "./pages/ProjectRelatedPosts";
-import CreateProject from "./pages/CreateProject";
-import EditProject from "./pages/EditProject";
-import Archive from "./pages/Archive";
-import ManageDisplay from "./pages/ManageDisplay";
-import ManageAuthors from "./pages/ManageAuthors";
-import Topics from "./pages/Topics";
-import TopicDetail from "./pages/TopicDetail";
-import TopicForm from "./pages/TopicForm";
-
 import "./App.css";
+
+const AddReply = lazy(() => import("./pages/AddReply"));
+const AdminLogin = lazy(() => import("./pages/AdminLogin"));
+const Archive = lazy(() => import("./pages/Archive"));
+const CreateEvent = lazy(() => import("./pages/CreateEvent"));
+const CreatePost = lazy(() => import("./pages/CreatePost"));
+const CreateProject = lazy(() => import("./pages/CreateProject"));
+const EditEvent = lazy(() => import("./pages/EditEvent"));
+const EditPost = lazy(() => import("./pages/EditPost"));
+const EditProject = lazy(() => import("./pages/EditProject"));
+const EventDetail = lazy(() => import("./pages/EventDetail"));
+const Events = lazy(() => import("./pages/Events"));
+const ManageAuthors = lazy(() => import("./pages/ManageAuthors"));
+const ManageDisplay = lazy(() => import("./pages/ManageDisplay"));
+const PostPage = lazy(() => import("./pages/PostPage"));
+const ProjectDetail = lazy(() => import("./pages/ProjectDetail"));
+const ProjectRelatedPosts = lazy(() => import("./pages/ProjectRelatedPosts"));
+const Projects = lazy(() => import("./pages/Projects"));
+const TopicDetail = lazy(() => import("./pages/TopicDetail"));
+const TopicForm = lazy(() => import("./pages/TopicForm"));
+const Topics = lazy(() => import("./pages/Topics"));
 
 function App() {
     return (
         <BrowserRouter>
             <Header />
-            <Routes>
-                {/* PUBLIC ROUTES */}
-                <Route path="/" element={<Home />} />
+            <Suspense fallback={<div role="status">Loading…</div>}>
+                <Routes>
+                    {/* PUBLIC ROUTES */}
+                    <Route path="/" element={<Home />} />
                 <Route path="/archive" element={<Archive />} />
                 <Route path="/post/:postId" element={<PostPage />} />
                 <Route path="/events" element={<Events />} />
@@ -150,7 +150,8 @@ function App() {
                         </ProtectedRoute>
                     }
                 />
-            </Routes>
+                </Routes>
+            </Suspense>
             <AdminQuickActions />
             <ScrollToTopButton />
         </BrowserRouter>

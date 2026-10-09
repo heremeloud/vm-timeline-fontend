@@ -22,6 +22,7 @@ export default function TikTokEmbed({ external_url }: TikTokEmbedProps) {
                 <iframe
                     src={embedUrl}
                     title="TikTok embed"
+                    loading="lazy"
                     style={{
                         width: "100%",
                         height: 750,

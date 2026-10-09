@@ -1,16 +1,9 @@
 import axios from "axios";
-import { setupCache } from "axios-cache-interceptor";
 import { isAdminView, setVisitorPreview } from "../utils/adminView";
 
-const api = setupCache(axios.create({
-    baseURL: import.meta.env.VITE_API_URL ,
-}), {
-    ttl: 1000 * 60 * 10,  // cache 10 minutes 
+const api = axios.create({
+    baseURL: import.meta.env.VITE_API_URL || "http://localhost:8000",
 });
-
-// const api = axios.create({
-//     baseURL: import.meta.env.VITE_API_URL || "http://localhost:8000",
-// });
 
 // Add token to all requests
 api.interceptors.request.use((config) => {

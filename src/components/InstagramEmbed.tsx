@@ -6,6 +6,7 @@ import "../styles/PostCard.css";
 import "../styles/MediaCarousel.css";
 import { CarouselControls } from "../ui";
 import type { MediaItem as MediaItemData } from "../types/models";
+import useNearViewport from "../hooks/useNearViewport";
 
 // -------------------------------------------------------
 // Single media item (image or video)
@@ -18,8 +19,7 @@ function MediaItem({ url, caption, postLayout = false }: { url: string; caption?
                 controls
                 playsInline
                 muted
-                autoPlay
-                preload="metadata"
+                preload="none"
                 className={postLayout ? "ig-archive-media" : undefined}
                 style={postLayout ? undefined : {
                     width: "100%", height: "auto", borderRadius: 12,
@@ -140,6 +140,7 @@ export default function InstagramEmbed({
     author_id,
 }: InstagramEmbedProps) {
     const [storyIndex, setStoryIndex] = useState(0);
+    const { ref: embedRef, isNearViewport } = useNearViewport<HTMLDivElement>();
     const externalUrl = (external_url || "").trim();
     const singleMediaUrl = (media_url || "").trim();
 
@@ -162,7 +163,7 @@ export default function InstagramEmbed({
 
     // Instagram embed processing
     useEffect(() => {
-        if (!hasIGEmbed) return;
+        if (!hasIGEmbed || !isNearViewport) return;
 
         const process = () => {
             if (window.instgrm?.Embeds?.process)
@@ -184,18 +185,30 @@ export default function InstagramEmbed({
         } else {
             process();
         }
-    }, [hasIGEmbed, igUrl]);
+    }, [hasIGEmbed, igUrl, isNearViewport]);
 
     // 1) Real IG post → use official embed
     if (hasIGEmbed) {
+        if (!isNearViewport) {
+            return (
+                <div ref={embedRef} className="instagram-media-placeholder">
+                    <a href={igUrl} target="_blank" rel="noopener noreferrer">
+                        View post on Instagram
+                    </a>
+                </div>
+            );
+        }
+
         return (
-            <blockquote
-                className="instagram-media"
-                data-instgrm-permalink={igUrl}
-                data-instgrm-version="14"
-                data-instgrm-captioned="true"
-                style={{ width: "100%", margin: 0, padding: 0 }}
-            />
+            <div ref={embedRef}>
+                <blockquote
+                    className="instagram-media"
+                    data-instgrm-permalink={igUrl}
+                    data-instgrm-version="14"
+                    data-instgrm-captioned="true"
+                    style={{ width: "100%", margin: 0, padding: 0 }}
+                />
+            </div>
         );
     }
 

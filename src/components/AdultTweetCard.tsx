@@ -82,6 +82,7 @@ export default function AdultTweetCard({ tweet, eventTagLinks = [] }: AdultTweet
                         controls
                         playsInline
                         muted
+                        preload="none"
                         className="post-adult-media"
                     />
                 ) : (

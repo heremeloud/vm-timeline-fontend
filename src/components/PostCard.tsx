@@ -408,6 +408,7 @@ export default function PostCard({
                                         controls
                                         playsInline
                                         muted
+                                        preload="none"
                                         className="post-adult-media"
                                     />
                                 ) : (
@@ -595,7 +596,7 @@ export default function PostCard({
           If TweetEmbed already handles media, can remove this. */}
             {isTwitter && post.media_url && !rendersAdultFallback && (
                 <div className="post-media">
-                    <img src={post.media_url} alt="" />
+                    <img src={post.media_url} alt="" loading="lazy" />
                 </div>
             )}
 
