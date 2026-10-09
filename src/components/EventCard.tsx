@@ -3,6 +3,7 @@ import { useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import Avatar from "./Avatar";
 import TweetEmbed from "./TweetEmbed";
+import TikTokEmbed from "./TikTokEmbed";
 import "../styles/EventCard.css";
 import "../styles/MediaCarousel.css";
 import { Button, ButtonLink, CarouselControls, ToggleButton, ToggleGroup } from "../ui";
@@ -18,7 +19,7 @@ import { errorDetail } from "../utils/errors";
 import { getYouTubeEmbedUrl } from "../utils/media";
 import { orderViewMimFirst } from "../utils/authors";
 import type { Event } from "../types/models";
-import { detectPostPlatform } from "../utils/postUrls";
+import { detectPostPlatform, extractTikTokPostId } from "../utils/postUrls";
 import { isAdminView } from "../utils/adminView";
 import { DEFAULT_TAG_OPTIONS } from "../constants/eventTags";
 
@@ -494,17 +495,26 @@ export default function EventCard({ event }: { event: Event }) {
                         {(() => {
                             const url = liveUrls[liveIdx];
                             const ytEmbed = getYouTubeEmbedUrl(url);
+                            const detectedPlatform = detectPostPlatform(url);
                             const displayType = currentLiveMedia.display_type || "auto";
                             const showTweet = displayType === "tweet"
-                                || (displayType === "auto" && detectPostPlatform(url) === "x");
+                                || (displayType === "auto" && detectedPlatform === "x");
+                            const showTikTok = displayType === "tiktok"
+                                || (displayType === "auto" && detectedPlatform === "tt");
                             const showYouTube = displayType === "youtube"
                                 || (displayType === "auto" && Boolean(ytEmbed));
                             const showArticle = displayType === "article"
-                                || (displayType === "auto" && isInterview && !showTweet && !showYouTube);
+                                || (displayType === "auto" && isInterview && !showTweet && !showTikTok && !showYouTube);
 
                             if (showTweet) return (
                                 <div className="eventcard-tweet" role="region" aria-label={`${displayName} tweet`}>
                                     <TweetEmbed url={url} />
+                                </div>
+                            );
+
+                            if (showTikTok && extractTikTokPostId(url)) return (
+                                <div className="eventcard-tiktok" role="region" aria-label={`${displayName} TikTok`}>
+                                    <TikTokEmbed external_url={url} />
                                 </div>
                             );
 

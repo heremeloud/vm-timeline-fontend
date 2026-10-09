@@ -143,7 +143,6 @@ export default function AddReply() {
 
         // -------------------- Twitter Reply --------------------
         if (isTwitter) {
-            if (!caption.trim()) return alert("Tweet reply needs text.");
             if (!tweetURL.trim()) return alert("Tweet URL is required.");
 
             const normalizedURL = normalizeXStatusUrl(tweetURL);
@@ -154,7 +153,7 @@ export default function AddReply() {
                 platform: "x",
                 external_url: normalizedURL,
                 external_id,
-                caption,
+                caption: caption.trim() || null,
                 caption_translation: translation || null,
                 caption_translation_note: translationNote.trim() || null,
                 media_url: mediaURL || null,
@@ -401,7 +400,7 @@ export default function AddReply() {
                         </div>
 
                         <div className="eventform-section">
-                            <label>Tweet Text <span className="form-required">*</span></label>
+                            <label>Tweet Text <span className="form-optional">(optional)</span></label>
                             <textarea
                                 value={caption}
                                 onChange={(e) => setCaption(e.target.value)}

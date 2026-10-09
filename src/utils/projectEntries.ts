@@ -64,6 +64,30 @@ export function listProjectEntries(project: Pick<Project, "fitting_workshops" | 
     ];
 }
 
+export interface AdjacentProjectEntries {
+    previous: ProjectEntryOption | null;
+    next: ProjectEntryOption | null;
+}
+
+/** Previous and next rows in the same project-detail section as the current row. */
+export function adjacentProjectEntries(
+    project: Pick<Project, "fitting_workshops" | "filming_days" | "episode_metadata">,
+    currentType: ProjectEntryType,
+    currentNumber: number,
+    isNavigable: (entry: ProjectEntryOption) => boolean = () => true,
+): AdjacentProjectEntries {
+    const entries = listProjectEntries(project);
+    const current = entries.find((entry) => entry.type === currentType && entry.number === currentNumber);
+    if (!current) return { previous: null, next: null };
+
+    const sectionEntries = entries.filter((entry) => entry.group === current.group);
+    const currentIndex = sectionEntries.findIndex((entry) => entry.type === currentType && entry.number === currentNumber);
+    return {
+        previous: sectionEntries.slice(0, currentIndex).reverse().find(isNavigable) ?? null,
+        next: sectionEntries.slice(currentIndex + 1).find(isNavigable) ?? null,
+    };
+}
+
 export function parseEntryLinks(json: string | null | undefined): ProjectEntryLink[] {
     try {
         const items: unknown = JSON.parse(json || "[]");

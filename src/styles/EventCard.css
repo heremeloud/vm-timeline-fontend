@@ -496,6 +496,11 @@
     min-width: 0;
 }
 
+.eventcard-tiktok {
+    width: 100%;
+    min-width: 0;
+}
+
 .eventcard-tweet .tweet-embed-wrapper {
     width: 100%;
     max-width: 550px;

@@ -15,7 +15,7 @@ type RawMediaItem = string | Partial<Record<keyof EventMediaItem, string | null>
 const emptyMediaItem = (): EventMediaItem => ({ url: "", date: "", keyword: "", hashtag: "", display_type: "auto" });
 
 function normalizeDisplayType(value?: string | null): EventMediaDisplayType {
-    if (value === "article" || value === "tweet" || value === "youtube") return value;
+    if (value === "article" || value === "tweet" || value === "tiktok" || value === "youtube") return value;
     return "auto";
 }
 
@@ -66,7 +66,7 @@ export default function EventMediaFields({ items, dateOptions = [], onChange }: 
     return (
         <div className="eventform-section">
             <label>Media <span className="form-optional">(optional)</span></label>
-            <p className="eventform-field-note">Add an article, tweet, or YouTube URL and choose how it should appear on the event card.</p>
+            <p className="eventform-field-note">Add an article, tweet, TikTok, or YouTube URL and choose how it should appear on the event card.</p>
             <div className="eventmedia-list">
                 {items.map((item, index) => (
                     <div key={index} className="eventmedia-item">
@@ -89,6 +89,7 @@ export default function EventMediaFields({ items, dateOptions = [], onChange }: 
                                     <option value="auto">Auto-detect</option>
                                     <option value="article">Article link</option>
                                     <option value="tweet">Tweet card</option>
+                                    <option value="tiktok">TikTok video</option>
                                     <option value="youtube">YouTube video</option>
                                 </Select>
                             </FormField>

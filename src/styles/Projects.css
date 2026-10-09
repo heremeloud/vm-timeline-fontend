@@ -870,6 +870,28 @@
     margin: 18px 0 22px;
 }
 
+.project-related-page-navigation {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    align-items: center;
+    gap: var(--ui-space-2);
+    margin: 0 0 var(--ui-space-4);
+}
+
+.project-related-page-navigation > :first-child {
+    justify-self: start;
+}
+
+.project-related-page-navigation > :last-child {
+    justify-self: end;
+}
+
+.project-related-page-swipe-hint {
+    color: var(--ui-color-muted);
+    font-size: 0.75rem;
+    text-align: center;
+}
+
 .project-related-page-header h1 {
     margin: 4px 0 6px;
     font-size: 1.7rem;
@@ -894,6 +916,10 @@
 }
 
 @media (max-width: 720px) {
+    .project-related-page-swipe-hint {
+        max-width: 72px;
+    }
+
     .project-series-column-header {
         display: none;
     }

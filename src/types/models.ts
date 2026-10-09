@@ -258,7 +258,7 @@ export interface EventDateItem {
     hashtag?: string | null;
 }
 
-export type EventMediaDisplayType = "auto" | "article" | "tweet" | "youtube";
+export type EventMediaDisplayType = "auto" | "article" | "tweet" | "tiktok" | "youtube";
 
 export interface LiveMediaItem {
     url: string;

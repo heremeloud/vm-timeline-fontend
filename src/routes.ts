@@ -11,6 +11,10 @@ export const ROUTES = {
     events: "/events",
     eventView: (slug: string) => `/events/view/${slug}`,
     eventDetail: (id: RouteId) => `/events/${id}`,
+    projectEntryEvent: (eventId: RouteId, projectId: RouteId, entryType: ProjectEntryType, entryNumber: RouteId) => {
+        const context = new URLSearchParams({ project: String(projectId), entryType, entryNumber: String(entryNumber) });
+        return `/events/${eventId}?${context.toString()}`;
+    },
     projects: "/projects",
     projectDetail: (id: RouteId) => `/projects/${id}`,
     projectRelatedPosts: (id: RouteId, entryType: ProjectEntryType, entryNumber: RouteId) =>

@@ -163,7 +163,7 @@
 
 /* Reserve the same label space so controls stay aligned when “optional” wraps. */
 .eventmedia-primary-fields:has(> :nth-child(3)) > .ui-form-field {
-    grid-template-rows: minmax(2.6em, auto) auto;
+    grid-template-rows: 3.2em auto;
     align-content: start;
 }
 

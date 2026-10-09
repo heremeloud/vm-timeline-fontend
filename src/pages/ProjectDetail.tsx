@@ -144,7 +144,7 @@ export default function ProjectDetail() {
         // The label is one string ("Q13"); its box has a fixed width (see Projects.css), so the count circle starts at the same spot in every row.
         const label = `${projectEntryTablePrefix(entryType, daysHaveSeveralTypes)}${number}`;
         const to = event?.id != null
-            ? ROUTES.eventDetail(event.id)
+            ? ROUTES.projectEntryEvent(event.id, project.slug || project.id, entryType, number)
             : relatedCount > 0 ? ROUTES.projectRelatedPosts(project.slug || project.id, entryType, number) : null;
         if (!to) return <span title={fullLabel}>{label}</span>;
         return (

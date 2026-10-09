@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { addEntryLinks, entriesOnDate, listProjectEntries, parseEntryLinks, projectEntryDayLabel, projectEntryLabel, projectEntryShortLabel, toggleEntryLink } from "./projectEntries.ts";
+import { addEntryLinks, adjacentProjectEntries, entriesOnDate, listProjectEntries, parseEntryLinks, projectEntryDayLabel, projectEntryLabel, projectEntryShortLabel, toggleEntryLink } from "./projectEntries.ts";
 
 const project = {
     fitting_workshops: [
@@ -23,6 +23,42 @@ test("a project's rows are listed in page order with labels", () => {
     ]);
     assert.equal(options[1].hashtag, "GirlRulesW1");
     assert.equal(options[0].hashtag, "");
+});
+
+test("adjacent project rows stay inside their project-detail section", () => {
+    assert.deepEqual(adjacentProjectEntries(project, "workshop", 1), {
+        previous: listProjectEntries(project)[0],
+        next: listProjectEntries(project)[2],
+    });
+    assert.deepEqual(adjacentProjectEntries(project, "filming", 5), { previous: null, next: null });
+    assert.deepEqual(adjacentProjectEntries(project, "episodes", 0), { previous: null, next: null });
+});
+
+test("adjacent project rows use their displayed order instead of sorting their numbers", () => {
+    const outOfOrder = {
+        episode_metadata: [
+            { episode_number: 3, air_date: "2026-03-16" },
+            { episode_number: 1, air_date: "2026-03-02" },
+            { episode_number: 2, air_date: "2026-03-09" },
+        ],
+    };
+    const adjacent = adjacentProjectEntries(outOfOrder, "episodes", 1);
+    assert.equal(adjacent.previous?.number, 3);
+    assert.equal(adjacent.next?.number, 2);
+});
+
+test("adjacent project rows skip entries that cannot be opened", () => {
+    const entries = {
+        filming_days: [
+            { q_number: 1, filming_date: "2025-10-21" },
+            { q_number: 2, filming_date: "2025-10-22" },
+            { q_number: 3, filming_date: "2025-10-23" },
+            { q_number: 4, filming_date: "2025-10-24" },
+        ],
+    };
+    const adjacent = adjacentProjectEntries(entries, "filming", 2, (entry) => entry.number !== 1 && entry.number !== 3);
+    assert.equal(adjacent.previous, null);
+    assert.equal(adjacent.next?.number, 4);
 });
 
 test("a fitting and a workshop on the same day are both suggested for a post of that day", () => {
