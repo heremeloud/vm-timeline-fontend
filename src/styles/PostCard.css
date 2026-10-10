@@ -120,6 +120,21 @@
     white-space: pre-wrap;
 }
 
+.post-note-line {
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+}
+
+.post-note-icon {
+    flex: none;
+}
+
+.post-note-text {
+    min-width: 0;
+    white-space: pre-wrap;
+}
+
 .post-adult-media {
     width: 100%;
     max-width: 100%;

@@ -84,7 +84,7 @@ function MediaCarousel({ items, caption, idx, setIdx, postLayout = false }: Medi
             {translation && (
                 <div className="post-caption-translation">
                     <p>{translation}</p>
-                    {note && <p className="post-translation-note">📝 {note}</p>}
+                    {note && <p className="post-translation-note post-note-line"><span className="post-note-icon" aria-hidden="true">📝</span><span className="post-note-text">{note}</span></p>}
                 </div>
             )}
         </div>

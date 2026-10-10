@@ -96,8 +96,9 @@ export default function TikTokReply({ reply }: { reply: PostText }) {
                                 <div className="igreply-translation">
                                     {main.translation}
                                     {main.note && (
-                                        <div className="igreply-note">
-                                            📝 {main.note}
+                                        <div className="igreply-note post-note-line">
+                                            <span className="post-note-icon" aria-hidden="true">📝</span>
+                                            <span className="post-note-text">{main.note}</span>
                                         </div>
                                     )}
                                 </div>

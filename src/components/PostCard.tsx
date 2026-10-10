@@ -393,12 +393,14 @@ export default function PostCard({
                             )}
                             {post.caption_translation_note &&
                                 (post.show_translation_note ?? true) && (
-                                    <p className="post-adult-note">
-                                        📝{" "}
-                                        <EventLinkedText
-                                            text={post.caption_translation_note}
-                                            eventTagLinks={eventTagLinks}
-                                        />
+                                    <p className="post-adult-note post-note-line">
+                                        <span className="post-note-icon" aria-hidden="true">📝</span>
+                                        <span className="post-note-text">
+                                            <EventLinkedText
+                                                text={post.caption_translation_note}
+                                                eventTagLinks={eventTagLinks}
+                                            />
+                                        </span>
                                     </p>
                                 )}
                             {post.media_url &&
@@ -479,12 +481,14 @@ export default function PostCard({
                         )}
                         {post.caption_translation_note &&
                             (post.show_translation_note ?? true) && (
-                                <p className="post-translation-note">
-                                    📝{" "}
-                                    <EventLinkedText
-                                        text={post.caption_translation_note}
-                                        eventTagLinks={eventTagLinks}
-                                    />
+                                <p className="post-translation-note post-note-line">
+                                    <span className="post-note-icon" aria-hidden="true">📝</span>
+                                    <span className="post-note-text">
+                                        <EventLinkedText
+                                            text={post.caption_translation_note}
+                                            eventTagLinks={eventTagLinks}
+                                        />
+                                    </span>
                                 </p>
                             )}
                     </div>

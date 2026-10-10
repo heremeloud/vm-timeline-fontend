@@ -76,7 +76,7 @@ export default function TweetReply({ reply }: { reply: Post }) {
                                 </div>
                             )}
                             {reply.caption_translation_note && (reply.show_translation_note ?? true) && (
-                                <p className="post-translation-note">📝 {reply.caption_translation_note}</p>
+                                <p className="post-translation-note post-note-line"><span className="post-note-icon" aria-hidden="true">📝</span><span className="post-note-text">{reply.caption_translation_note}</span></p>
                             )}
                             {reply.media_url && (
                                 <img src={reply.media_url} alt="reply-media" className="tweet-reply__media" />

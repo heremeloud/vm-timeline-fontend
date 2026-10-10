@@ -71,7 +71,7 @@ export default function InstagramBroadcast({ messages = [], channelName, externa
                         ) : message.text ? <p className="ig-broadcast-original">{message.text}</p> : null}
                         {message.attachment_type === "photo" && <MessageMedia url={message.url} />}
                         {message.translation && <p className="ig-broadcast-translation">{message.translation}</p>}
-                        {message.note && <p className="ig-broadcast-note">📝 {message.note}</p>}
+                        {message.note && <p className="ig-broadcast-note post-note-line"><span className="post-note-icon" aria-hidden="true">📝</span><span className="post-note-text">{message.note}</span></p>}
                     </article>
                 ))}
             </div>
