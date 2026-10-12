@@ -10,6 +10,7 @@ import { FilterBar, FilterDivider, FilterField, FilterRow, FloatingActionButton,
 import type { EventTagEntry, Post, TimelinePage } from "../types/models";
 import { isAdminView } from "../utils/adminView";
 import AuthorGroupFilters from "../components/AuthorGroupFilters";
+import PostSortToggle from "../components/PostSortToggle";
 import { hiddenAuthorCategories, readShownAuthorGroups, writeShownAuthorGroups } from "../utils/authorGroups";
 import type { ShownAuthorGroups } from "../utils/authorGroups";
 
@@ -284,7 +285,7 @@ export default function Home() {
 
     return (
         <div className="home-container">
-            <div className="home-header">
+            <div className="home-header home-header--with-filters">
                 <h1 style={{ marginBottom: "0.05rem" }}>ViewMim Interaction</h1>
                 <h1 style={{ marginTop: "0.05rem" }}>🤎Timeline🤍</h1>
                 <p>Collecting ViewMim social media interactions</p>
@@ -299,7 +300,7 @@ export default function Home() {
             </div>
 
             {/* Filters */}
-            <FilterBar className="filter-bar--two-row">
+            <FilterBar className="filter-bar--two-row filter-bar--timeline">
                 <FilterRow className="filter-row">
                     <FilterField label="Platform">
                     <Select
@@ -317,13 +318,7 @@ export default function Home() {
                     <FilterDivider />
 
                     <FilterField label="Sort">
-                    <Select
-                        value={sortOrder}
-                        onChange={(e) => changeSortOrder(e.target.value)}
-                    >
-                        <option value="newest">Newest First</option>
-                        <option value="oldest">Oldest First</option>
-                    </Select>
+                    <PostSortToggle boxed value={sortOrder === "oldest" ? "oldest" : "newest"} onChange={changeSortOrder} />
                     </FilterField>
                 </FilterRow>
                 {isAdmin && (

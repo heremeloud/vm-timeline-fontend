@@ -67,10 +67,14 @@ export const getAdminEvent = (id: Id | string) => api.get<{ event: Event }>(`/ev
 export const getAdminEvents = ({ limit = 50, offset = 0, sort = "newest", ...rest }: EventListParams = {}) =>
     api.get<Event[]>(listUrl("/events/admin", { limit, offset, sort, ...rest }));
 
-export const countAdminEvents = ({ name, category }: Pick<EventListParams, "name" | "category"> = {}) => {
+export const countAdminEvents = ({ name, category, subcategory, author, visibleStart, visibleEnd }: Omit<EventListParams, "limit" | "offset" | "sort"> = {}) => {
     const params = new URLSearchParams();
     if (name) params.set("name", name);
     if (category) params.set("category", category);
+    if (subcategory) params.set("subcategory", subcategory);
+    if (author) params.set("author", author);
+    if (visibleStart) params.set("visible_start", visibleStart);
+    if (visibleEnd) params.set("visible_end", visibleEnd);
     return api.get<CountResponse>(`/events/admin/count?${params.toString()}`);
 };
 

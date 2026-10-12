@@ -42,6 +42,7 @@ export interface ProjectListParams {
     offset?: number;
     sort?: string;
     category?: string;
+    name?: string;
 }
 
 export const getProjects = ({ sort, category }: ProjectListParams = {}) => {
@@ -54,15 +55,17 @@ export const getProject = (id: Id | string) => api.get<{ project: Project }>(`/p
 
 export const getAdminProject = (id: Id | string) => api.get<{ project: Project }>(`/projects/admin/${id}`);
 
-export const getAdminProjects = ({ limit = 50, offset = 0, sort = "newest", category }: ProjectListParams = {}) => {
+export const getAdminProjects = ({ limit = 50, offset = 0, sort = "newest", category, name }: ProjectListParams = {}) => {
     let url = `/projects/admin?limit=${limit}&offset=${offset}&sort=${sort}`;
     if (category) url += `&category=${encodeURIComponent(category)}`;
+    if (name) url += `&name=${encodeURIComponent(name)}`;
     return api.get<Project[]>(url);
 };
 
-export const countAdminProjects = ({ category }: Pick<ProjectListParams, "category"> = {}) => {
+export const countAdminProjects = ({ category, name }: Pick<ProjectListParams, "category" | "name"> = {}) => {
     const params = new URLSearchParams();
     if (category) params.set("category", category);
+    if (name) params.set("name", name);
     return api.get<CountResponse>(`/projects/admin/count?${params.toString()}`);
 };
 

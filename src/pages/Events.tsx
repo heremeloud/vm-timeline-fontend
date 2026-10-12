@@ -7,6 +7,7 @@ import { Link, useParams, useSearchParams } from "react-router-dom";
 import { ROUTES } from "../routes";
 import EventCard from "../components/EventCard";
 import EventViewNavigation from "../components/EventViewNavigation";
+import PostSortToggle from "../components/PostSortToggle";
 import "../styles/Home.css";
 import useEventCategories from "../hooks/useEventCategories";
 import { getEventStartDate } from "../utils/eventDateRange";
@@ -385,7 +386,7 @@ export default function Events() {
 
     return (
         <div className="home-container">
-            <div className="home-header">
+            <div className="home-header home-header--with-filters">
                 <h1 style={{ marginBottom: "0.2rem" }}>ViewMim</h1>
                 <h1 style={{ marginTop: "0.2rem" }}>🤎{savedView?.title || "Events"}🤍</h1>
                 <p>Event timeline (fan meets, shows, lives, etc.)</p>
@@ -405,7 +406,7 @@ export default function Events() {
             {!savedViewLoading && !savedViewError && (
                 <>
 
-            <ToggleGroup segmented className="events-view-toggle" aria-label="Events view">
+            <ToggleGroup segmented slim solid className="events-view-toggle" aria-label="Events view">
                 <ToggleButton
                     active={viewMode === "list"}
                     onClick={() => setViewMode("list")}
@@ -481,10 +482,7 @@ export default function Events() {
                     <FilterDivider />
 
                     <FilterField label="Sort">
-                        <Select value={sortOrder} onChange={(e) => setSortOrder(e.target.value)}>
-                            <option value="newest">Newest First</option>
-                            <option value="oldest">Oldest First</option>
-                        </Select>
+                        <PostSortToggle boxed value={sortOrder === "oldest" ? "oldest" : "newest"} onChange={setSortOrder} />
                     </FilterField>
                 </FilterRow>
             </FilterBar>

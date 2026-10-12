@@ -1,30 +1,33 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { DragEvent, FormEvent } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { getAuthors } from "../api/authorsService";
+import SearchRulesSettings from "../components/SearchRulesSettings";
 import { countAdminPosts, countAdminPostSearch, deletePost, getAdminPosts, reorderPost, searchAdminPosts, updatePost } from "../api/postsService";
 import { countAdminEvents, getAdminEvents, updateEvent } from "../api/eventsService";
 import { createEventView, deleteEventView, getAdminEventViews, updateEventView } from "../api/eventViewsService";
-import { createEventCategory, createEventSubcategory, deleteEventCategory, deleteEventSubcategory, updateEventCategory, updateEventSubcategory } from "../api/eventCategoriesService";
+import { createEventCategory, createEventSubcategory, deleteEventCategory, deleteEventSubcategory, getEventCategoryCounts, updateEventCategory, updateEventSubcategory } from "../api/eventCategoriesService";
 import { countAdminProjects, getAdminProjects, updateProject } from "../api/projectsService";
 import { getAdminTopics, updateTopic } from "../api/topicsService";
 import { ROUTES } from "../routes";
 import { formatEventDateRange } from "../utils/eventDateRange";
 import useEventCategories from "../hooks/useEventCategories";
+import useProjectCategories from "../hooks/useProjectCategories";
+import ProjectCategoryManager from "../components/ProjectCategoryManager";
 import useModalDialog from "../hooks/useModalDialog";
 import { isVideo } from "../utils/media";
 import TweetEmbed from "../components/TweetEmbed";
 import InstagramEmbed from "../components/InstagramEmbed";
 import TikTokEmbed from "../components/TikTokEmbed";
 import VisibilityToggle from "../components/VisibilityToggle";
-import { Button, DragHandle, DropIndicator, Pagination, ToggleButton, ToggleGroup } from "../ui";
+import { Button, DragHandle, DropIndicator, FloatingActionLink, Pagination, ToggleButton, ToggleGroup } from "../ui";
 import { errorDetail } from "../utils/errors";
 import AuthorGroupFilters from "../components/AuthorGroupFilters";
 import { defaultShownAuthorGroups, hiddenAuthorCategories } from "../utils/authorGroups";
 import { slugify } from "../utils/slugify";
 import { resolvePhotoUrl } from "../utils/media";
 import type { SearchScopes } from "../api/postsService";
-import type { Author, EventCategoryOption, EventSubcategoryOption, EventView, Id, MediaItem } from "../types/models";
+import type { Author, EventCategoryCounts, EventCategoryOption, EventSubcategoryOption, EventView, Id, MediaItem } from "../types/models";
 import "../styles/EventForm.css";
 
 const LIMIT = 25;
@@ -215,6 +218,23 @@ export default function ManageDisplay() {
     const [dateTo, setDateTo] = useState("");
     const [postSearch, setPostSearch] = useState("");
     const [submittedPostSearch, setSubmittedPostSearch] = useState("");
+    const [listSearch, setListSearch] = useState("");
+    const [submittedListSearch, setSubmittedListSearch] = useState("");
+    const { categories: eventCategories } = useEventCategories();
+    const { categories: projectCategories, loading: projectCategoriesLoading, reload: reloadProjectCategories } = useProjectCategories();
+    const [projectCategory, setProjectCategory] = useState("");
+    const [eventType, setEventType] = useState(""); // "category" or "category:subcategory"
+    const [eventAuthor, setEventAuthor] = useState("");
+    const [eventDateFrom, setEventDateFrom] = useState("");
+    const [eventDateTo, setEventDateTo] = useState("");
+    const [eventTypeCategory = "", eventTypeSubcategory = ""] = eventType.split(":");
+    const eventFilters = useMemo(() => ({
+        category: eventTypeCategory || undefined,
+        subcategory: eventTypeSubcategory || undefined,
+        author: eventAuthor || undefined,
+        visibleStart: eventDateFrom || undefined,
+        visibleEnd: eventDateTo || undefined,
+    }), [eventTypeCategory, eventTypeSubcategory, eventAuthor, eventDateFrom, eventDateTo]);
     const [searchScopes, setSearchScopes] = useState<SearchScopes>({
         text: true,
         translations: true,
@@ -245,7 +265,7 @@ export default function ManageDisplay() {
     useEffect(() => {
         setPage(1);
         setJumpPage("");
-    }, [activeTab, sortOrder, platformFilter, authorFilter, hideAuthorCategories, dateFrom, dateTo, submittedPostSearch, searchScopes]);
+    }, [activeTab, sortOrder, platformFilter, authorFilter, hideAuthorCategories, dateFrom, dateTo, submittedPostSearch, submittedListSearch, eventType, eventAuthor, eventDateFrom, eventDateTo, projectCategory, searchScopes]);
 
     async function loadItems() {
         setLoading(true);
@@ -282,12 +302,12 @@ export default function ManageDisplay() {
             setHasNextPage(rows.length > LIMIT);
             setItems(rows.slice(0, LIMIT));
         } else if (activeTab === "events") {
-            const res = await getAdminEvents({ limit: LIMIT + 1, offset, sort: sortOrder });
+            const res = await getAdminEvents({ limit: LIMIT + 1, offset, sort: sortOrder, name: submittedListSearch, ...eventFilters });
             const rows = res.data || [];
             setHasNextPage(rows.length > LIMIT);
             setItems(rows.slice(0, LIMIT));
         } else if (activeTab === "projects") {
-            const res = await getAdminProjects({ limit: LIMIT + 1, offset, sort: sortOrder });
+            const res = await getAdminProjects({ limit: LIMIT + 1, offset, sort: sortOrder, name: submittedListSearch, category: projectCategory || undefined });
             const rows = res.data || [];
             setHasNextPage(rows.length > LIMIT);
             setItems(rows.slice(0, LIMIT));
@@ -306,7 +326,7 @@ export default function ManageDisplay() {
     useEffect(() => {
         loadItems();
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [activeTab, page, sortOrder, platformFilter, authorFilter, hideAuthorCategories, dateFrom, dateTo, submittedPostSearch, searchScopes]);
+    }, [activeTab, page, sortOrder, platformFilter, authorFilter, hideAuthorCategories, dateFrom, dateTo, submittedPostSearch, submittedListSearch, eventType, eventAuthor, eventDateFrom, eventDateTo, projectCategory, searchScopes]);
 
     useEffect(() => {
         let cancelled = false;
@@ -335,10 +355,10 @@ export default function ManageDisplay() {
                 });
                 total = res.data?.count || 0;
             } else if (activeTab === "events") {
-                const res = await countAdminEvents();
+                const res = await countAdminEvents({ name: submittedListSearch, ...eventFilters });
                 total = res.data?.count || 0;
             } else if (activeTab === "projects") {
-                const res = await countAdminProjects();
+                const res = await countAdminProjects({ name: submittedListSearch, category: projectCategory || undefined });
                 total = res.data?.count || 0;
             } else if (activeTab === "specials") {
                 const res = await getAdminTopics();
@@ -354,7 +374,7 @@ export default function ManageDisplay() {
         return () => {
             cancelled = true;
         };
-    }, [activeTab, sortOrder, platformFilter, authorFilter, hideAuthorCategories, dateFrom, dateTo, submittedPostSearch, searchScopes]);
+    }, [activeTab, sortOrder, platformFilter, authorFilter, hideAuthorCategories, dateFrom, dateTo, submittedPostSearch, submittedListSearch, eventFilters, projectCategory, searchScopes]);
 
     const authorById = useMemo(() => {
         const map = new Map<Id, Author>();
@@ -411,6 +431,30 @@ export default function ManageDisplay() {
             return;
         }
         setSubmittedPostSearch(postSearch.trim());
+    }
+
+    function submitListSearch(e: FormEvent<HTMLFormElement>) {
+        e.preventDefault();
+        setSubmittedListSearch(listSearch.trim());
+    }
+
+    function clearListSearch() {
+        setListSearch("");
+        setSubmittedListSearch("");
+    }
+
+    function clearEventFilters() {
+        setEventType("");
+        setEventAuthor("");
+        setEventDateFrom("");
+        setEventDateTo("");
+        setProjectCategory("");
+    }
+
+    function selectTab(tab: Tab) {
+        clearListSearch();
+        clearEventFilters();
+        setActiveTab(tab);
     }
 
     function clearPostSearch() {
@@ -533,7 +577,7 @@ export default function ManageDisplay() {
                         key={tab}
                         role="tab"
                         active={activeTab === tab}
-                        onClick={() => setActiveTab(tab)}
+                        onClick={() => selectTab(tab)}
                     >
                         {tabLabel(tab)}
                     </ToggleButton>
@@ -638,6 +682,89 @@ export default function ManageDisplay() {
                 </section>
             )}
 
+            {activeTab === "projects" && (
+                <ProjectCategoryManager categories={projectCategories} loading={projectCategoriesLoading} reload={reloadProjectCategories} />
+            )}
+
+            {(activeTab === "events" || activeTab === "projects") && (
+                <section className="eventform-section eventform-form">
+                    {activeTab === "events" && (
+                        <div style={{ display: "grid", gap: 12, gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", marginBottom: 12 }}>
+                            <div>
+                                <label>Type</label>
+                                <select value={eventType} onChange={(e) => setEventType(e.target.value)}>
+                                    <option value="">All</option>
+                                    {eventCategories.flatMap((category) => [
+                                        <option key={category.value} value={category.value}>{category.label}</option>,
+                                        ...(category.subcategories || []).map((subcategory) => (
+                                            <option key={`${category.value}:${subcategory.value}`} value={`${category.value}:${subcategory.value}`}>
+                                                {category.label} - {subcategory.label}
+                                            </option>
+                                        )),
+                                    ])}
+                                </select>
+                            </div>
+                            <div>
+                                <label>Participants</label>
+                                <select value={eventAuthor} onChange={(e) => setEventAuthor(e.target.value)}>
+                                    <option value="">All</option>
+                                    <option value="viewmim">ViewMim</option>
+                                    <option value="view">View</option>
+                                    <option value="mim">Mim</option>
+                                    <option value="vimmy">Vimmy</option>
+                                </select>
+                            </div>
+                            <div className="manage-display-date-range">
+                                <div>
+                                    <label>Start Date <span className="form-optional">(optional)</span></label>
+                                    <input type="date" value={eventDateFrom} max={eventDateTo || undefined} onChange={(e) => setEventDateFrom(e.target.value)} />
+                                </div>
+                                <div>
+                                    <label>End Date <span className="form-optional">(optional)</span></label>
+                                    <input type="date" value={eventDateTo} min={eventDateFrom || undefined} onChange={(e) => setEventDateTo(e.target.value)} />
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                    {activeTab === "projects" && (
+                        <div style={{ width: "min(100%, 240px)", marginBottom: 12 }}>
+                            <label>Category</label>
+                            <select value={projectCategory} onChange={(e) => setProjectCategory(e.target.value)}>
+                                <option value="">All</option>
+                                {projectCategories.map((category) => (
+                                    <option key={category.value} value={category.value}>{category.label}</option>
+                                ))}
+                            </select>
+                        </div>
+                    )}
+                    <form onSubmit={submitListSearch} style={{ display: "grid", gap: 8 }}>
+                        <label>{activeTab === "events" ? "Search events" : "Search projects"}</label>
+                        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                            <input
+                                type="search"
+                                value={listSearch}
+                                onChange={(e) => setListSearch(e.target.value)}
+                                placeholder={activeTab === "events"
+                                    ? "Search names, keywords, tags, dates (typos are forgiven)"
+                                    : "Search titles, hashtags, categories (typos are forgiven)"}
+                                maxLength={100}
+                            />
+                            <button type="submit">Search</button>
+                            {submittedListSearch && (
+                                <button type="button" onClick={clearListSearch}>
+                                    Clear
+                                </button>
+                            )}
+                        </div>
+                        {submittedListSearch && (
+                            <div style={{ fontSize: "0.85rem", opacity: 0.75 }}>
+                                Showing matches for "{submittedListSearch}"
+                            </div>
+                        )}
+                    </form>
+                </section>
+            )}
+
             {activeTab === "event-settings" && <EventDisplaySettings />}
 
             {activeTab !== "event-settings" && <section className="eventform-section eventform-form">
@@ -735,6 +862,9 @@ export default function ManageDisplay() {
 
                 {renderPaginationControls("bottom")}
             </section>}
+
+            {activeTab === "posts" && <FloatingActionLink to={ROUTES.createPost} state={{ returnTo }} label="Create post" />}
+            {activeTab === "events" && <FloatingActionLink to={ROUTES.createEvent} label="Create event" />}
         </div>
     );
 }
@@ -764,7 +894,20 @@ function EventCategoryManager({ categories, loading, reload }: EventCategoryMana
     const [selectedCategoryId, setSelectedCategoryId] = useState<Id | null>(null);
     const [draggedId, setDraggedId] = useState<Id | null>(null);
     const [dropTarget, setDropTarget] = useState<DragTargetState | null>(null);
+    const [counts, setCounts] = useState<EventCategoryCounts | null>(null);
     const dialogRef = useModalDialog(selectedCategoryId !== null, () => setSelectedCategoryId(null));
+
+    const loadCounts = useCallback(async () => {
+        try {
+            setCounts((await getEventCategoryCounts()).data);
+        } catch (err) {
+            console.error("Could not load event category counts:", err);
+        }
+    }, []);
+
+    useEffect(() => {
+        void loadCounts();
+    }, [loadCounts]);
     const selectedCategory = categories.find((category) => category.id === selectedCategoryId);
 
     const run: RunFn = async (action) => {
@@ -772,7 +915,7 @@ function EventCategoryManager({ categories, loading, reload }: EventCategoryMana
         setError("");
         try {
             await action();
-            await reload();
+            await Promise.all([reload(), loadCounts()]);
             return true;
         } catch (err) {
             setError(errorDetail(err, "Could not update event categories."));
@@ -853,7 +996,7 @@ function EventCategoryManager({ categories, loading, reload }: EventCategoryMana
                             <div className="manage-authors-row-info">
                                 <strong>{category.label}</strong>
                                 <div className="manage-authors-row-sub">
-                                    {category.subcategories?.length || 0} subcategories · stored as “{category.value}”
+                                    {counts?.categories[category.value] ?? 0} events · {category.subcategories?.length || 0} subcategories · stored as “{category.value}”
                                     {category.is_default ? " · default for event forms" : ""}
                                 </div>
                             </div>
@@ -893,7 +1036,7 @@ function EventCategoryManager({ categories, loading, reload }: EventCategoryMana
                             </div>
                         </div>
                         {error && <p role="alert" style={{ color: "#9a3412" }}>{error}</p>}
-                        <EventCategoryEditor key={`${category.id}-${category.value}-${category.label}`} category={category} saving={saving} run={run} />
+                        <EventCategoryEditor key={`${category.id}-${category.value}-${category.label}`} category={category} subcategoryCounts={counts?.subcategories} saving={saving} run={run} />
                     </>;
                 })()}
             </dialog>
@@ -901,7 +1044,7 @@ function EventCategoryManager({ categories, loading, reload }: EventCategoryMana
     );
 }
 
-function EventCategoryEditor({ category, saving, run }: { category: SavedCategory; saving: boolean; run: RunFn }) {
+function EventCategoryEditor({ category, subcategoryCounts, saving, run }: { category: SavedCategory; subcategoryCounts?: Record<string, number>; saving: boolean; run: RunFn }) {
     const [name, setName] = useState(category.value);
     const [label, setLabel] = useState(category.label);
     const [newSubcategory, setNewSubcategory] = useState("");
@@ -984,7 +1127,9 @@ function EventCategoryEditor({ category, saving, run }: { category: SavedCategor
                                 />
                                 <div className="manage-authors-row-info">
                                     <strong>{subcategory.label}</strong>
-                                    <div className="manage-authors-row-sub">stored as “{subcategory.value}”</div>
+                                    <div className="manage-authors-row-sub">
+                                        {subcategoryCounts?.[`${category.value}:${subcategory.value}`] ?? 0} events · stored as “{subcategory.value}”
+                                    </div>
                                 </div>
                                 <button type="button" className="manage-authors-row-edit" onClick={() => setEditingSubcategoryId(editing ? null : subcategory.id)}>{editing ? "Close" : "Edit"}</button>
                                 <Button variant="danger" size="small" disabled={saving} className="manage-display-delete" onClick={async () => {
@@ -1037,6 +1182,7 @@ function EventDisplaySettings() {
     const categories = loaded as SavedCategory[];
     return (
         <>
+            <SearchRulesSettings />
             <EventCategoryManager categories={categories} loading={loading} reload={reload} />
             <FilteredEventPages categories={categories} />
         </>

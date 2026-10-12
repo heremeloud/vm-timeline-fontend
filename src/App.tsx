@@ -1,10 +1,12 @@
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Home from "./pages/Home";
 import Header from "./components/Header";
 import ScrollToTopButton from "./components/ScrollToTopButton";
 import AdminQuickActions from "./components/AdminQuickActions";
 import ProtectedRoute from "./components/ProtectedRoute";
+import { getSearchSettings } from "./api/searchSettingsService";
+import { setIdentityTags } from "./utils/eventTagLinks";
 
 import "./App.css";
 
@@ -30,11 +32,21 @@ const TopicForm = lazy(() => import("./pages/TopicForm"));
 const Topics = lazy(() => import("./pages/Topics"));
 
 function App() {
+    // Hashtag links skip the admin-editable identity hashtags; remount pages once if the saved list differs from the default.
+    const [searchRulesVersion, setSearchRulesVersion] = useState(0);
+    useEffect(() => {
+        getSearchSettings()
+            .then((res) => {
+                if (setIdentityTags(res.data.identity_tags)) setSearchRulesVersion((version) => version + 1);
+            })
+            .catch((error) => console.warn("Could not load search settings; using defaults:", error));
+    }, []);
+
     return (
         <BrowserRouter>
             <Header />
             <Suspense fallback={<div role="status">Loading…</div>}>
-                <Routes>
+                <Routes key={searchRulesVersion}>
                     {/* PUBLIC ROUTES */}
                     <Route path="/" element={<Home />} />
                 <Route path="/archive" element={<Archive />} />

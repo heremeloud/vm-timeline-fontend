@@ -27,10 +27,10 @@ Tokens (`--ui-*`) and all primitive CSS live in [`src/styles/UI.css`](../styles/
 | --- | --- | --- |
 | `Button` | Any action | `variant`: `primary` `secondary`(default) `ghost` `danger` `add` `insert` `save`; `size`: `compact` `small` `card` `medium`(default) `large`. `type="button"` by default. |
 | `ButtonLink` | Navigation that looks like a button | Wraps react-router `Link`; same `variant`/`size`. Never nest a `<button>` in a `<Link>`. |
-| `ToggleButton` / `ToggleGroup` | Immediate choices | `active` sets `aria-pressed` (or `aria-selected` with `role="tab"`); `segmented` for mutually exclusive; `compact` for small 1px-border pills in dense rows. |
+| `ToggleButton` / `ToggleGroup` | Immediate choices | `active` sets `aria-pressed` (or `aria-selected` with `role="tab"`); `segmented` for mutually exclusive; `compact` for small 1px-border pills in dense rows; `slim` (20px) + `solid` (filled selected option) for page-level switches like List/Calendar and Newest/Oldest; `boxed` for a rounded-rectangle version inside filter rows. |
 | `FormField` | Label + hint + error + required around **one** control | Injects `id`, `required`, `aria-invalid`, `aria-describedby` into its child. |
 | `TextInput` `Select` `Textarea` `Checkbox` | Form controls | Don't style native controls per page. |
-| `FilterBar` `FilterRow` `FilterField` `FilterDivider` | Compact, open filter rows | Events page is the reference. |
+| `FilterBar` `FilterRow` `FilterField` `FilterDivider` | Compact, open filter rows | Events page is the reference. `FilterBar` keeps `--ui-filter-gap` (24px) above and below itself on every page; a page header that leads into it gets `home-header--with-filters`, and anything between the header and the bar (e.g. the Events view pill) uses the same token. |
 | `Pagination` | Prev / Next / "Jump to" bar | Controlled: `page`, `lastPage`, `onPrevious`, `onNext`, `jumpValue`, `onJumpChange`, `onJump`; `inline` for one row. |
 | `Badge` | Read-only metadata/status | `neutral accent info success warning danger`. Not for actions. |
 | `Alert` `EmptyState` | Inline feedback / empty lists | |

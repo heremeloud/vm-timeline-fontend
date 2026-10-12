@@ -1,5 +1,5 @@
 import api from "./api";
-import type { EventCategoryOption, EventSubcategoryOption, Id } from "../types/models";
+import type { EventCategoryCounts, EventCategoryOption, EventSubcategoryOption, Id } from "../types/models";
 
 export interface CategoryInput {
     name?: string;
@@ -13,6 +13,7 @@ export interface SubcategoryInput extends CategoryInput {
 }
 
 export const getEventCategories = () => api.get<EventCategoryOption[]>("/event-categories");
+export const getEventCategoryCounts = () => api.get<EventCategoryCounts>("/event-categories/admin/counts");
 export const createEventCategory = (data: CategoryInput) => api.post("/event-categories/admin", data);
 export const updateEventCategory = (id: Id, data: CategoryInput) => api.patch(`/event-categories/admin/${id}`, data);
 export const deleteEventCategory = (id: Id) => api.delete(`/event-categories/admin/${id}`);

@@ -95,8 +95,14 @@
     width: 140px;
 }
 
-.filter-bar--two-row .filter-row .ui-filter-field:last-child select {
+.filter-bar--two-row .filter-row .ui-filter-field:last-child select,
+.filter-bar--two-row .filter-row .ui-filter-field:last-child .ui-toggle-group {
     width: 140px;
+}
+
+/* The timeline has a single filter row, so labels need no shared column width (that is for the Events page's two rows). */
+.ui-filter-bar.filter-bar--timeline .filter-row .ui-filter-field label {
+    min-width: 0;
 }
 
 /* Admin-only author group checkboxes: their own row under the Platform / Sort filters. */
@@ -108,30 +114,9 @@
 /* EVENTS CALENDAR               */
 /* ============================= */
 
+/* Layout only: the pill sits one filter gap below the header; the filter bar below adds the same gap. */
 .events-view-toggle {
-    margin: 0 auto 16px;
-    width: 200px;
-    height: 34px;
-}
-
-.events-view-toggle .ui-toggle-button {
-    border-color: #955803;
-    background: #fff;
-    color: #955803;
-    box-shadow: none;
-}
-
-.events-view-toggle .ui-toggle-button[aria-pressed="true"] {
-    border-color: #955803;
-    background: #955803;
-    color: #fff;
-    box-shadow: none;
-}
-
-.events-view-toggle .ui-toggle-button[aria-pressed="true"]:hover {
-    border-color: var(--ui-color-accent-hover, #b58a58);
-    background: var(--ui-color-accent-hover, #b58a58);
-    color: #fff;
+    margin: var(--ui-filter-gap) auto 0;
 }
 
 .events-calendar {
@@ -322,7 +307,8 @@
 
     .filter-bar--two-row .filter-row .ui-filter-field:first-child input,
     .filter-bar--two-row .filter-row .ui-filter-field:first-child select,
-    .filter-bar--two-row .filter-row .ui-filter-field:last-child select {
+    .filter-bar--two-row .filter-row .ui-filter-field:last-child select,
+    .filter-bar--two-row .filter-row .ui-filter-field:last-child .ui-toggle-group {
         width: 100%;
         min-width: 0;
         flex: 1;
@@ -415,4 +401,9 @@
         font-size: 0.68rem;
         padding: 2px 9px;
     }
+}
+
+/* Trim the heading's bottom margin so the sort pill sits evenly between it and the first card. */
+.event-related-posts h2 {
+    margin-bottom: 10px;
 }

@@ -1,4 +1,7 @@
 import { useEffect, useState } from "react";
+import PostSortToggle from "../components/PostSortToggle";
+import { orderRelatedPosts } from "../utils/postOrder";
+import { usePostSort } from "../hooks/usePostSort";
 import { Link, useLocation, useParams } from "react-router-dom";
 import { getEventTagIndex } from "../api/eventsService";
 import { getProjectPostCandidates, getProjectRelatedPostCounts } from "../api/postsService";
@@ -45,6 +48,7 @@ export default function ProjectRelatedPosts() {
     const [posts, setPosts] = useState<Post[]>([]);
     const [eventTagIndex, setEventTagIndex] = useState<EventTagIndex | null>(null);
     const [relatedPostCounts, setRelatedPostCounts] = useState<Record<string, number>>({});
+    const [sort, setSort] = usePostSort();
     const [loading, setLoading] = useState(true);
     const [loadedEntryKey, setLoadedEntryKey] = useState("");
     const isAdmin = isAdminView();
@@ -154,11 +158,14 @@ export default function ProjectRelatedPosts() {
                 </nav>
             )}
             {posts.length > 0 ? (
-                <div className="timeline-container">
-                    {posts.map((post) => (
-                        <PostCard key={post.id} post={post} eventTagIndex={eventTagIndex} />
-                    ))}
-                </div>
+                <>
+                    <PostSortToggle value={sort} onChange={setSort} />
+                    <div className="timeline-container">
+                        {orderRelatedPosts(posts, sort).map((post) => (
+                            <PostCard key={post.id} post={post} eventTagIndex={eventTagIndex} />
+                        ))}
+                    </div>
+                </>
             ) : (
                 <p className="project-related-posts-status">
                     No related posts found.{!cleanHashtag && ` ${entryLabel} has no hashtag, so posts are linked to it from the post form.`}

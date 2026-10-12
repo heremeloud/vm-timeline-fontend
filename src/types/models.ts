@@ -353,6 +353,23 @@ export interface EventCategoryOption {
     subcategories: EventSubcategoryOption[];
 }
 
+/** A project category as managed in Manage Display (GET /project-categories). "series" is protected. */
+export interface ProjectCategoryOption {
+    id?: Id;
+    value: string;
+    label: string;
+    sort_order: number;
+    is_visible?: boolean;
+    project_count?: number;
+    is_protected?: boolean;
+}
+
+/** Events per category and per "category:subcategory" (GET /event-categories/admin/counts). */
+export interface EventCategoryCounts {
+    categories: Record<string, number>;
+    subcategories: Record<string, number>;
+}
+
 export interface CountResponse {
     count: number;
 }
@@ -376,4 +393,14 @@ export interface EventTagEntry {
     end_date?: string | null;
     event_date?: string | null;
     [extra: string]: unknown;
+}
+
+export type TypoTolerance = "off" | "normal" | "loose";
+
+/** Admin-editable event/project search rules (GET/PUT /search-settings). */
+export interface SearchSettings {
+    identity_tags: string[];
+    typo_tolerance: TypoTolerance;
+    default_identity_tags: string[];
+    typo_tolerance_options: TypoTolerance[];
 }

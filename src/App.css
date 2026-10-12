@@ -229,6 +229,15 @@ select {
     text-align: center;
 }
 
+/* A header followed by a filter block: the filter bar supplies the gap (--ui-filter-gap) on both sides of itself. */
+.home-header--with-filters {
+    margin-bottom: 0;
+}
+
+.home-header--with-filters hr {
+    margin-bottom: 0;
+}
+
 /* Center filter area */
 .filter-bar {
   display: flex;

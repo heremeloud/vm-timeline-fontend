@@ -13,17 +13,31 @@ export interface EventTagLink {
     projectEntryNumber?: number | null;
 }
 
-const EXCLUDED_IDENTITY_TAGS = new Set([
-    "viewmim",
+/**
+ * Identity hashtags (ViewMim, วิวมิ้ม, …) are on nearly every event, so they never link to one.
+ * The list is admin-editable (Manage Display → Event Setup → Search rules); `setIdentityTags` applies the saved list.
+ */
+export const DEFAULT_IDENTITY_TAGS = [
+    "ViewMim",
     "วิวมิ้ม",
-    "vimmy",
+    "VIMMY",
     "viewbenyapa",
     "วิวเบญญาภา",
     "สระอิของวว",
     "mimrattanawadee",
     "มิ้มรัตนวดี",
     "ด้อมเป็ดจิ๋ว",
-]);
+];
+
+let identityTags = new Set(DEFAULT_IDENTITY_TAGS.map((tag) => normalizeTag(tag)));
+
+/** Replace the identity hashtags; returns true when the set actually changed. */
+export function setIdentityTags(tags: string[]): boolean {
+    const next = new Set(tags.map((tag) => normalizeTag(tag)).filter(Boolean));
+    const changed = next.size !== identityTags.size || [...next].some((tag) => !identityTags.has(tag));
+    identityTags = next;
+    return changed;
+}
 
 const PHYSICAL_EVENT_CATEGORIES = new Set([
     "event",
@@ -122,7 +136,7 @@ export function buildEventTagIndex(events: EventTagEntry[] = []): EventTagIndex 
         });
 
         tagsByName.forEach((dates, normalized) => {
-            if (EXCLUDED_IDENTITY_TAGS.has(normalized)) return;
+            if (identityTags.has(normalized)) return;
 
             const matches = index.get(normalized) || [];
             matches.push(dates.length ? { ...event, dates: [...new Set(dates)] } : event);
@@ -182,7 +196,7 @@ function hashtagLinksIn(text: string, post: Partial<TaggedPost>, eventTagIndex: 
 
     hashtags.forEach((hashtag) => {
         const normalized = normalizeTag(hashtag);
-        if (seen.has(normalized) || EXCLUDED_IDENTITY_TAGS.has(normalized)) return;
+        if (seen.has(normalized) || identityTags.has(normalized)) return;
         seen.add(normalized);
 
         const matches = eventTagIndex.get(normalized);

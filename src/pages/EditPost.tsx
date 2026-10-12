@@ -7,6 +7,7 @@ import ProjectEntryPicker from "../components/ProjectEntryPicker";
 import { parseEntryLinks, serializeEntryLinks } from "../utils/projectEntries";
 import { ROUTES } from "../routes";
 import { isImage, isVideo } from "../utils/media";
+import HoursAgoInput from "../components/HoursAgoInput";
 import AutoResizeTextarea from "../components/AutoResizeTextarea";
 import R2MediaUploader from "../components/R2MediaUploader";
 import type { R2MediaUploaderHandle } from "../components/R2MediaUploader";
@@ -420,6 +421,13 @@ export default function EditPost() {
                                 Today
                             </label>
                         </div>
+                        <HoursAgoInput
+                            onApply={(date, time) => {
+                                setPostedAt(date);
+                                setPostedTime(time);
+                                setPostedAtIsEstimated(true);
+                            }}
+                        />
                         {supportsExactPostTime && <div className="eventform-field-note">URLs auto-fill this when possible. Instagram times are estimates. Time is shown in Bangkok (UTC+7) and stored as UTC.</div>}
                     </div>
                 </div>

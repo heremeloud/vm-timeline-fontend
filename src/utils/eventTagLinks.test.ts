@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { buildEventTagIndex, findEventForHashtag, getEventTagLinks, linkOpensEvent } from "./eventTagLinks.ts";
+import { DEFAULT_IDENTITY_TAGS, buildEventTagIndex, findEventForHashtag, getEventTagLinks, linkOpensEvent, setIdentityTags } from "./eventTagLinks.ts";
 
 test("date-specific hashtags are indexed only for their occurrence date", () => {
     const events = [
@@ -183,4 +183,20 @@ test("a post linked to project rows in the form links to them, with or without a
     assert.equal(getEventTagLinks({ ...post, show_timeline_context: false }, index, { includeHiddenTimelineContext: true }).length, 2);
     // bad JSON is ignored
     assert.deepEqual(getEventTagLinks({ ...post, project_entry_links_json: "{oops" }, index).map((l) => l.event.id), [7]);
+});
+
+test("identity hashtags are not indexed, and the list is editable", () => {
+    const events = [{ id: 1, name: "Event", dates: [], tags: ["ViewMim", "FanMeet"], date_items: [] }];
+
+    assert.equal(buildEventTagIndex(events).has("viewmim"), false);
+    assert.equal(buildEventTagIndex(events).has("fanmeet"), true);
+
+    try {
+        assert.equal(setIdentityTags(["#FanMeet"]), true);
+        assert.equal(setIdentityTags(["fanmeet"]), false, "same list again is not a change");
+        assert.equal(buildEventTagIndex(events).has("viewmim"), true);
+        assert.equal(buildEventTagIndex(events).has("fanmeet"), false);
+    } finally {
+        setIdentityTags(DEFAULT_IDENTITY_TAGS);
+    }
 });

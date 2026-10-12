@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { getAdminProjects, getProjects, updateProject } from "../api/projectsService";
 import { ROUTES } from "../routes";
 import Avatar from "../components/Avatar";
-import { PROJECT_CATEGORIES } from "../constants/projectCategories";
+import useProjectCategories from "../hooks/useProjectCategories";
 import { CardGrid, FilterBar, FilterField, FloatingActionLink, Select } from "../ui";
 import { formatCardDateRange } from "../utils/cardDate";
 import { orderViewMimFirst } from "../utils/authors";
@@ -13,6 +13,7 @@ import "../styles/Projects.css";
 import { isAdminView } from "../utils/adminView";
 
 export default function Projects() {
+    const { categories: projectCategories } = useProjectCategories();
     const [projects, setProjects] = useState<Project[]>([]);
     const [categoryFilter, setCategoryFilter] = useState("");
     const [savingVisibilityId, setSavingVisibilityId] = useState<Id | null>(null);
@@ -52,7 +53,7 @@ export default function Projects() {
 
     return (
         <div className="home-container">
-            <div className="home-header">
+            <div className="home-header home-header--with-filters">
                 <h1 style={{ marginBottom: "0.2rem" }}>ViewMim</h1>
                 <h1 style={{ marginTop: "0.2rem" }}>🤎Projects🤍</h1>
                 <p>Series, songs, concerts and more</p>
@@ -65,8 +66,8 @@ export default function Projects() {
                 <FilterField label="Category">
                     <Select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)}>
                         <option value="">-- All --</option>
-                        {PROJECT_CATEGORIES.map((c) => (
-                            <option key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</option>
+                        {projectCategories.filter((c) => c.is_visible !== false).map((c) => (
+                            <option key={c.value} value={c.value}>{c.label}</option>
                         ))}
                     </Select>
                 </FilterField>

@@ -59,7 +59,7 @@ All native buttons use the app accent for keyboard focus and suppress the browse
 
 Do not remove `:focus-visible` without supplying another visible keyboard-focus treatment. When a specialized control overrides the universal outline, keep its replacement in the brown/neutral UI palette.
 
-Use `ToggleButton` and `ToggleGroup` for choices that switch immediately. The `active` prop supplies `aria-pressed`; when `role="tab"` is used, it supplies `aria-selected` instead. Use `segmented` for mutually exclusive choices such as List/Calendar. Use `compact` for small pills in dense rows (the event date picker): smaller, with a 1px border in the pressed state too.
+Use `ToggleButton` and `ToggleGroup` for choices that switch immediately. The `active` prop supplies `aria-pressed`; when `role="tab"` is used, it supplies `aria-selected` instead. Use `segmented` for mutually exclusive choices such as List/Calendar. Use `compact` for small pills in dense rows (the event date picker): smaller, with a 1px border in the pressed state too. Use `segmented slim solid` on `ToggleGroup` for page-level view/sort switches (Events List/Calendar, Related Posts Newest/Oldest): a 20px pill whose selected option is filled with the accent color. Inside a filter row add `boxed`: a 32px rounded rectangle that matches the neighbouring dropdowns instead of a full pill. Page CSS may only set its margin.
 
 ```tsx
 import { ToggleButton, ToggleGroup } from "../ui";

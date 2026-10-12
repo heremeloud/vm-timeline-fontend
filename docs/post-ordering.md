@@ -43,7 +43,8 @@ The **same** `_order_posts(query, "newest")` is used everywhere, so these always
 | Event page → Related Posts | `GET /posts/event/{id}` |
 | Project / Q day / episode / fitting / workshop / prep → Related Posts | `GET /posts/project/{ref}/related` |
 
-Do not give a screen its own sort. Related lists are the timeline's order *filtered*, so two posts keep the same
+The event and project Related Posts pages have a **Newest first / Oldest first** toggle (`PostSortToggle`). Because *Oldest first* is the exact mirror of
+*Newest first*, they reverse the backend's newest list (`utils/postOrder.ts`) instead of re-sorting. Apart from that, do not give a screen its own sort. Related lists are the timeline's order *filtered*, so two posts keep the same
 relative order as on the timeline. The differences you may still see on a related page are not ordering:
 
 - Posts that are hidden but ticked **On related page** are included there and slot in by date; the timeline omits them.

@@ -1,0 +1,8 @@
+/* Layout only; the pill itself is ToggleGroup `segmented slim solid`. */
+.event-related-posts .post-sort-toggle {
+    margin: 0 auto 16px;
+}
+
+.project-related-page .post-sort-toggle {
+    margin: -4px auto 16px;
+}

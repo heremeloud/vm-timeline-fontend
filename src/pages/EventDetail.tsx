@@ -1,4 +1,7 @@
 import { useEffect, useState } from "react";
+import PostSortToggle from "../components/PostSortToggle";
+import { orderRelatedPosts } from "../utils/postOrder";
+import { usePostSort } from "../hooks/usePostSort";
 import { useLocation, useParams, useNavigate } from "react-router-dom";
 import { getAdminEvent, getEvent, getEventTagIndex } from "../api/eventsService";
 import { getAdminProject, getProject } from "../api/projectsService";
@@ -15,6 +18,7 @@ import { ButtonLink, FloatingActionLink } from "../ui";
 import { adjacentProjectEntries, projectEntryLabel } from "../utils/projectEntries";
 import type { ProjectEntryType } from "../routes";
 import useSwipeNavigation from "../hooks/useSwipeNavigation";
+import "../styles/Home.css";
 import "../styles/Projects.css";
 
 const PROJECT_ENTRY_TYPES = new Set<ProjectEntryType>(["filming", "episodes", "fitting", "workshop", "prep"]);
@@ -35,6 +39,7 @@ export default function EventDetail() {
     const [eventTagIndex, setEventTagIndex] = useState<EventTagIndex | null>(null);
     const [navigationProject, setNavigationProject] = useState<Project | null>(null);
     const [navigationPostCounts, setNavigationPostCounts] = useState<Record<string, number>>({});
+    const [sort, setSort] = usePostSort();
     const [loading, setLoading] = useState(true);
     const [loadedEventId, setLoadedEventId] = useState("");
     const isAdmin = isAdminView();
@@ -166,8 +171,9 @@ export default function EventDetail() {
             {relatedPosts.length > 0 && (
                 <section className="event-related-posts" aria-labelledby="event-related-posts-title">
                     <h2 id="event-related-posts-title">Related Posts</h2>
+                    <PostSortToggle value={sort} onChange={setSort} />
                     <div className="timeline-container">
-                        {relatedPosts.map((post) => (
+                        {orderRelatedPosts(relatedPosts, sort).map((post) => (
                             <PostCard key={post.id} post={post} eventTagIndex={eventTagIndex} />
                         ))}
                     </div>

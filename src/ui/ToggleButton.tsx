@@ -5,11 +5,17 @@ export type ToggleVariant = "accent" | "neutral" | "success" | "danger";
 
 export interface ToggleGroupProps extends HTMLAttributes<HTMLDivElement> {
     segmented?: boolean;
+    /** Slim 20px pill switch for page-level view/sort choices (use with `segmented`). */
+    slim?: boolean;
+    /** Selected option is filled with the accent color and white text instead of the soft tint. */
+    solid?: boolean;
+    /** Rounded-rectangle shape with the light border of form controls, for use inside filter rows (with `segmented`). */
+    boxed?: boolean;
 }
 
-export function ToggleGroup({ segmented = false, className = "", children, role = "group", ...props }: ToggleGroupProps) {
+export function ToggleGroup({ segmented = false, slim = false, solid = false, boxed = false, className = "", children, role = "group", ...props }: ToggleGroupProps) {
     return (
-        <div className={cx("ui-toggle-group", segmented && "ui-toggle-group--segmented", className)} role={role} {...props}>
+        <div className={cx("ui-toggle-group", segmented && "ui-toggle-group--segmented", slim && "ui-toggle-group--slim", solid && "ui-toggle-group--solid", boxed && "ui-toggle-group--boxed", className)} role={role} {...props}>
             {children}
         </div>
     );

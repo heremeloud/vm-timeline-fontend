@@ -4,7 +4,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { getAdminProject, updateProject, getProjects } from "../api/projectsService";
 import { getAuthors } from "../api/authorsService";
 import { ROUTES } from "../routes";
-import { PROJECT_CATEGORIES } from "../constants/projectCategories";
+import useProjectCategories from "../hooks/useProjectCategories";
 import { cleanPastedSocialUrls, cleanPastedYouTubeUrl, extractPlaylistId, normalizeSocialPostUrl, normalizeYouTubeVideoUrl } from "../utils/postUrls";
 import { slugify } from "../utils/slugify";
 import { errorDetail } from "../utils/errors";
@@ -15,6 +15,7 @@ import { Button, FocalPointPicker } from "../ui";
 import "../styles/EventForm.css";
 
 export default function EditProject() {
+    const { categories: projectCategories } = useProjectCategories();
     const { projectId } = useParams();
     const navigate = useNavigate();
     const [loading, setLoading] = useState(true);
@@ -218,8 +219,8 @@ export default function EditProject() {
                     <label>Category</label>
                     <select value={category} onChange={(e) => setCategory(e.target.value)}>
                         <option value="">-- None --</option>
-                        {PROJECT_CATEGORIES.map((c) => (
-                            <option key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</option>
+                        {projectCategories.map((c) => (
+                            <option key={c.value} value={c.value}>{c.label}{c.is_visible === false ? " (hidden from filter)" : ""}</option>
                         ))}
                     </select>
                 </div>

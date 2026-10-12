@@ -118,6 +118,14 @@ export function utcToBangkokDateTime(utcValue: Maybe) {
     return Number.isNaN(epochMs) ? null : bangkokPartsFromEpochMs(epochMs);
 }
 
+/** Bangkok date/time for "N hours ago" (decimals allowed); null if the value isn't a non-negative number. */
+export function hoursAgoToBangkokDateTime(hours: Maybe, now: Date = new Date()) {
+    const amount = Number((hours ?? "").toString().trim());
+    if (!(hours ?? "").toString().trim() || !Number.isFinite(amount) || amount < 0) return null;
+    const parts = bangkokPartsFromEpochMs(now.getTime() - amount * 3_600_000);
+    return { date: parts.date, time: parts.time.slice(0, 5) + ":00" };
+}
+
 export function bangkokDateTimeToUtc(date: Maybe, time: Maybe) {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(date || "") || !/^\d{2}:\d{2}(?::\d{2})?$/.test(time || "")) return null;
     const normalizedTime = time!.length === 5 ? `${time}:00` : time;
