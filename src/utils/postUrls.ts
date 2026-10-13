@@ -118,11 +118,23 @@ export function utcToBangkokDateTime(utcValue: Maybe) {
     return Number.isNaN(epochMs) ? null : bangkokPartsFromEpochMs(epochMs);
 }
 
-/** Bangkok date/time for "N hours ago" (decimals allowed); null if the value isn't a non-negative number. */
-export function hoursAgoToBangkokDateTime(hours: Maybe, now: Date = new Date()) {
-    const amount = Number((hours ?? "").toString().trim());
-    if (!(hours ?? "").toString().trim() || !Number.isFinite(amount) || amount < 0) return null;
-    const parts = bangkokPartsFromEpochMs(now.getTime() - amount * 3_600_000);
+function parseNonNegative(value: Maybe) {
+    const text = (value ?? "").toString().trim();
+    if (!text) return 0;
+    const amount = Number(text);
+    return Number.isFinite(amount) && amount >= 0 ? amount : null;
+}
+
+/**
+ * Bangkok date/time for "H hours M minutes ago" (either may be blank, decimals allowed).
+ * Null if both are blank or either is not a non-negative number.
+ */
+export function timeAgoToBangkokDateTime(hours: Maybe, minutes: Maybe, now: Date = new Date()) {
+    const hourAmount = parseNonNegative(hours);
+    const minuteAmount = parseNonNegative(minutes);
+    if (hourAmount === null || minuteAmount === null) return null;
+    if (!(hours ?? "").toString().trim() && !(minutes ?? "").toString().trim()) return null;
+    const parts = bangkokPartsFromEpochMs(now.getTime() - (hourAmount * 60 + minuteAmount) * 60_000);
     return { date: parts.date, time: parts.time.slice(0, 5) + ":00" };
 }
 

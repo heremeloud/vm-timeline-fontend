@@ -361,6 +361,7 @@ export default function CreatePost() {
                             </label>
                         </div>
                         <HoursAgoInput
+                            dateOnly={!supportsExactPostTime}
                             onApply={(date, time) => {
                                 setPostedAt(date);
                                 setPostedTime(time);
