@@ -8,9 +8,11 @@ interface HoursAgoInputProps {
     onApply: (date: string, time: string) => void;
     /** For content that only stores a date (Instagram stories and reels): the button sets the date alone. */
     dateOnly?: boolean;
+    /** A time already saved for this content (Bangkok HH:MM:SS), shown so it is clear what is stored. */
+    savedTime?: string | null;
 }
 
-export default function HoursAgoInput({ onApply, dateOnly = false }: HoursAgoInputProps) {
+export default function HoursAgoInput({ onApply, dateOnly = false, savedTime = null }: HoursAgoInputProps) {
     const [hours, setHours] = useState("");
     const [minutes, setMinutes] = useState("");
     const result = timeAgoToBangkokDateTime(hours, minutes);
@@ -51,7 +53,13 @@ export default function HoursAgoInput({ onApply, dateOnly = false }: HoursAgoInp
                 aria-label="Minutes ago"
             />
             <span>minutes ago</span>
-            <Button size="small" disabled={!result} onClick={apply}>{dateOnly ? "Set date" : "Set date & time"}</Button>
+            <Button size="small" disabled={!result} onClick={apply}>Set date &amp; time</Button>
+            {dateOnly && (
+                <span className="eventform-field-note">
+                    Saved as this story's time (Bangkok, admins only). Story order is still your drag order.
+                    {savedTime && ` Current: ${savedTime}`}
+                </span>
+            )}
         </div>
     );
 }

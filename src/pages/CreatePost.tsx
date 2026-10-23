@@ -13,7 +13,7 @@ import R2MediaUploader from "../components/R2MediaUploader";
 import type { R2MediaUploaderHandle } from "../components/R2MediaUploader";
 import MediaUrlField from "../components/MediaUrlField";
 import { deleteMediaObject } from "../api/mediaService";
-import { bangkokDateTimeToUtc, cleanPastedPostUrl, detectMediaAuthor, detectMediaDate, detectPostDateTime, isInstagramChannelUrl, isInstagramPostUrl, normalizePostUrl } from "../utils/postUrls";
+import { bangkokDateTimeToUtc, cleanPastedPostUrl, detectMediaAuthor, detectMediaDate, detectPostDateTime, isInstagramChannelUrl, isInstagramPostUrl, normalizePostUrl, utcOnBangkokDate, utcToBangkokDateTime } from "../utils/postUrls";
 import { isFromR2 } from "../utils/media";
 import { appendUploadedUrls, nextMediaSequence } from "../utils/mediaItemOrder";
 import { Button } from "../ui";
@@ -57,6 +57,7 @@ export default function CreatePost() {
     });
     const [postedTime, setPostedTime] = useState("");
     const [postedAtIsEstimated, setPostedAtIsEstimated] = useState(false);
+    const [estimatedAtUtc, setEstimatedAtUtc] = useState<string | null>(null);
 
     const [caption, setCaption] = useState("");
     const [captionTranslation, setCaptionTranslation] = useState("");
@@ -273,6 +274,7 @@ export default function CreatePost() {
                 posted_at,
                 posted_at_utc: supportsExactPostTime ? bangkokDateTimeToUtc(posted_at, postedTime) : null,
                 posted_at_is_estimated: supportsExactPostTime && postedAtIsEstimated,
+                estimated_posted_at_utc: supportsExactPostTime ? null : utcOnBangkokDate(estimatedAtUtc, posted_at),
                 parent_id: parent_id || null,
                 is_visible: isVisible,
                 is_adult: isAdult,
@@ -362,10 +364,12 @@ export default function CreatePost() {
                         </div>
                         <HoursAgoInput
                             dateOnly={!supportsExactPostTime}
+                            savedTime={utcToBangkokDateTime(utcOnBangkokDate(estimatedAtUtc, posted_at))?.time}
                             onApply={(date, time) => {
                                 setPostedAt(date);
                                 setPostedTime(time);
                                 setPostedAtIsEstimated(true);
+                                setEstimatedAtUtc(bangkokDateTimeToUtc(date, time));
                             }}
                         />
                         {supportsExactPostTime && <div className="eventform-field-note">URLs auto-fill this when possible. Instagram times are estimates. Time is shown in Bangkok (UTC+7) and stored as UTC.</div>}

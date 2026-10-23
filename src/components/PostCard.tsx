@@ -30,6 +30,7 @@ import { errorDetail } from "../utils/errors";
 import type { EventTagIndex } from "../utils/eventTagLinks";
 import type { Post, PostText } from "../types/models";
 import { isAdminView } from "../utils/adminView";
+import { utcOnBangkokDate } from "../utils/postUrls";
 
 export interface PostCardProps {
     post: Post;
@@ -44,6 +45,10 @@ export default function PostCard({
 }: PostCardProps) {
     const location = useLocation();
     const isAdmin = isAdminView();
+    // Admins see the detailed Bangkok time: the exact time, or for date-only content (IG stories) the time entered as "ago".
+    const adminExactUtc = isAdmin
+        ? post.posted_at_utc || utcOnBangkokDate(post.estimated_posted_at_utc, post.posted_at)
+        : null;
     const returnTo = `${location.pathname}${location.search}`;
     const isInstagram = post.platform === "ig" || post.platform === "instagram";
     const isBroadcast = isInstagram && post.content_type === "broadcast";
@@ -303,8 +308,8 @@ export default function PostCard({
                                         : "TikTok"}
                             </span>
                             <span className="post-date-sep">·</span>
-                            {isAdmin && post.posted_at_utc
-                                ? new Date(post.posted_at_utc).toLocaleString("en-US", {
+                            {adminExactUtc
+                                ? new Date(adminExactUtc).toLocaleString("en-US", {
                                       timeZone: "Asia/Bangkok",
                                       year: "numeric",
                                       month: "long",

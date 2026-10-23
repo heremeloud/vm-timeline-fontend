@@ -91,6 +91,8 @@ export interface Post {
     posted_at?: string | null;
     posted_at_utc?: string | null;
     posted_at_is_estimated: boolean;
+    /** Time entered as "N hours ago" for date-only content (IG stories/reels); display only, never affects order. */
+    estimated_posted_at_utc?: string | null;
     sort_order: number;
     media_url?: string | null;
     media_urls_json: string;

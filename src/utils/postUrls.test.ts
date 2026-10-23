@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { timeAgoToBangkokDateTime } from "./postUrls.ts";
+import { timeAgoToBangkokDateTime, utcOnBangkokDate } from "./postUrls.ts";
 
 const now = new Date("2026-10-12T10:30:45Z"); // 17:30:45 in Bangkok
 
@@ -23,4 +23,12 @@ test("rejects empty, negative and non-numeric input", () => {
     assert.equal(timeAgoToBangkokDateTime("-1", "", now), null);
     assert.equal(timeAgoToBangkokDateTime("2", "-5", now), null);
     assert.equal(timeAgoToBangkokDateTime("abc", "", now), null);
+});
+
+test("a story time is only kept while it falls on the chosen Bangkok date", () => {
+    const utc = "2026-10-12T10:30:00.000Z"; // 17:30 on 2026-10-12 in Bangkok
+    assert.equal(utcOnBangkokDate(utc, "2026-10-12"), utc);
+    assert.equal(utcOnBangkokDate(utc, "2026-10-11"), null, "date changed by hand: drop the time");
+    assert.equal(utcOnBangkokDate(null, "2026-10-12"), null, "nothing entered: stays date-only as before");
+    assert.equal(utcOnBangkokDate(undefined, "2026-10-12"), null);
 });

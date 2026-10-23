@@ -138,6 +138,11 @@ export function timeAgoToBangkokDateTime(hours: Maybe, minutes: Maybe, now: Date
     return { date: parts.date, time: parts.time.slice(0, 5) + ":00" };
 }
 
+/** The UTC instant if it falls on the given Bangkok date, otherwise null (an "ago" time must agree with the chosen date). */
+export function utcOnBangkokDate(utcValue: Maybe, date: Maybe) {
+    return utcToBangkokDateTime(utcValue)?.date === date ? utcValue ?? null : null;
+}
+
 export function bangkokDateTimeToUtc(date: Maybe, time: Maybe) {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(date || "") || !/^\d{2}:\d{2}(?::\d{2})?$/.test(time || "")) return null;
     const normalizedTime = time!.length === 5 ? `${time}:00` : time;
