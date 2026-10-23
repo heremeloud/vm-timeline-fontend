@@ -56,7 +56,7 @@ export default function HoursAgoInput({ onApply, dateOnly = false, savedTime = n
             <Button size="small" disabled={!result} onClick={apply}>Set date &amp; time</Button>
             {dateOnly && (
                 <span className="eventform-field-note">
-                    Saved as this story's time (Bangkok, admins only). Story order is still your drag order.
+                    Saved as this story's time (shown to admins). Stories with a time are ordered by it.
                     {savedTime && ` Current: ${savedTime}`}
                 </span>
             )}

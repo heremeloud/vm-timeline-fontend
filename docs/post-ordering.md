@@ -8,11 +8,12 @@ How top-level posts are ordered. Replies are separate (see the end). The single 
 Two sorts exist: **Newest first** (the default) and **Oldest first**. For *Newest first*:
 
 1. **Date**: `posted_at` (a plain `YYYY-MM-DD`, Bangkok date), newest day first.
-2. **Within one day**, the day is either *date-only* or *exact*:
-   - A day is **mixed / date-only** if *any* top-level post on that date has no exact time
-     (`posted_at_utc` is empty, e.g. Instagram stories). Every post on that day is then ordered by its
-     manual `sort_order`, ascending. The exact time of the timed posts on that day is **ignored**.
-   - A day is **exact** if *every* post on it has an exact time. Posts are ordered by `posted_at_utc`, newest first.
+2. **Within one day**, the day is either *date-only* or *exact*. A post's **time** is its exact time (`posted_at_utc`), or, for
+   date-only content such as IG stories, the time entered as "N hours ago" (`estimated_posted_at_utc`):
+   - A day is **mixed / date-only** if *any* top-level post on that date has **no time at all** (neither of the two,
+     e.g. an IG story saved without the "ago" time). Every post on that day is then ordered by its manual `sort_order`,
+     ascending. The times of the timed posts on that day are **ignored**.
+   - A day is **exact** if *every* post on it has a time. Posts are ordered by that time, newest first.
 3. **Tie-break**: higher `id` first.
 
 *Oldest first* is the mirror image: oldest day first, manual order reversed (`sort_order` descending),
@@ -20,8 +21,8 @@ exact times oldest first, lower `id` first.
 
 | Day contains | Order within the day (Newest first) |
 | --- | --- |
-| only posts with an exact time | by time, newest first |
-| any post without an exact time (stories, estimated dates) | manual `sort_order`, ascending (what you drag in Manage Display) |
+| only posts with a time (exact, or an IG story's "ago" time) | by time, newest first |
+| any post with no time at all (e.g. a story saved without the "ago" time) | manual `sort_order`, ascending (what you drag in Manage Display) |
 
 ## Manual order (`sort_order`)
 
