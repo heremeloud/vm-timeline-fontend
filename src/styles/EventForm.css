@@ -178,6 +178,13 @@
     }
 }
 
+.eventform-platform-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    align-items: start;
+    gap: 16px;
+}
+
 .eventform-author-date-row {
     display: grid;
     grid-template-columns: minmax(200px, 1fr) minmax(0, auto);
@@ -1719,14 +1726,59 @@
     opacity: 0.7;
 }
 
+/* Two lined-up rows: [hours box][label][minutes box][label][button]. The local-time box spans the first three
+   columns so its right edge matches the minutes box, and both buttons share the last column (same size). */
 .eventform-form .eventform-hours-ago {
-    display: flex;
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: 64px max-content 64px max-content max-content;
     align-items: center;
     gap: 8px;
     margin-top: 8px;
 }
 
-.eventform-form .eventform-hours-ago input {
-    width: 72px;
+.eventform-form .eventform-hours-ago > span {
+    font-size: 0.88rem;
+    line-height: 30px;
+    white-space: nowrap;
+}
+
+/* width 0 + min-width 100%: the note fills the row but never widens the columns above it. */
+.eventform-form .eventform-hours-ago > .eventform-field-note {
+    grid-column: 1 / -1;
+    width: 0;
+    min-width: 100%;
+    font-size: 0.82rem;
+    line-height: 1.4;
+    white-space: normal;
+}
+
+/* Inputs match the 30px small button beside them so each row lines up. */
+.eventform-form .eventform-hours-ago input:not([type="checkbox"]):not([type="radio"]) {
+    box-sizing: border-box;
+    width: 100%;
+    height: 30px;
+    min-height: 30px;
+    padding: 0 8px;
+    font-size: 0.85rem;
+    line-height: 1;
+}
+
+.eventform-form .eventform-hours-ago .eventform-hours-ago-clock {
+    grid-column: 1 / span 3;
+}
+
+/* Narrow screens: no room for columns, so the pieces simply wrap. */
+@media (max-width: 480px) {
+    .eventform-form .eventform-hours-ago {
+        display: flex;
+        flex-wrap: wrap;
+    }
+
+    .eventform-form .eventform-hours-ago input:not([type="checkbox"]):not([type="radio"]) {
+        width: 72px;
+    }
+
+    .eventform-form .eventform-hours-ago .eventform-hours-ago-clock {
+        width: 124px;
+    }
 }

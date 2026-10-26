@@ -138,6 +138,33 @@ export function timeAgoToBangkokDateTime(hours: Maybe, minutes: Maybe, now: Date
     return { date: parts.date, time: parts.time.slice(0, 5) + ":00" };
 }
 
+/**
+ * A clock time typed in the viewer's own time zone ("HH:MM"), taken as its most recent occurrence (today, or
+ * yesterday if that time is still ahead). Returns the Bangkok date/time of that instant and how long ago it was.
+ * `offsetMinutes` is the viewer's zone as Date.getTimezoneOffset() reports it (minutes behind UTC).
+ */
+export function localClockToBangkokDateTime(clock: Maybe, now: Date = new Date(), offsetMinutes: number = now.getTimezoneOffset()) {
+    const match = /^(\d{1,2}):(\d{2})$/.exec((clock ?? "").trim());
+    if (!match) return null;
+    const hour = Number(match[1]);
+    const minute = Number(match[2]);
+    if (hour > 23 || minute > 59) return null;
+
+    const localNow = new Date(now.getTime() - offsetMinutes * 60_000); // read with the UTC getters = local clock
+    let localMs = Date.UTC(localNow.getUTCFullYear(), localNow.getUTCMonth(), localNow.getUTCDate(), hour, minute);
+    if (localMs > localNow.getTime()) localMs -= 86_400_000;
+    const instantMs = localMs + offsetMinutes * 60_000;
+
+    const parts = bangkokPartsFromEpochMs(instantMs);
+    const minutesAgo = Math.floor((now.getTime() - instantMs) / 60_000);
+    return {
+        date: parts.date,
+        time: parts.time.slice(0, 5) + ":00",
+        hours: Math.floor(minutesAgo / 60),
+        minutes: minutesAgo % 60,
+    };
+}
+
 /** The UTC instant if it falls on the given Bangkok date, otherwise null (an "ago" time must agree with the chosen date). */
 export function utcOnBangkokDate(utcValue: Maybe, date: Maybe) {
     return utcToBangkokDateTime(utcValue)?.date === date ? utcValue ?? null : null;

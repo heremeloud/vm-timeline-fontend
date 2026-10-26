@@ -1,7 +1,7 @@
 import { useState } from "react";
 import type { KeyboardEvent } from "react";
 import { Button, TextInput } from "../ui";
-import { timeAgoToBangkokDateTime } from "../utils/postUrls";
+import { localClockToBangkokDateTime, timeAgoToBangkokDateTime } from "../utils/postUrls";
 
 interface HoursAgoInputProps {
     /** Called with the Bangkok date (YYYY-MM-DD) and time (HH:MM:SS) that is the typed hours and minutes before now. */
@@ -15,10 +15,27 @@ interface HoursAgoInputProps {
 export default function HoursAgoInput({ onApply, dateOnly = false, savedTime = null }: HoursAgoInputProps) {
     const [hours, setHours] = useState("");
     const [minutes, setMinutes] = useState("");
+    const [localClock, setLocalClock] = useState("");
     const result = timeAgoToBangkokDateTime(hours, minutes);
+    const clockResult = localClockToBangkokDateTime(localClock);
+    const localZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
     const apply = () => {
         if (result) onApply(result.date, result.time);
+    };
+
+    // A clock time in the viewer's own zone: fill the hours/minutes boxes with how long ago it was, and set the date and time.
+    const applyLocalClock = () => {
+        if (!clockResult) return;
+        setHours(String(clockResult.hours));
+        setMinutes(String(clockResult.minutes));
+        onApply(clockResult.date, clockResult.time);
+    };
+
+    const handleClockKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
+        if (event.key !== "Enter") return;
+        event.preventDefault();
+        applyLocalClock();
     };
 
     const handleKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
@@ -27,6 +44,7 @@ export default function HoursAgoInput({ onApply, dateOnly = false, savedTime = n
         apply();
     };
 
+    // One grid so both rows line up: [hours box][label][minutes box][label][button]; the time box spans the first three columns.
     return (
         <div className="eventform-hours-ago">
             <TextInput
@@ -54,6 +72,19 @@ export default function HoursAgoInput({ onApply, dateOnly = false, savedTime = n
             />
             <span>minutes ago</span>
             <Button size="small" disabled={!result} onClick={apply}>Set date &amp; time</Button>
+
+            <TextInput
+                className="eventform-hours-ago-clock"
+                type="time"
+                value={localClock}
+                onChange={(e) => setLocalClock(e.target.value)}
+                onKeyDown={handleClockKeyDown}
+                aria-label={`Time in your local zone (${localZone})`}
+                title={`Your local time (${localZone})`}
+            />
+            <span>or at your local time</span>
+            <Button size="small" disabled={!clockResult} onClick={applyLocalClock}>Use local time</Button>
+
             {dateOnly && (
                 <span className="eventform-field-note">
                     Saved as this story's time (shown to admins). Stories with a time are ordered by it.

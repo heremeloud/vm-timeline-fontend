@@ -208,7 +208,7 @@ function ProfileCardContent({ author: initialAuthor, defaultPhoto, thaiFullName,
                 <h2 className="archive-name">{author.name}</h2>
 
                 {(thaiFullName || displayFullName) && (
-                    <div className={`archive-full-names ${thaiFullName ? "archive-full-names--bilingual" : ""}`.trim()}>
+                    <div className={`archive-full-names ${thaiFullName ? (displayFullName ? "archive-full-names--bilingual" : "archive-full-names--thai-only") : ""}`.trim()}>
                         {thaiFullName && (
                             <div className="archive-full-name archive-full-name--words" lang="th">
                                 {thaiFullName.split(/\s+/).map((word: string) => (
@@ -296,7 +296,12 @@ export default function Archive() {
                     thaiFullName="มิ้ม รัตนวดี วงศ์ทอง"
                     fcIcon="🤍"
                 />
-                <ProfileCard author={vimmy} fcIcon="💜" className="archive-card--third" />
+                <ProfileCard
+                    author={vimmy}
+                    thaiFullName="วิมมี่"
+                    fcIcon="💜"
+                    className="archive-card--third"
+                />
             </div>
         </div>
     );

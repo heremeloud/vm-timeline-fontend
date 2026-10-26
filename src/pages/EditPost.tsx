@@ -363,32 +363,33 @@ export default function EditPost() {
 
             <form id="edit-post-form" className="eventform-form" onSubmit={saveChanges}>
 
-                <div className="eventform-section">
-                    <label>Platform</label>
-                    <select
-                        value={platform}
-                        onChange={(e) => setPlatform(e.target.value)}
-                    >
-                        <option value="ig">Instagram</option>
-                        <option value="x">Twitter</option>
-                        <option value="tt">TikTok</option>
-                    </select>
-                </div>
-
-                {platform === "ig" && (
-                    <div className="eventform-section">
-                        <label>Instagram Content Type</label>
-                        <select value={contentType} onChange={(e) => {
-                            const next = e.target.value;
-                            setContentType(next);
-                            if (next !== "post") setExternalURL("");
-                        }}>
-                            <option value="story">Story</option>
-                            <option value="broadcast">Broadcast channel</option>
-                            <option value="post">Post / Reel</option>
+                <div className="eventform-section eventform-platform-row">
+                    <div>
+                        <label>Platform</label>
+                        <select
+                            value={platform}
+                            onChange={(e) => setPlatform(e.target.value)}
+                        >
+                            <option value="ig">Instagram</option>
+                            <option value="x">Twitter</option>
+                            <option value="tt">TikTok</option>
                         </select>
                     </div>
-                )}
+                    {platform === "ig" && (
+                        <div>
+                            <label>Instagram Content Type</label>
+                            <select value={contentType} onChange={(e) => {
+                                const next = e.target.value;
+                                setContentType(next);
+                                if (next !== "post") setExternalURL("");
+                            }}>
+                                <option value="story">Story</option>
+                                <option value="broadcast">Broadcast channel</option>
+                                <option value="post">Post / Reel</option>
+                            </select>
+                        </div>
+                    )}
+                </div>
 
                 <div className="eventform-section eventform-author-date-row">
                     <div>
@@ -424,18 +425,21 @@ export default function EditPost() {
                                 Today
                             </label>
                         </div>
-                        <HoursAgoInput
-                            dateOnly={!supportsExactPostTime}
-                            savedTime={utcToBangkokDateTime(utcOnBangkokDate(estimatedAtUtc, postedAt))?.time}
-                            onApply={(date, time) => {
-                                setPostedAt(date);
-                                setPostedTime(time);
-                                setPostedAtIsEstimated(true);
-                                setEstimatedAtUtc(bangkokDateTimeToUtc(date, time));
-                            }}
-                        />
                         {supportsExactPostTime && <div className="eventform-field-note">URLs auto-fill this when possible. Instagram times are estimates. Time is shown in Bangkok (UTC+7) and stored as UTC.</div>}
                     </div>
+                </div>
+
+                <div className="eventform-section eventform-hours-ago-section">
+                    <HoursAgoInput
+                        dateOnly={!supportsExactPostTime}
+                        savedTime={utcToBangkokDateTime(utcOnBangkokDate(estimatedAtUtc, postedAt))?.time}
+                        onApply={(date, time) => {
+                            setPostedAt(date);
+                            setPostedTime(time);
+                            setPostedAtIsEstimated(true);
+                            setEstimatedAtUtc(bangkokDateTimeToUtc(date, time));
+                        }}
+                    />
                 </div>
 
                 
