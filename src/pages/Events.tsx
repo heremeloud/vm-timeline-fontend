@@ -14,6 +14,7 @@ import { getEventStartDate } from "../utils/eventDateRange";
 import { FilterBar, FilterDivider, FilterField, FilterRow, FloatingActionLink, Pagination, Select, TextInput, ToggleButton, ToggleGroup } from "../ui";
 import type { Event, EventView } from "../types/models";
 import { isAdminView } from "../utils/adminView";
+import { twitterImageAtSize } from "../utils/twitterImage";
 
 type ViewMode = "list" | "calendar";
 
@@ -546,7 +547,7 @@ export default function Events() {
                                                 )}
                                                 {(photo?.url || ev.project_thumbnail_url) && (
                                                     <img
-                                                        src={photo?.url || ev.project_thumbnail_url || undefined}
+                                                        src={twitterImageAtSize(photo?.url || ev.project_thumbnail_url || "", "medium") || undefined}
                                                         alt=""
                                                         className="events-calendar-thumb"
                                                         style={{

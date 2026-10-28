@@ -211,6 +211,18 @@
     margin-bottom: 28px;
 }
 
+/* Shows the light thumbnail; the link opens the full-size original for saving. */
+.project-detail-thumb-link {
+    display: flex;
+    flex-shrink: 0;
+    border-radius: 12px;
+}
+
+.project-detail-thumb-link:focus-visible {
+    outline: none;
+    box-shadow: var(--ui-focus-ring);
+}
+
 .project-detail-thumb {
     width: 240px;
     min-width: 240px;

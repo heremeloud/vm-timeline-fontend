@@ -11,6 +11,7 @@ import type { Id, Project } from "../types/models";
 import "../styles/Home.css";
 import "../styles/Projects.css";
 import { isAdminView } from "../utils/adminView";
+import { twitterImageAtSize } from "../utils/twitterImage";
 
 export default function Projects() {
     const { categories: projectCategories } = useProjectCategories();
@@ -87,7 +88,7 @@ export default function Projects() {
                             {p.thumbnail_url
                                 ? (
                                     <img
-                                        src={p.thumbnail_url}
+                                        src={twitterImageAtSize(p.thumbnail_url, "medium")}
                                         alt={p.title}
                                         style={{
                                             objectPosition: `${p.thumbnail_focal_x ?? 50}% ${p.thumbnail_focal_y ?? 50}%`,

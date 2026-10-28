@@ -16,6 +16,7 @@ import { getYouTubeEmbedUrl } from "../utils/media";
 import { Button, ButtonLink } from "../ui";
 import type { Event, Project } from "../types/models";
 import { isAdminView } from "../utils/adminView";
+import { twitterImageAtSize } from "../utils/twitterImage";
 
 interface ExternalLinkItem {
     href: string;
@@ -190,11 +191,19 @@ export default function ProjectDetail() {
             {/* Header */}
             <div className="project-detail-header">
                 {project.thumbnail_url && (
-                    <img
-                        src={project.thumbnail_url}
-                        alt={project.title}
-                        className="project-detail-thumb"
-                    />
+                    <a
+                        href={project.thumbnail_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="project-detail-thumb-link"
+                        title="Open full-size image"
+                    >
+                        <img
+                            src={twitterImageAtSize(project.thumbnail_url, "medium")}
+                            alt={project.title}
+                            className="project-detail-thumb"
+                        />
+                    </a>
                 )}
 
                 <div className="project-detail-info">
@@ -437,7 +446,7 @@ export default function ProjectDetail() {
                         <Link key={child.id} to={ROUTES.projectDetail(child.slug || child.id)} className="project-detail-child-project">
                             {child.thumbnail_url && (
                                 <img
-                                    src={child.thumbnail_url}
+                                    src={twitterImageAtSize(child.thumbnail_url, "medium")}
                                     alt={child.title}
                                     className="project-detail-child-thumb"
                                     style={{
