@@ -156,6 +156,10 @@ Stored in `ProjectFittingWorkshop` (`kind` = `fitting` | `workshop` | `prep`, `n
   together with the reader's text size (fixed-pixel column widths clipped the circle at larger sizes).
 - **Saving.** Edited in the project form above Filming Q Days (`SeriesMetadataFields`). Saving a project replaces only the
   collections the request sends (`filming_days`, `episode_metadata`, `fitting_workshops`); one left out is untouched.
+- **Renaming relinks.** The edit form sends each saved row's `id` back. When a row keeps its `id` but its type or number changes
+  (Fitting Day 1 → Workshop Day 1, Q3 → Q4), every post explicitly linked to the old row (2.3) is relinked to the new one
+  (`_relink_project_entry_posts` in `routers/projects.py`); swapping two rows swaps their posts. Hashtag links are not rewritten,
+  and a removed row's links are left as they are.
 - **Linking.** Rows with a hashtag link like Q/EP; rows without one are linked from the post form (see 2.3).
 
 Backend tests: `tests/test_project_fitting_workshop.py`, `tests/test_event_related_posts.py`.

@@ -1,10 +1,14 @@
 import { useState } from "react";
 import type { Dispatch, FocusEvent, MouseEvent, SetStateAction } from "react";
 import { Button } from "../ui";
-import type { FittingWorkshopKind } from "../types/models";
+import type { FittingWorkshopKind, Id } from "../types/models";
 
-/** Form-state rows: every field is a string while editing and parsed on save. */
+/**
+ * Form-state rows: every field is a string while editing and parsed on save.
+ * `id` is the saved row's id (absent on new rows); sending it back lets the backend relink posts when a row's type or number changes.
+ */
 export interface FilmingDayRow {
+    id?: Id;
     q_number: string;
     filming_date: string;
     hashtag: string;
@@ -12,6 +16,7 @@ export interface FilmingDayRow {
 }
 
 export interface EpisodeRow {
+    id?: Id;
     episode_number: string;
     air_date: string;
     title: string;
@@ -20,6 +25,7 @@ export interface EpisodeRow {
 }
 
 export interface FittingWorkshopRow {
+    id?: Id;
     kind: FittingWorkshopKind;
     number: string;
     date: string;

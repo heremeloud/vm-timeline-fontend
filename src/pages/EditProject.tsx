@@ -74,12 +74,14 @@ export default function EditProject() {
             setYear(p.year ? String(p.year) : "");
             setEpisodeCount(p.episode_count ? String(p.episode_count) : "");
             setFilmingDays((p.filming_days || []).map((row) => ({
+                id: row.id,
                 q_number: String(row.q_number),
                 filming_date: row.filming_date || "",
                 hashtag: row.hashtag || "",
                 keyword: row.keyword || "",
             })));
             setEpisodes((p.episode_metadata || []).map((row) => ({
+                id: row.id,
                 episode_number: String(row.episode_number),
                 air_date: row.air_date || "",
                 title: row.title || "",
@@ -87,6 +89,7 @@ export default function EditProject() {
                 keyword: row.keyword || "",
             })));
             setFittingWorkshops((p.fitting_workshops || []).map((row) => ({
+                id: row.id,
                 kind: row.kind,
                 number: String(row.number),
                 date: row.date || "",
