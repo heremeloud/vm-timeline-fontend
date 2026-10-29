@@ -46,6 +46,7 @@ export default function EditProject() {
     const [mydramalistUrl, setMydramalistUrl] = useState("");
     const [gmmtvUrl, setGmmtvUrl] = useState("");
     const [officialTwitterUrl, setOfficialTwitterUrl] = useState("");
+    const [fittingWorkshopsByDate, setFittingWorkshopsByDate] = useState(true);
     const [spotifyUrl, setSpotifyUrl] = useState("");
     const [appleMusicUrl, setAppleMusicUrl] = useState("");
     const [parentProjectId, setParentProjectId] = useState("");
@@ -114,6 +115,7 @@ export default function EditProject() {
             setMydramalistUrl(p.mydramalist_url || "");
             setGmmtvUrl(p.gmmtv_url || "");
             setOfficialTwitterUrl(p.official_twitter_url || "");
+            setFittingWorkshopsByDate(p.fitting_workshops_by_date ?? true);
             setSpotifyUrl(p.spotify_url || "");
             setAppleMusicUrl(p.apple_music_url || "");
             setParentProjectId(p.parent_project_id ? String(p.parent_project_id) : "");
@@ -163,6 +165,7 @@ export default function EditProject() {
                 mydramalist_url: mydramalistUrl || null,
                 gmmtv_url: gmmtvUrl || null,
                 official_twitter_url: category === "series" ? officialTwitterUrl || null : null,
+                fitting_workshops_by_date: fittingWorkshopsByDate,
                 spotify_url: category === "song" ? spotifyUrl || null : "",
                 apple_music_url: category === "song" ? appleMusicUrl || null : "",
                 parent_project_id: parentProjectId ? parseInt(parentProjectId) : null,
@@ -277,6 +280,8 @@ export default function EditProject() {
                         episodeCount={episodeCount}
                         primaryHashtag={hashtag}
                         startDate={startDate}
+                        fittingWorkshopsByDate={fittingWorkshopsByDate}
+                        setFittingWorkshopsByDate={setFittingWorkshopsByDate}
                         inferOptionalFields
                     />
                 )}

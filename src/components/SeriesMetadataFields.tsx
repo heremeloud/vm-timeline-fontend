@@ -166,6 +166,9 @@ interface SeriesMetadataFieldsProps {
     setEpisodes: Dispatch<SetStateAction<EpisodeRow[]>> | ((rows: EpisodeRow[]) => void);
     fittingWorkshops: FittingWorkshopRow[];
     setFittingWorkshops: Dispatch<SetStateAction<FittingWorkshopRow[]>> | ((rows: FittingWorkshopRow[]) => void);
+    /** Saved on the project: list the days old to new (ticked) or grouped by type. */
+    fittingWorkshopsByDate: boolean;
+    setFittingWorkshopsByDate: (value: boolean) => void;
     episodeCount: number | string | null | undefined;
     primaryHashtag: string | null | undefined;
     startDate: string;
@@ -179,6 +182,8 @@ export default function SeriesMetadataFields({
     setEpisodes,
     fittingWorkshops,
     setFittingWorkshops,
+    fittingWorkshopsByDate,
+    setFittingWorkshopsByDate,
     episodeCount,
     primaryHashtag,
     startDate,
@@ -268,6 +273,10 @@ export default function SeriesMetadataFields({
                             <label className="series-metadata-toggle">
                                 <input type="checkbox" checked={showFwKeyword} onChange={(e) => setShowFwKeyword(e.target.checked)} />
                                 Keyword
+                            </label>
+                            <label className="series-metadata-toggle" title="Ticked: days are listed old to new. Unticked: grouped by type (fittings, workshops, prep).">
+                                <input type="checkbox" checked={fittingWorkshopsByDate} onChange={(e) => setFittingWorkshopsByDate(e.target.checked)} />
+                                Order by date
                             </label>
                         </div>
                     </div>

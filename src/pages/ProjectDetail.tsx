@@ -9,7 +9,7 @@ import RelationshipChartSection from "../components/RelationshipChartSection";
 import "../styles/Projects.css";
 import { formatEventDateRange } from "../utils/eventDateRange";
 import useEventTagIndex from "../hooks/useEventTagIndex";
-import { projectEntryLabel, projectEntryTablePrefix } from "../utils/projectEntries";
+import { projectEntryDayLabel, projectEntryLabel } from "../utils/projectEntries";
 import { findEventForHashtag } from "../utils/eventTagLinks";
 import { orderViewMimFirst } from "../utils/authors";
 import { getYouTubeEmbedUrl } from "../utils/media";
@@ -123,10 +123,8 @@ export default function ProjectDetail() {
     // Fitting / workshop / prep days often have no hashtag or keyword, so those columns only show when some row has one.
     const daysHaveHashtags = fittingWorkshops.some((row) => Boolean(row.hashtag?.trim()));
     const daysHaveKeywords = fittingWorkshops.some((row) => Boolean(row.keyword?.trim()));
-    // Days of one type read "D1"; with several types a letter (F / W / P) tells them apart.
-    const daysHaveSeveralTypes = new Set(fittingWorkshops.map((row) => row.kind)).size > 1;
-    // All three tables share one circle position, so it is set once for the whole page: wider when day labels carry a letter.
-    const listClass = `project-series-metadata-list project-series-metadata-list--counts${daysHaveSeveralTypes ? " project-series-metadata-list--letters" : ""}`;
+    // All three tables share one circle position, so it is set once for the whole page.
+    const listClass = "project-series-metadata-list project-series-metadata-list--counts";
     const daysRowClass = `project-series-days-row${daysHaveHashtags ? "" : " project-no-days-hashtag"}${daysHaveKeywords ? "" : " project-no-days-keyword"}`;
     const daysColumnHeader = `project-series-column-header ${daysRowClass}`;
     const childProjects = project.child_projects ?? [];
@@ -137,22 +135,23 @@ export default function ProjectDetail() {
     const relatedCountFor = (entryType: ProjectEntryType, number: number) => relatedPostCounts[`${entryType}:${number}`] || 0;
 
     // A Q/EP/F/W hashtag that belongs to an event opens that event; otherwise the number opens the related posts.
+    // An admin can open an empty row's related-posts page too, to create a post linked to it there.
     const entryIndex = (hashtag: string | null | undefined, referenceDate: string | null | undefined, entryType: ProjectEntryType, number: number) => {
         const event = findEventForHashtag(eventTagIndex, hashtag, referenceDate);
         const relatedCount = relatedCountFor(entryType, number);
-        // The table shows "D1" for a day; its full name ("Fitting Day 1") is the tooltip and the accessible name.
+        // The table shows "F1" / "W1" / "D1" for a day; its full name ("Fitting Day 1") is the tooltip and the accessible name.
         const fullLabel = projectEntryLabel(entryType, number);
         // The label is one string ("Q13"); its box has a fixed width (see Projects.css), so the count circle starts at the same spot in every row.
-        const label = `${projectEntryTablePrefix(entryType, daysHaveSeveralTypes)}${number}`;
+        const label = projectEntryDayLabel(entryType, number);
         const to = event?.id != null
             ? ROUTES.projectEntryEvent(event.id, project.slug || project.id, entryType, number)
-            : relatedCount > 0 ? ROUTES.projectRelatedPosts(project.slug || project.id, entryType, number) : null;
+            : relatedCount > 0 || isAdmin ? ROUTES.projectRelatedPosts(project.slug || project.id, entryType, number) : null;
         if (!to) return <span title={fullLabel}>{label}</span>;
         return (
             <Link
                 className="project-series-related-index"
                 to={to}
-                title={event ? `Open the event for ${displayHashtag(hashtag)}` : `View posts related to ${fullLabel}`}
+                title={event ? `Open the event for ${displayHashtag(hashtag)}` : relatedCount > 0 ? `View posts related to ${fullLabel}` : `Add a post related to ${fullLabel}`}
                 aria-label={fullLabel}
             >
                 <span className="project-series-related-label">{label}</span>

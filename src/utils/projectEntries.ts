@@ -25,19 +25,15 @@ export function projectEntryShortLabel(type: ProjectEntryType, number: number) {
     return `${FORM_PREFIX[type]}${number}`;
 }
 
-/**
- * The prefix of a label in the project page's tables: "Q", "EP", and for a fitting / workshop / prep day "D" (like "Q1" and "EP1").
- * When the project has days of more than one type, a letter says which ("F D", "W D", "P D"); the full name ("Fitting Day 1") is
- * `projectEntryLabel`, used for tooltips and the related-posts page.
- */
-export function projectEntryTablePrefix(type: ProjectEntryType, withTypeLetter: boolean) {
-    if (type === "filming") return "Q";
-    if (type === "episodes") return "EP";
-    return withTypeLetter ? `${FORM_PREFIX[type]} D` : "D";
-}
+/** Label prefix in the project page's tables, like "Q1" and "EP1": fitting "F1", workshop "W1", prep "D1". */
+const TABLE_PREFIX: Record<ProjectEntryType, string> = { fitting: "F", workshop: "W", prep: "D", filming: "Q", episodes: "EP" };
 
-export function projectEntryDayLabel(type: ProjectEntryType, number: number, withTypeLetter: boolean) {
-    return `${projectEntryTablePrefix(type, withTypeLetter)}${number}`;
+/**
+ * A row's label in the project page's tables: F1, W2, D1, Q5, EP3. The full name ("Fitting Day 1") is `projectEntryLabel`,
+ * used for tooltips and the related-posts page.
+ */
+export function projectEntryDayLabel(type: ProjectEntryType, number: number) {
+    return `${TABLE_PREFIX[type]}${number}`;
 }
 
 export function projectEntryLabel(type: ProjectEntryType, number: number) {

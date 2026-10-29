@@ -232,6 +232,8 @@ export interface Project {
     mydramalist_url?: string | null;
     gmmtv_url?: string | null;
     official_twitter_url?: string | null;
+    /** List fitting / workshop / prep days old to new; false groups them by type. */
+    fitting_workshops_by_date?: boolean;
     spotify_url?: string | null;
     apple_music_url?: string | null;
     start_date?: string | null;

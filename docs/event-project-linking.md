@@ -98,7 +98,8 @@ An event's `keyword` typed in Related Event / Project links the post to that eve
   In each, the **Q** / **EP** / **F** / **W** number links to
   1. the event that owns the row's hashtag (`findEventForHashtag`: real events only, nearest to the filming/air date), else
   2. the related-posts page if any post uses the hashtag, else
-  3. stays plain text.
+  3. stays plain text for visitors; for an admin it still opens the (empty) related-posts page, whose **+** button creates a post
+     linked to that row. There the admin's previous / next links step through every row, empty ones included.
   The Keyword column still just copies the keyword.
 - **Related posts page** (`/projects/:id/filming|episodes|fitting|workshop/:n`): posts mentioning the row's hashtag anywhere in
   caption, translation, note or Related Event / Project text (the "show on related page" checkbox applies; the post's own Public/timeline visibility does not).
@@ -145,12 +146,16 @@ Stored in `ProjectFittingWorkshop` (`kind` = `fitting` | `workshop` | `prep`, `n
 `prep` is a day that is both a fitting and a workshop, or general preparation.
 
 - **Names.** Visitors (related-posts page, post chips, admin strip, tag index, tooltips) see **Fitting Day 1**, **Workshop Day 2**,
-  **Prep Day 1** (`projectEntryLabel`; Q days and episodes stay `Q5` / `EP3`); the project page's table uses the compact **D1** (below). The admin forms save space with **F / W / P**
+  **Prep Day 1** (`projectEntryLabel`; Q days and episodes stay `Q5` / `EP3`); the project page's table uses the compact **F1** / **W1** / **D1** (below). The admin forms save space with **F / W / P**
   (`projectEntryShortLabel`: F1, W2, P1) in the project form and the post picker.
 - **Optional columns.** Many of these days have no hashtag or keyword, so the project form has Hashtag / Keyword toggles
   (on when any row already has one) and the project page only shows those columns when some row has a value.
-- **Layout.** On the project page a day shows as **D1** (`projectEntryDayLabel`), like Q1 and EP1; when the project has days of more than one
-  type a letter tells them apart (**F D1**, **W D1**, **P D1**), and the tooltip / accessible name is the full "Fitting Day 1". The admin
+- **Order.** The project form's **Order by date** checkbox (`fitting_workshops_by_date` on the project, default on) picks the order
+  (`_fitting_workshop_sort_key`). Ticked, days are listed old to new whatever their type; days without a date go last, and days on the
+  same date go fitting, workshop, prep, then by number. Unticked, they are grouped by type (fittings, workshops, prep), then by number.
+  The project page, the edit form, the post picker and the previous / next links on the related-posts page all follow this order.
+- **Layout.** On the project page a fitting shows as **F1**, a workshop as **W1** and a prep day as **D1** (`projectEntryDayLabel`), like Q1
+  and EP1; the tooltip / accessible name is the full "Fitting Day 1". The admin
   count circle sits right after the label; every label is a box of the same width (`--series-label-min`, as if padded with invisible space; only the text is underlined, and the characters are set slightly tighter), so the small circle starts at the same spot in every row of every table. The Fitting & Workshop, Filming Q Days and Episodes tables share one first-column width
   (`--series-index-col`), so their dates line up. The column, the label minimum width and the circle are all in `rem`/`em`, so they scale
   together with the reader's text size (fixed-pixel column widths clipped the circle at larger sizes).

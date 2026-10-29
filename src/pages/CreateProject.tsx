@@ -43,6 +43,7 @@ export default function CreateProject() {
     const [mydramalistUrl, setMydramalistUrl] = useState("");
     const [gmmtvUrl, setGmmtvUrl] = useState("");
     const [officialTwitterUrl, setOfficialTwitterUrl] = useState("");
+    const [fittingWorkshopsByDate, setFittingWorkshopsByDate] = useState(true);
     const [spotifyUrl, setSpotifyUrl] = useState("");
     const [appleMusicUrl, setAppleMusicUrl] = useState("");
     const [parentProjectId, setParentProjectId] = useState("");
@@ -93,6 +94,7 @@ export default function CreateProject() {
                 mydramalist_url: mydramalistUrl || null,
                 gmmtv_url: gmmtvUrl || null,
                 official_twitter_url: category === "series" ? officialTwitterUrl || null : null,
+                fitting_workshops_by_date: fittingWorkshopsByDate,
                 spotify_url: category === "song" ? spotifyUrl || null : null,
                 apple_music_url: category === "song" ? appleMusicUrl || null : null,
                 parent_project_id: parentProjectId ? parseInt(parentProjectId) : null,
@@ -212,6 +214,8 @@ export default function CreateProject() {
                         episodeCount={episodeCount}
                         primaryHashtag={hashtag}
                         startDate={startDate}
+                        fittingWorkshopsByDate={fittingWorkshopsByDate}
+                        setFittingWorkshopsByDate={setFittingWorkshopsByDate}
                     />
                 )}
 

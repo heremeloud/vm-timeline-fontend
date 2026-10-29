@@ -26,6 +26,7 @@ export interface ProjectInput {
     mydramalist_url?: string | null;
     gmmtv_url?: string | null;
     official_twitter_url?: string | null;
+    fitting_workshops_by_date?: boolean;
     spotify_url?: string | null;
     apple_music_url?: string | null;
     parent_project_id?: Id | null;

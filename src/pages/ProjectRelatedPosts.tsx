@@ -101,8 +101,10 @@ export default function ProjectRelatedPosts() {
 
     const number = Number(entryNumber);
     const adjacentEntries = project
+        // Visitors skip rows with nothing to show; an admin steps through every row, empty ones included, to add posts.
         ? adjacentProjectEntries(project, entryType as ProjectEntryType, number, (target) =>
-            Boolean(findEventForHashtag(eventTagIndex, target.hashtag, target.date))
+            isAdmin
+            || Boolean(findEventForHashtag(eventTagIndex, target.hashtag, target.date))
             || (relatedPostCounts[`${target.type}:${target.number}`] || 0) > 0
         )
         : { previous: null, next: null };
@@ -169,6 +171,7 @@ export default function ProjectRelatedPosts() {
             ) : (
                 <p className="project-related-posts-status">
                     No related posts found.{!cleanHashtag && ` ${entryLabel} has no hashtag, so posts are linked to it from the post form.`}
+                    {isAdmin && " Use the + button to create a post linked to it."}
                 </p>
             )}
             {isAdmin && (

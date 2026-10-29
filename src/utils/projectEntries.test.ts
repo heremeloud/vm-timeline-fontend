@@ -104,9 +104,10 @@ test("forms use the compact F / W / P labels while visitors see the full names",
     assert.deepEqual([options[0].shortLabel, options[0].label], ["P3", "Prep Day 3"]);
 });
 
-test("the project page shows a day as D1, with a type letter only when the project has several types of day", () => {
-    assert.equal(projectEntryDayLabel("prep", 1, false), "D1");
-    assert.equal(projectEntryDayLabel("fitting", 12, true), "F D12");
-    assert.equal(projectEntryDayLabel("workshop", 2, true), "W D2");
-    assert.equal(projectEntryDayLabel("prep", 3, true), "P D3");
+test("the project page shows fittings as F1, workshops as W1 and prep days as D1, like Q1 and EP1", () => {
+    assert.equal(projectEntryDayLabel("fitting", 12), "F12");
+    assert.equal(projectEntryDayLabel("workshop", 2), "W2");
+    assert.equal(projectEntryDayLabel("prep", 3), "D3");
+    assert.equal(projectEntryDayLabel("filming", 5), "Q5");
+    assert.equal(projectEntryDayLabel("episodes", 1), "EP1");
 });
