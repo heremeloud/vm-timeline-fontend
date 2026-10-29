@@ -1,0 +1,68 @@
+/* Click-to-load YouTube poster (components/YouTubeEmbed). Fills a relative, aspect-ratio parent. */
+.youtube-embed-poster {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    padding: 0;
+    border: 0;
+    background: #111;
+    cursor: pointer;
+    overflow: hidden;
+}
+
+.youtube-embed-poster img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0.85;
+    transition: opacity 0.15s;
+}
+
+.youtube-embed-poster:hover img {
+    opacity: 1;
+}
+
+.youtube-embed-poster:focus-visible {
+    outline: none;
+    box-shadow: inset var(--ui-focus-ring);
+}
+
+.youtube-embed-title {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    padding: 12px 16px;
+    color: #fff;
+    font-size: 0.9rem;
+    font-weight: 600;
+    text-align: left;
+    background: linear-gradient(rgba(0, 0, 0, 0.6), transparent);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* YouTube-style red rounded play button with a white triangle. */
+.youtube-embed-play {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 68px;
+    height: 48px;
+    transform: translate(-50%, -50%);
+    border-radius: 12px;
+    background: #f00;
+}
+
+.youtube-embed-play::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-35%, -50%);
+    border-style: solid;
+    border-width: 10px 0 10px 17px;
+    border-color: transparent transparent transparent #fff;
+}
