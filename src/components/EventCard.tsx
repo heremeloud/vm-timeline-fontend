@@ -17,7 +17,6 @@ import {
 import { getEventDateItemForPhoto } from "../utils/eventDateItems";
 import { errorDetail } from "../utils/errors";
 import { getYouTubeEmbedUrl } from "../utils/media";
-import YouTubeEmbed from "./YouTubeEmbed";
 import { orderViewMimFirst } from "../utils/authors";
 import type { Event } from "../types/models";
 import { detectPostPlatform, extractTikTokPostId } from "../utils/postUrls";
@@ -522,7 +521,13 @@ export default function EventCard({ event }: { event: Event }) {
                             if (showYouTube && ytEmbed) return (
                                 <div className="eventcard-live-embed">
                                     {/* A new element per video: changing an iframe's src adds a browser-history entry, which breaks Back. */}
-                                    <YouTubeEmbed key={ytEmbed} embedUrl={ytEmbed} title={`${displayName} media ${liveIdx + 1}`} />
+                                    <iframe
+                                        key={ytEmbed}
+                                        src={ytEmbed}
+                                        title={`${displayName} media ${liveIdx + 1}`}
+                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                                        allowFullScreen
+                                    />
                                 </div>
                             );
 

@@ -17,7 +17,6 @@ import { Button, ButtonLink } from "../ui";
 import type { Event, Project } from "../types/models";
 import { isAdminView } from "../utils/adminView";
 import { twitterImageAtSize } from "../utils/twitterImage";
-import YouTubeEmbed from "../components/YouTubeEmbed";
 
 interface ExternalLinkItem {
     href: string;
@@ -545,7 +544,12 @@ export default function ProjectDetail() {
                     <div className="project-detail-playlist project-detail-playlist--video">
                         <div className="project-detail-playlist-label">{project.youtube_label || "Video"}</div>
                         <div className="project-detail-embed">
-                            <YouTubeEmbed embedUrl={embedUrl} title={project.youtube_label || "YouTube video"} />
+                            <iframe
+                                src={embedUrl}
+                                title={project.youtube_label || "YouTube video"}
+                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                allowFullScreen
+                            />
                         </div>
                         <a
                             href={project.youtube_url}
@@ -570,10 +574,11 @@ export default function ProjectDetail() {
                             <div key={pid} className="project-detail-playlist">
                                 <div className="project-detail-playlist-label">{label}</div>
                                 <div className="project-detail-embed">
-                                    <YouTubeEmbed
-                                        embedUrl={`https://www.youtube.com/embed/videoseries?list=${pid}`}
+                                    <iframe
+                                        src={`https://www.youtube.com/embed/videoseries?list=${pid}`}
                                         title={label}
-                                        poster={project.thumbnail_url && twitterImageAtSize(project.thumbnail_url, "medium")}
+                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                        allowFullScreen
                                     />
                                 </div>
                                 <a
