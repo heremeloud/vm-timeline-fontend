@@ -1,5 +1,5 @@
 import type { ProjectEntryType } from "../routes";
-import type { EventTagEntry, Post, ProjectEntryLink } from "../types/models";
+import type { Event, EventTagEntry, Post, ProjectEntryLink } from "../types/models";
 
 export type EventTagIndex = Map<string, EventTagEntry[]>;
 
@@ -37,6 +37,24 @@ export function setIdentityTags(tags: string[]): boolean {
     const changed = next.size !== identityTags.size || [...next].some((tag) => !identityTags.has(tag));
     identityTags = next;
     return changed;
+}
+
+/** True for identity hashtags (#ViewMim, …), which never link to anything. */
+export function isIdentityTag(tag: string | null | undefined) {
+    return identityTags.has(normalizeTag(tag));
+}
+
+/**
+ * The "Related Event / Project" text a post created from an event page starts with, so the post links to the event:
+ * the date's own hashtag, else the event's first hashtag, else the date's keyword, else the Event-wide Keyword.
+ * Identity hashtags (#ViewMim) are skipped because they never link, so an event tagged only #ViewMim falls back to its keyword.
+ */
+export function defaultEventRelatedText(event: Pick<Event, "tags" | "date_items" | "keyword">, date: string) {
+    const usable = (tag: string | null | undefined) => Boolean(tag?.trim()) && !isIdentityTag(tag);
+    const dateItem = event.date_items.find((item) => item.date === date);
+    const hashtag = [dateItem?.hashtag, ...event.tags].find(usable)?.trim() || "";
+    if (hashtag) return `#${hashtag.replace(/^#/, "")}`;
+    return dateItem?.keyword?.trim() || event.keyword?.trim() || "";
 }
 
 const PHYSICAL_EVENT_CATEGORIES = new Set([

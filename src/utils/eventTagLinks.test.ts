@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { DEFAULT_IDENTITY_TAGS, buildEventTagIndex, findEventForHashtag, getEventTagLinks, linkOpensEvent, setIdentityTags } from "./eventTagLinks.ts";
+import { DEFAULT_IDENTITY_TAGS, buildEventTagIndex, defaultEventRelatedText, findEventForHashtag, getEventTagLinks, linkOpensEvent, setIdentityTags } from "./eventTagLinks.ts";
 
 test("date-specific hashtags are indexed only for their occurrence date", () => {
     const events = [
@@ -199,4 +199,22 @@ test("identity hashtags are not indexed, and the list is editable", () => {
     } finally {
         setIdentityTags(DEFAULT_IDENTITY_TAGS);
     }
+});
+
+test("a post created from an event page starts with a hashtag that links, else a keyword, never an identity tag", () => {
+    // only identity hashtags: fall back to the Event-wide Keyword
+    const event = { tags: ["ViewMim", "วิวมิ้ม"], date_items: [], keyword: "GMMTV NEXT" };
+    assert.equal(defaultEventRelatedText(event, "2026-11-03"), "GMMTV NEXT");
+    assert.equal(defaultEventRelatedText({ ...event, tags: ["ViewMim", "BBFanFest"] }, "2026-11-03"), "#BBFanFest");
+    const dated = {
+        tags: ["BBFanFest", "ViewMim"],
+        date_items: [{ date: "2025-06-29", hashtag: "BBFanFestD2", keyword: "" }, { date: "2025-07-01", hashtag: "", keyword: "DAISY" }],
+        keyword: "BB FAN FEST",
+    };
+    assert.equal(defaultEventRelatedText(dated, "2025-06-29"), "#BBFanFestD2");
+    assert.equal(defaultEventRelatedText(dated, "2025-06-28"), "#BBFanFest");
+    const onlyIdentity = { ...dated, tags: ["ViewMim"] };
+    assert.equal(defaultEventRelatedText(onlyIdentity, "2025-07-01"), "DAISY");
+    assert.equal(defaultEventRelatedText(onlyIdentity, "2025-06-28"), "BB FAN FEST");
+    assert.equal(defaultEventRelatedText({ tags: ["ViewMim"], date_items: [], keyword: "" }, "2026-01-01"), "");
 });

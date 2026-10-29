@@ -9,7 +9,7 @@ import { getEventPostCandidates, getProjectRelatedPostCounts } from "../api/post
 import EventCard from "../components/EventCard";
 import PostCard from "../components/PostCard";
 import { ROUTES } from "../routes";
-import { buildEventTagIndex, findEventForHashtag, getEventTagLinks, linkOpensEvent } from "../utils/eventTagLinks";
+import { buildEventTagIndex, defaultEventRelatedText, findEventForHashtag, getEventTagLinks, linkOpensEvent } from "../utils/eventTagLinks";
 import type { EventTagIndex } from "../utils/eventTagLinks";
 import type { Event, Post, Project } from "../types/models";
 import { isAdminView } from "../utils/adminView";
@@ -22,13 +22,6 @@ import "../styles/Home.css";
 import "../styles/Projects.css";
 
 const PROJECT_ENTRY_TYPES = new Set<ProjectEntryType>(["filming", "episodes", "fitting", "workshop", "prep"]);
-
-function eventContextText(event: Event, defaultDate: string) {
-    const dateItem = event.date_items.find((item) => item.date === defaultDate);
-    const hashtag = dateItem?.hashtag?.trim() || event.tags.find((tag) => tag.trim())?.trim() || "";
-    if (hashtag) return `#${hashtag.replace(/^#/, "")}`;
-    return dateItem?.keyword?.trim() || event.keyword?.trim() || "";
-}
 
 export default function EventDetail() {
     const { eventId } = useParams();
@@ -142,7 +135,7 @@ export default function EventDetail() {
     }
 
     const defaultPostedAt = getEventStartDate(event) || "";
-    const defaultTimelineContext = eventContextText(event, defaultPostedAt);
+    const defaultTimelineContext = defaultEventRelatedText(event, defaultPostedAt);
     return (
         <div style={{ maxWidth: 750, margin: "0 auto", padding: "24px 20px 60px" }} {...swipeHandlers}>
             <button
