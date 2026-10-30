@@ -7,6 +7,7 @@ export default function Header() {
         <header className="main-header">
             <div className="header-inner">
                 <Link to={ROUTES.archive} className="site-title-link">
+                    <img className="site-logo" src="/icons/vm-logo-mark.png" alt="" />
                     <h2 className="site-title">ViewMim Archive</h2>
                 </Link>
 

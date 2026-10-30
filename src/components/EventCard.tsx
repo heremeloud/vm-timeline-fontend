@@ -17,6 +17,7 @@ import {
 import { getEventDateItemForPhoto } from "../utils/eventDateItems";
 import { errorDetail } from "../utils/errors";
 import { getYouTubeEmbedUrl } from "../utils/media";
+import { twitterImageAtSize } from "../utils/twitterImage";
 import { orderViewMimFirst } from "../utils/authors";
 import type { Event } from "../types/models";
 import { detectPostPlatform, extractTikTokPostId } from "../utils/postUrls";
@@ -448,7 +449,7 @@ export default function EventCard({ event }: { event: Event }) {
 
                 {activePhoto && (
                     <div className="eventcard-media media-carousel" role="region" aria-label="Event photos">
-                        <img src={activePhoto.url} alt={`${displayName} — photo ${activePhotoIdx + 1}`}
+                        <img src={twitterImageAtSize(activePhoto.url, "large")} alt={`${displayName} — photo ${activePhotoIdx + 1}`}
                             className="eventcard-img" loading="lazy" />
                         <CarouselControls
                             index={activePhotoIdx}

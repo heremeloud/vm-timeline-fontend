@@ -12,12 +12,22 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: 12px;
     padding: 0 20px;
 }
 
 .site-title-link {
+    display: flex;
+    align-items: center;
+    gap: 8px;
     text-decoration: none;
     color: inherit;
+}
+
+.site-logo {
+    height: 36px;
+    width: auto;
+    flex-shrink: 0;
 }
 
 .site-title-link:hover {
@@ -29,6 +39,7 @@
 .site-title {
     margin: 0;
     font-size: 1.2rem;
+    white-space: nowrap;
 }
 
 .nav-links {
@@ -53,16 +64,49 @@
 }
 
 @media (max-width: 600px) {
+    .header-inner {
+        gap: 10px;
+        padding: 0 16px;
+    }
+
+    .site-title-link {
+        gap: 6px;
+    }
+
+    .site-logo {
+        height: 28px;
+    }
+
+    /* Logo, title and nav share one row: the title becomes a compact two-line wordmark. */
     .site-title {
-        font-size: 0.95rem;
+        font-size: 0.85rem;
+        line-height: 1.1;
+        white-space: normal;
+        width: min-content;
     }
 
     .nav-links {
-        gap: 12px;
+        gap: 10px;
     }
 
     .nav-link {
         font-size: 0.82rem;
     }
-
 }
+
+@media (max-width: 360px) {
+    .site-logo {
+        height: 22px;
+    }
+
+    .nav-links {
+        gap: 8px;
+    }
+}
+
+@media (max-width: 340px) {
+    .site-logo {
+        display: none;
+    }
+}
+

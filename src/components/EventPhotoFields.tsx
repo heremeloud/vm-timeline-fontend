@@ -1,5 +1,6 @@
 import { Button, FocalPointPicker } from "../ui";
 import type { EventPhoto } from "../types/models";
+import { twitterImageAtSize } from "../utils/twitterImage";
 
 interface EventPhotoFieldsProps {
     photos: EventPhoto[];
@@ -46,7 +47,7 @@ export default function EventPhotoFields({ photos, onChange, dates = [], dateMod
                             min={startDate || undefined} max={endDate || startDate || undefined}
                             onChange={e => updatePhoto(index, { date: e.target.value || null })} />
                     )}
-                    <FocalPointPicker imageUrl={photo.url.trim()} x={photo.focal_x} y={photo.focal_y}
+                    <FocalPointPicker imageUrl={twitterImageAtSize(photo.url.trim(), "medium")} x={photo.focal_x} y={photo.focal_y}
                         onChange={(focal_x, focal_y) => updatePhoto(index, { focal_x, focal_y })} />
                 </div>
             ))}
