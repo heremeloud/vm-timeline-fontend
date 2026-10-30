@@ -18,8 +18,9 @@ export default function TikTokEmbed({ external_url }: TikTokEmbedProps) {
 
     // 1) TikTok embed iframe
     if (hasTikTokEmbed) {
-        // TikTok embed URL format
-        const embedUrl = `https://www.tiktok.com/embed/v2/${videoId}`;
+        // The lighter player/v1 endpoint: embed/v2 makes far more API calls per card, so a page of
+        // TikTok cards hit TikTok's per-visitor limit and some frames showed "ratelimit triggered".
+        const embedUrl = `https://www.tiktok.com/player/v1/${videoId}?description=1&music_info=1&rel=0`;
 
         return (
             <div ref={ref} className="tiktok-embed">
@@ -32,8 +33,8 @@ export default function TikTokEmbed({ external_url }: TikTokEmbedProps) {
                         className="tiktok-embed-frame"
                         src={embedUrl}
                         title="TikTok embed"
-                        allow="encrypted-media;"
-                        scrolling="yes"
+                        allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
+                        allowFullScreen
                     />
                 )}
             </div>
