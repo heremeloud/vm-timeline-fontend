@@ -200,6 +200,7 @@ export default function ProjectDetail() {
                         <img
                             src={twitterImageAtSize(project.thumbnail_url, "medium")}
                             alt={project.title}
+                            referrerPolicy="no-referrer"
                             className="project-detail-thumb"
                         />
                     </a>
@@ -447,6 +448,7 @@ export default function ProjectDetail() {
                                 <img
                                     src={twitterImageAtSize(child.thumbnail_url, "medium")}
                                     alt={child.title}
+                                    referrerPolicy="no-referrer"
                                     className="project-detail-child-thumb"
                                     style={{
                                         objectPosition: `${child.thumbnail_focal_x ?? 50}% ${child.thumbnail_focal_y ?? 50}%`,

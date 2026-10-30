@@ -90,6 +90,7 @@ export default function Projects() {
                                     <img
                                         src={twitterImageAtSize(p.thumbnail_url, "medium")}
                                         alt={p.title}
+                                        referrerPolicy="no-referrer"
                                         style={{
                                             objectPosition: `${p.thumbnail_focal_x ?? 50}% ${p.thumbnail_focal_y ?? 50}%`,
                                         }}
