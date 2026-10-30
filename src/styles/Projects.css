@@ -365,13 +365,15 @@
 }
 
 @media (max-width: 600px) {
+    /* Stack the cover above the info so it can use the full width instead of a cropped sliver. */
     .project-detail-header {
+        flex-direction: column;
         gap: 16px;
     }
 
     .project-detail-thumb {
-        width: 145px;
-        min-width: 145px;
+        width: 100%;
+        min-width: 0;
     }
 
     .project-detail-title {
