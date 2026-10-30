@@ -547,6 +547,7 @@ export default function Events() {
                                                 )}
                                                 {(photo?.url || ev.project_thumbnail_url) && (
                                                     <img
+                                                        referrerPolicy="no-referrer"
                                                         src={twitterImageAtSize(photo?.url || ev.project_thumbnail_url || "", "medium") || undefined}
                                                         alt=""
                                                         className="events-calendar-thumb"

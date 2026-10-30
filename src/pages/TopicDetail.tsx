@@ -134,7 +134,7 @@ export default function TopicDetail() {
 
             <div className="topic-detail-header">
                 {topic.cover_url && (
-                    <img src={topic.cover_url} alt={topic.title} className="topic-detail-cover" />
+                    <img src={topic.cover_url} alt={topic.title} className="topic-detail-cover" referrerPolicy="no-referrer" />
                 )}
 
                 <div className="topic-detail-info">

@@ -920,7 +920,7 @@ function CompactMediaTile({ item, index }: { item: StoryItem | MediaItem; index:
                 {video ? (
                     <video src={url} className="compact-media-fill" muted playsInline preload="metadata" />
                 ) : image ? (
-                    <img src={url} alt="" className="compact-media-fill" loading="lazy" />
+                    <img src={url} alt="" className="compact-media-fill" loading="lazy" referrerPolicy="no-referrer" />
                 ) : (
                     <div className="compact-media-fallback">Media</div>
                 )}
@@ -933,7 +933,7 @@ function CompactMediaTile({ item, index }: { item: StoryItem | MediaItem; index:
                     {video ? (
                         <video src={url} muted autoPlay loop playsInline preload="metadata" />
                     ) : (
-                        <img src={url} alt="" loading="lazy" />
+                        <img src={url} alt="" loading="lazy" referrerPolicy="no-referrer" />
                     )}
                     <span>Media {index + 1}</span>
                 </div>

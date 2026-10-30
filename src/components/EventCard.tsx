@@ -450,6 +450,7 @@ export default function EventCard({ event }: { event: Event }) {
                 {activePhoto && (
                     <div className="eventcard-media media-carousel" role="region" aria-label="Event photos">
                         <img src={twitterImageAtSize(activePhoto.url, "large")} alt={`${displayName} — photo ${activePhotoIdx + 1}`}
+                            referrerPolicy="no-referrer"
                             className="eventcard-img" loading="lazy" />
                         <CarouselControls
                             index={activePhotoIdx}

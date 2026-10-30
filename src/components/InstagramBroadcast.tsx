@@ -25,7 +25,7 @@ function MessageMedia({ url }: { url?: string | null }) {
         return <video className="ig-broadcast-media" src={url} controls playsInline preload="metadata" />;
     }
     if (isImage(url)) {
-        return <img className="ig-broadcast-media" src={url} alt="Broadcast channel attachment" loading="lazy" />;
+        return <img className="ig-broadcast-media" src={url} alt="Broadcast channel attachment" loading="lazy" referrerPolicy="no-referrer" />;
     }
     return <a className="ig-broadcast-attachment" href={url} target="_blank" rel="noopener noreferrer">View attachment ↗</a>;
 }

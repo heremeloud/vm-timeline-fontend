@@ -59,7 +59,7 @@ export default function Topics() {
                     <Link to={ROUTES.topicDetail(topic.slug || topic.id)} className="topic-card">
                         <div className="topic-card-thumb">
                             {topic.cover_url
-                                ? <img src={topic.cover_url} alt={topic.title} />
+                                ? <img src={topic.cover_url} alt={topic.title} referrerPolicy="no-referrer" />
                                 : <div className="topic-card-placeholder">Special</div>
                             }
                         </div>

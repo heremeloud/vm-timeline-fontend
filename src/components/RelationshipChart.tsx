@@ -142,7 +142,7 @@ function inlineLabelPositions(connections: ActiveRelationship[], characters: Rel
 function CharacterPortrait({ character, crossOrigin }: { character: RelationshipChartCharacter; crossOrigin?: "anonymous" | "use-credentials" }) {
     const [failedUrl, setFailedUrl] = useState<string | null>(null);
     return character.photo && character.photo !== failedUrl
-        ? <img className="relationship-chart-portrait" src={character.photo} alt="" crossOrigin={crossOrigin} onError={() => setFailedUrl(character.photo ?? null)} />
+        ? <img className="relationship-chart-portrait" src={character.photo} alt="" crossOrigin={crossOrigin} onError={() => setFailedUrl(character.photo ?? null)} referrerPolicy="no-referrer" />
         : <Portrait tone={character.tone} />;
 }
 

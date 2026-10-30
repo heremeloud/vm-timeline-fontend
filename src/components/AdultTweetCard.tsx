@@ -87,7 +87,7 @@ export default function AdultTweetCard({ tweet, eventTagLinks = [] }: AdultTweet
                         className="post-adult-media"
                     />
                 ) : (
-                    <img src={tweet.media_url} alt="" className="post-adult-media" />
+                    <img src={tweet.media_url} alt="" className="post-adult-media" referrerPolicy="no-referrer" />
                 )
             )}
         </div>

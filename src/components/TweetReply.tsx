@@ -79,7 +79,7 @@ export default function TweetReply({ reply }: { reply: Post }) {
                                 <p className="post-translation-note post-note-line"><span className="post-note-icon" aria-hidden="true">📝</span><span className="post-note-text">{reply.caption_translation_note}</span></p>
                             )}
                             {reply.media_url && (
-                                <img src={reply.media_url} alt="reply-media" className="tweet-reply__media" />
+                                <img src={reply.media_url} alt="reply-media" className="tweet-reply__media" referrerPolicy="no-referrer" />
                             )}
                         </>
                     )}

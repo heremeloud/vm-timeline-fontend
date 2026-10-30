@@ -39,6 +39,7 @@ export default function FocalPointPicker({ imageUrl, x, y, onChange }: FocalPoin
                     aria-label="Choose the image display focus"
                 >
                     <img
+                        referrerPolicy="no-referrer"
                         src={imageUrl}
                         alt="Display focus preview"
                         style={{ objectPosition: `${focalX}% ${focalY}%` }}

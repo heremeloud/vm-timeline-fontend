@@ -165,6 +165,7 @@ export default function IGReply({ reply }: { reply: PostText }) {
                                         />
                                     ) : (
                                         <img
+                                            referrerPolicy="no-referrer"
                                             src={main.media_url}
                                             alt="reply media"
                                             onError={(e) =>

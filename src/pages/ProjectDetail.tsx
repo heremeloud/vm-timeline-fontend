@@ -285,7 +285,7 @@ export default function ProjectDetail() {
                                     rel="noopener noreferrer"
                                     className="project-detail-ext-link"
                                 >
-                                    <img src={icon} alt={alt} className="project-detail-ext-link-icon" />
+                                    <img src={icon} alt={alt} className="project-detail-ext-link-icon" referrerPolicy="no-referrer" />
                                     {label} ↗
                                 </a>
                             ))}

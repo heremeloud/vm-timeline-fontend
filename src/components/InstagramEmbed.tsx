@@ -32,6 +32,7 @@ function MediaItem({ url, caption, postLayout = false }: { url: string; caption?
     if (isImage(url)) {
         return (
             <img
+                referrerPolicy="no-referrer"
                 src={url}
                 alt={caption || "Instagram media"}
                 loading="lazy"

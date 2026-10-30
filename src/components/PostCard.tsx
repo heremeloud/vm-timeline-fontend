@@ -420,6 +420,7 @@ export default function PostCard({
                                     />
                                 ) : (
                                     <img
+                                        referrerPolicy="no-referrer"
                                         src={post.media_url}
                                         alt=""
                                         className="post-adult-media"
@@ -605,7 +606,7 @@ export default function PostCard({
           If TweetEmbed already handles media, can remove this. */}
             {isTwitter && post.media_url && !rendersAdultFallback && (
                 <div className="post-media">
-                    <img src={post.media_url} alt="" loading="lazy" />
+                    <img src={post.media_url} alt="" loading="lazy" referrerPolicy="no-referrer" />
                 </div>
             )}
 

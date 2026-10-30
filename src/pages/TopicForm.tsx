@@ -972,6 +972,7 @@ function TimelineItemPreview({ post, draft, selectedMediaIndices }: TimelineItem
                             />
                         ) : (
                             <img
+                                referrerPolicy="no-referrer"
                                 key={`${url}-${index}`}
                                 src={url}
                                 alt={`Preview ${index + 1}`}

@@ -133,7 +133,7 @@ function ProfileCardContent({ author: initialAuthor, defaultPhoto, thaiFullName,
                     title="Click to change photo"
                 >
                     {editPhoto
-                        ? <img src={editPhoto} alt="preview" className="archive-photo" />
+                        ? <img src={editPhoto} alt="preview" className="archive-photo" referrerPolicy="no-referrer" />
                         : <div className="archive-photo-placeholder">{draft.name[0]}</div>
                     }
                     <div className="archive-photo-overlay">📷</div>
@@ -199,7 +199,7 @@ function ProfileCardContent({ author: initialAuthor, defaultPhoto, thaiFullName,
         <div className={`archive-card ${className}`.trim()}>
             <div className="archive-photo-wrap">
                 {displayPhoto
-                    ? <img src={displayPhoto} alt={author.name} className="archive-photo" />
+                    ? <img src={displayPhoto} alt={author.name} className="archive-photo" referrerPolicy="no-referrer" />
                     : <div className="archive-photo-placeholder">{author.name?.[0]}</div>
                 }
             </div>
@@ -236,7 +236,7 @@ function ProfileCardContent({ author: initialAuthor, defaultPhoto, thaiFullName,
                     return (
                         <a key={key} href={url} target="_blank" rel="noopener noreferrer" className="archive-link">
                             {imgSrc
-                                ? <img src={imgSrc} alt={label} className="archive-link-img" />
+                                ? <img src={imgSrc} alt={label} className="archive-link-img" referrerPolicy="no-referrer" />
                                 : <span className="archive-link-icon">{fcIcon}</span>
                             }
                             {label}
