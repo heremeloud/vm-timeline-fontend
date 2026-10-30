@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import useNearViewport from "../hooks/useNearViewport";
 import { extractTikTokPostId } from "../utils/postUrls";
 
 interface TikTokEmbedProps {
@@ -11,6 +12,9 @@ export default function TikTokEmbed({ external_url }: TikTokEmbedProps) {
 
     const videoId = useMemo(() => extractTikTokPostId(ttUrl), [ttUrl]);
     const hasTikTokEmbed = !!videoId;
+    // Each TikTok player boots a whole app; only start one when its card is about to scroll into view,
+    // so the visible card isn't competing with players further down the timeline.
+    const { ref, isNearViewport } = useNearViewport<HTMLDivElement>("200px");
 
     // 1) TikTok embed iframe
     if (hasTikTokEmbed) {
@@ -18,21 +22,20 @@ export default function TikTokEmbed({ external_url }: TikTokEmbedProps) {
         const embedUrl = `https://www.tiktok.com/embed/v2/${videoId}`;
 
         return (
-            <div style={{ width: "100%", maxWidth: 605, margin: "0 auto" }}>
-                <iframe
-                    src={embedUrl}
-                    title="TikTok embed"
-                    loading="lazy"
-                    style={{
-                        width: "100%",
-                        height: 750,
-                        border: "none",
-                        borderRadius: 12,
-                        overflow: "hidden",
-                    }}
-                    allow="encrypted-media;"
-                    scrolling="yes"
-                />
+            <div ref={ref} className="tiktok-embed">
+                {/* Sits under the frame and shows until TikTok paints its own page over it. */}
+                <div className="tiktok-embed-placeholder" aria-hidden="true">
+                    <span className="tiktok-embed-spinner" />
+                </div>
+                {isNearViewport && (
+                    <iframe
+                        className="tiktok-embed-frame"
+                        src={embedUrl}
+                        title="TikTok embed"
+                        allow="encrypted-media;"
+                        scrolling="yes"
+                    />
+                )}
             </div>
         );
     }

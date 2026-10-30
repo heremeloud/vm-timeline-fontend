@@ -835,3 +835,43 @@
     color: #9a3412;
     font-style: italic;
 }
+
+/* TikTok embed: a light placeholder (TikTok's player starts on a white page) holds the card's space while it loads. */
+.tiktok-embed {
+    position: relative;
+    width: 100%;
+    max-width: 605px;
+    height: 750px;
+    margin: 0 auto;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.tiktok-embed-placeholder {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ui-toggle-neutral-tint);
+}
+
+.tiktok-embed-spinner {
+    width: 28px;
+    height: 28px;
+    border: 3px solid var(--ui-chart-border);
+    border-top-color: var(--ui-platform-tiktok);
+    border-radius: 50%;
+    animation: tiktok-embed-spin 0.8s linear infinite;
+}
+
+@keyframes tiktok-embed-spin {
+    to { transform: rotate(360deg); }
+}
+
+.tiktok-embed-frame {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    border: none;
+}
