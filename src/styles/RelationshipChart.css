@@ -9,7 +9,7 @@
 .relationship-chart-header-actions button:disabled { opacity: .65; cursor: wait; }
 .relationship-chart-hidden-note { color: #a4614f; font-weight: 600; }
 .relationship-chart-eyebrow { font-size: 10px; font-weight: 700; letter-spacing: 1.8px; color: var(--ui-chart-eyebrow); }
-.relationship-chart-heading h2 { font-family: Georgia, serif; font-size: clamp(30px, 4vw, 36px); font-weight: 400; margin: 10px 0; line-height: 1.2; }
+.relationship-chart-heading h2 { font-family: Georgia, "Noto Color Emoji", serif; font-size: clamp(30px, 4vw, 36px); font-weight: 400; margin: 10px 0; line-height: 1.2; }
 .relationship-chart-heading p, .relationship-chart-note { font-size: 12px; line-height: 1.6; color: var(--ui-chart-text-muted); margin: 0; }
 .relationship-chart-heading .relationship-chart-eyebrow { font-size: 14px; }
 .relationship-chart-heading p { font-size: 16px; }

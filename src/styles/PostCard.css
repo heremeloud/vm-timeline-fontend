@@ -11,7 +11,7 @@
     padding: 14px 16px;
     border: 1px solid var(--ui-platform-x-border);
     border-radius: 12px;
-    font-family: Arial, sans-serif;
+    font-family: Arial, "Noto Color Emoji", sans-serif;
     color: var(--ui-platform-x-text);
     background: #fff;
     box-sizing: border-box;
@@ -567,7 +567,7 @@
     margin-top: 8px;
     padding: 10px 12px 12px;
     border-top: 1px solid #efefef;
-    font-family: Arial, Helvetica, sans-serif;
+    font-family: Arial, Helvetica, "Noto Color Emoji", sans-serif;
     font-size: 14px;
     line-height: 18px;
     overflow-wrap: anywhere;
